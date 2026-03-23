@@ -1,23 +1,8 @@
-# Receitas App PostgreSQL
+# CMV Mockup Empresa
 
 Aplicação web para gerenciamento de insumos e receitas com suporte a receitas compostas por outras receitas.
 
 O projeto foi construído com `aiohttp`, `Jinja2`, `SQLAlchemy async` e `PostgreSQL`, e inclui uma visualização recursiva da composição completa de cada receita.
-
-## Estrutura
-
-O código principal da aplicação está em:
-
-`cmv_mockup_empresa/`
-
-Arquivos importantes:
-
-- `cmv_mockup_empresa/main.py`: ponto de entrada da aplicação e definição das rotas
-- `cmv_mockup_empresa/app/database/models.py`: modelos `Produto` e `ComponenteReceita`
-- `cmv_mockup_empresa/app/database/session.py`: conexão assíncrona com PostgreSQL
-- `cmv_mockup_empresa/app/database/initiliaze_db.py`: recria e popula o banco com dados de exemplo na inicialização
-- `cmv_mockup_empresa/app/services/produto_service.py`: regras de negócio para receitas e busca paginada
-- `cmv_mockup_empresa/templates/`: telas HTML renderizadas com `Jinja2`
 
 ## Funcionalidades
 
@@ -29,6 +14,16 @@ Arquivos importantes:
 - Visualização detalhada de receita com estrutura recursiva
 - Busca paginada de produtos para `Select2`
 - Validação de payloads com `Pydantic`
+
+## Estrutura do projeto
+
+- `main.py`: ponto de entrada da aplicação e definição das rotas
+- `app/database/models.py`: modelos `Produto` e `ComponenteReceita`
+- `app/database/session.py`: conexão assíncrona com PostgreSQL
+- `app/database/initiliaze_db.py`: recria e popula o banco com dados de exemplo na inicialização
+- `app/services/produto_service.py`: regras de negócio para receitas e busca paginada
+- `templates/`: telas HTML renderizadas com `Jinja2`
+- `static/`: arquivos estáticos do frontend
 
 ## Tecnologias
 
@@ -49,12 +44,6 @@ Arquivos importantes:
 - Extensão `uuid-ossp` disponível no PostgreSQL caso a consulta recursiva use `uuid_generate_v4()`
 
 ## Instalação
-
-Entre na pasta da aplicação:
-
-```powershell
-cd .\cmv_mockup_empresa
-```
 
 Crie e ative um ambiente virtual:
 
@@ -79,22 +68,22 @@ postgresql+asyncpg://postgres:123@localhost:5432/cmv_00
 
 Esse valor aparece em:
 
-- `cmv_mockup_empresa/app/database/session.py`
-- `cmv_mockup_empresa/app/database/models.py`
+- `app/database/session.py`
+- `app/database/models.py`
 
 Antes de rodar, garanta que:
 
 1. O PostgreSQL esteja ativo
 2. Exista um banco chamado `cmv_00`
-3. O usuário/senha batam com o que está configurado no projeto
+3. O usuário e a senha batam com o que está configurado no projeto
 
-Exemplo de criação no PostgreSQL:
+Exemplo de criação do banco:
 
 ```sql
 CREATE DATABASE cmv_00;
 ```
 
-Se necessário, habilite a extensão:
+Se necessário, habilite a extensão usada na consulta recursiva:
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -178,4 +167,4 @@ O projeto atualmente tem algumas características importantes para desenvolvimen
 - a string de conexão está hardcoded
 - a interface já possui botões de editar e excluir, mas esses fluxos ainda não estão implementados no backend
 
-Se a ideia for evoluir o projeto, um próximo passo natural é mover a configuração do banco para variáveis de ambiente e evitar `drop_all`/`create_all` em toda subida da aplicação.
+Um próximo passo natural é mover a configuração do banco para variáveis de ambiente e evitar `drop_all`/`create_all` em toda subida da aplicação.
