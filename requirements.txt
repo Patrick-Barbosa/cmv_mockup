@@ -1,0 +1,9 @@
+aiocache
+aiohttp
+aiohttp-jinja2
+aiohttp-session
+jinja2
+python-jose
+pydantic
+sqlalchemy
+asyncpg
