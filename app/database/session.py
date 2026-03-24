@@ -3,9 +3,13 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from aiohttp import web
 from typing import AsyncIterator
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+import os
 
+# Carrega variáveis do arquivo .env
+load_dotenv()
 
-DATABASE_URL = "postgresql+asyncpg://postgres:123@localhost:5432/cmv_00"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 DB_KEY = web.AppKey("db_key", async_sessionmaker)
 DB_ENGINE_KEY = web.AppKey("db_engine_key", AsyncEngine)
