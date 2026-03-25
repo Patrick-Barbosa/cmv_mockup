@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
+UNIDADES_PADRAO = ["g", "kg", "ml", "l", "un", "cx", "pct", "tb", "ds"]
+
 
 class PaginatedParamsModel(BaseModel):
     q: Optional[str] = None

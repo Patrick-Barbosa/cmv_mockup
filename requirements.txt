@@ -7,3 +7,5 @@ pydantic
 sqlalchemy
 asyncpg
 python-dotenv
+pytest
+httpx
