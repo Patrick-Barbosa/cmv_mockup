@@ -3,3 +3,7 @@
 /app/services/__pycache__
 .env
 .github/copilot-instructions.md
+/__pycache__
+/.qwen
+AGENTS.md
+QWEN.md
