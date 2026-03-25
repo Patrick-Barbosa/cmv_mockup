@@ -108,9 +108,9 @@
                     <td>{{ produto.nome|e }}</td>
                     <td>{{ produto.quantidade_base }}</td>
                     <td>
-                        <!-- botão “Visualizar” -->
+                        <!-- botão "Visualizar" -->
                         <a
-                          href="{{ request.app['main_router']['receitas_view'].url_for(id=produto.id|string) }}"
+                          href="{{ url_for('receitas_view', receita_id=produto.id) }}"
                           class="btn btn-sm btn-outline-secondary"
                           title="Visualizar"
                         >
@@ -350,7 +350,7 @@
           const data = await response.json();
           console.log('Recipe created on server:', data);
           alert('Recipe created successfully!');
-          showRecipesList();
+          window.location.reload();
 
         } catch (err) {
           console.error('Failed to create recipe:', err);

@@ -1,47 +1,48 @@
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, AsyncEngine
-from aiohttp import web
-from typing import AsyncIterator
-from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 from dotenv import load_dotenv
 import os
 
 # Carrega variáveis do arquivo .env
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-DB_KEY = web.AppKey("db_key", async_sessionmaker)
-DB_ENGINE_KEY = web.AppKey("db_engine_key", AsyncEngine)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:123@localhost/cmv_00")
 
 
-@asynccontextmanager
-async def get_db_session(request: web.Request) -> AsyncIterator[AsyncSession]:
-    session_factory = request.app[DB_KEY]
-    async with session_factory() as session:
-        yield session
+class DatabaseSession:
+    """Gerenciador de sessão do banco de dados para FastAPI."""
+    
+    def __init__(self):
+        self.engine: AsyncEngine | None = None
+        self.session_factory: async_sessionmaker | None = None
+    
+    def init(self):
+        """Inicializa o engine e o session factory."""
+        self.engine = create_async_engine(
+            DATABASE_URL,
+            echo=True,
+            future=True
+        )
+        
+        self.session_factory = async_sessionmaker(
+            bind=self.engine,
+            expire_on_commit=False,
+            class_=AsyncSession,
+        )
+    
+    async def close(self):
+        """Fecha a conexão com o banco de dados."""
+        if self.engine:
+            await self.engine.dispose()
+    
+    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+        """Dependency que fornece sessões do banco de dados."""
+        async with self.session_factory() as session:
+            try:
+                yield session
+            finally:
+                await session.close()
 
 
-async def init_db_conn(app: web.Application):
-    engine = create_async_engine(
-        DATABASE_URL,
-        echo=True,
-        future=True
-    )
-
-    session_factory = async_sessionmaker(
-        bind=engine,
-        expire_on_commit=False,
-        class_=AsyncSession,
-    )
-
-    app[DB_ENGINE_KEY] = engine
-    #app[DB_KEY] = session_factory
-    # Adicionar aos subapps também, caso existam
-    app[DB_KEY] = app["subapp"][DB_KEY] = session_factory
-
-    # Cleanup ao finalizar o app
-    async def close_db(app: web.Application):
-        await engine.dispose()
-
-    app.on_cleanup.append(close_db)
+# Instância global para ser usada no lifespan do FastAPI
+db_session = DatabaseSession()

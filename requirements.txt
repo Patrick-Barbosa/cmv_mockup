@@ -1,8 +1,7 @@
-aiocache
-aiohttp
-aiohttp-jinja2
-aiohttp-session
+fastapi
+uvicorn[standard]
 jinja2
+python-multipart
 python-jose
 pydantic
 sqlalchemy

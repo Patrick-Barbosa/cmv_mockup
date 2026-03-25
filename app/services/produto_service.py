@@ -154,8 +154,17 @@ class ProdutoService:
 
         id_receita = receita.id
 
-        # cria os links sem tocar em receita.componentes
+        # Remove duplicatas de componentes (mesmo id_componente)
+        # Mantém o primeiro componente de cada id_componente
+        seen = set()
+        unique_components = []
         for comp in payload.componentes:
+            if comp.id_componente not in seen:
+                seen.add(comp.id_componente)
+                unique_components.append(comp)
+
+        # cria os links sem tocar em receita.componentes
+        for comp in unique_components:
             cr = ComponenteReceita(
                 id_receita=id_receita,
                 id_componente=comp.id_componente,
