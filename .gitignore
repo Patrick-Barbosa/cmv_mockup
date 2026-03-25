@@ -7,3 +7,6 @@
 /.qwen
 AGENTS.md
 QWEN.md
+/app/routers/__pycache__
+/app/routers/api/__pycache__
+/app/schemas/__pycache__
