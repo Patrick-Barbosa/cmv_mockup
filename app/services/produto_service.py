@@ -1,8 +1,9 @@
-from sqlalchemy import select, text, func
+from sqlalchemy import select, text, func, delete
 from typing import Literal, Optional, TypeVar
 from pydantic import BaseModel, Field, ConfigDict
 from app.database.models import Produto, ComponenteReceita
 from sqlalchemy.orm import load_only
+from fastapi import HTTPException
 
 # define um TypeVar que só aceita subclasses de BaseModel
 T = TypeVar('T', bound=BaseModel)
@@ -114,7 +115,7 @@ class ProdutoService:
         if q and len(q) < 3:
             return {'items': [], 'pagination': {'more': False}}
 
-        query = select(Produto).options(load_only(Produto.id, Produto.nome, Produto.tipo))
+        query = select(Produto).options(load_only(Produto.id, Produto.nome, Produto.tipo, Produto.custo, Produto.unidade))
         query_total = select(func.count())
         if q:
             query = query.where(Produto.nome.ilike(f"%{q}%"))
@@ -136,7 +137,13 @@ class ProdutoService:
 
 
         data = {
-            'items': [{'id': p.id, 'text': p.nome, "tipo": 'Insumo' if p.tipo == 'insumo' else 'Receita'} for p in items],
+            'items': [{
+                'id': p.id, 
+                'text': p.nome, 
+                "tipo": 'Insumo' if p.tipo == 'insumo' else 'Receita',
+                'custo': p.custo,
+                'unidade': p.unidade
+            } for p in items],
             'pagination': {
                 'more': total > page*per_page
             }
@@ -146,7 +153,7 @@ class ProdutoService:
     
 
     async def create_recipe(self, payload: T) -> int:
-        receita = Produto(nome=payload.nome, tipo='receita', quantidade_base=payload.quantidade_base)
+        receita = Produto(nome=payload.nome, tipo='receita', quantidade_base=payload.quantidade_base, unidade=payload.unidade)
         # adiciona a receita à sessão
         self.session.add(receita)
         # faz o INSERT e popula receita.id
@@ -174,4 +181,95 @@ class ProdutoService:
 
         # não precisa de commit aqui
         return id_receita
-            
+
+    async def edit_insumo(self, insumo_id: int, nome: Optional[str], custo: Optional[float], unidade: Optional[str]) -> Produto:
+        result = await self.session.execute(
+            select(Produto).where(Produto.id == insumo_id, Produto.tipo == 'insumo')
+        )
+        insumo = result.scalar_one_or_none()
+        if not insumo:
+            raise HTTPException(status_code=404, detail=f"Insumo com id={insumo_id} não encontrado.")
+
+        if nome is not None:
+            insumo.nome = nome
+        if custo is not None:
+            insumo.custo = custo
+        if unidade is not None:
+            insumo.unidade = unidade
+
+        await self.session.commit()
+        return insumo
+
+    async def delete_insumo(self, insumo_id: int) -> None:
+        result = await self.session.execute(
+            select(Produto).where(Produto.id == insumo_id, Produto.tipo == 'insumo')
+        )
+        insumo = result.scalar_one_or_none()
+        if not insumo:
+            raise HTTPException(status_code=404, detail=f"Insumo com id={insumo_id} não encontrado.")
+
+        # Verifica se está sendo usado em alguma receita
+        uso_result = await self.session.execute(
+            select(ComponenteReceita).where(ComponenteReceita.id_componente == insumo_id).limit(1)
+        )
+        em_uso = uso_result.scalar_one_or_none()
+        if em_uso:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Insumo com id={insumo_id} está sendo usado em uma ou mais receitas e não pode ser deletado."
+            )
+
+        await self.session.delete(insumo)
+        await self.session.commit()
+
+    async def edit_receita(self, receita_id: int, nome: Optional[str], quantidade_base: Optional[float], unidade: Optional[str], componentes) -> Produto:
+        result = await self.session.execute(
+            select(Produto).where(Produto.id == receita_id, Produto.tipo == 'receita')
+        )
+        receita = result.scalar_one_or_none()
+        if not receita:
+            raise HTTPException(status_code=404, detail=f"Receita com id={receita_id} não encontrada.")
+
+        if nome is not None:
+            receita.nome = nome
+        if quantidade_base is not None:
+            receita.quantidade_base = quantidade_base
+        if unidade is not None:
+            receita.unidade = unidade
+
+        if componentes is not None:
+            # Remove todos os componentes atuais da receita
+            await self.session.execute(
+                delete(ComponenteReceita).where(ComponenteReceita.id_receita == receita_id)
+            )
+
+            # Remove duplicatas e insere os novos componentes
+            seen = set()
+            for comp in componentes:
+                if comp.id_componente not in seen:
+                    seen.add(comp.id_componente)
+                    cr = ComponenteReceita(
+                        id_receita=receita_id,
+                        id_componente=comp.id_componente,
+                        quantidade=comp.quantidade
+                    )
+                    self.session.add(cr)
+
+        await self.session.commit()
+        return receita
+
+    async def delete_receita(self, receita_id: int) -> None:
+        result = await self.session.execute(
+            select(Produto).where(Produto.id == receita_id, Produto.tipo == 'receita')
+        )
+        receita = result.scalar_one_or_none()
+        if not receita:
+            raise HTTPException(status_code=404, detail=f"Receita com id={receita_id} não encontrada.")
+
+        # Remove os componentes da receita primeiro
+        await self.session.execute(
+            delete(ComponenteReceita).where(ComponenteReceita.id_receita == receita_id)
+        )
+
+        await self.session.delete(receita)
+        await self.session.commit()

@@ -16,6 +16,8 @@ class Produto(Base):
   nome = Column(String, nullable=False, unique=True)
   tipo = Column(String, nullable=False)
   quantidade_base = Column(Float)
+  custo = Column(Float)
+  unidade = Column(String)
   
   __table_args__ = (
     CheckConstraint("tipo IN ('receita', 'insumo')", name="tipo_check"),

@@ -25,8 +25,8 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 
 - [x] Cadastro de Insumos
 - [x] Cadastro de Receitas
-- [ ] Migrar para FastAPI
-- [ ] Cadastro do custo dos insumos
+- [x] Migrar para FastAPI
+- [x] Cadastro do custo dos insumos
 - [ ] Cálculo do Custo Unitário
 - [ ] Input de Vendas por Produto e por Loja
 - [ ] CMV Ideal por Produto
