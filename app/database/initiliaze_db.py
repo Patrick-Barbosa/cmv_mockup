@@ -1,18 +1,18 @@
 
-from app.database.session import DB_ENGINE_KEY, DB_KEY
+from app.database.session import db_session
 from app.database.models import Base, Produto, ComponenteReceita
+from contextlib import asynccontextmanager
 
-async def init_db(app):
-    async_engine = app[DB_ENGINE_KEY]
-    async_session_local = app[DB_KEY]
 
-    async with async_engine.begin() as conn:
+async def init_db():
+    """Inicializa o banco de dados: drop, create e populates com dados de exemplo."""
+    
+    async with db_session.engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    
     # Popular o banco com dados iniciais
-    async with async_session_local() as session:
+    async with db_session.session_factory() as session:
         # 1) Cria todos os produtos sem especificar IDs
         produtos = [
             Produto(nome='Bolo de cenoura', tipo='receita', quantidade_base=0.450),

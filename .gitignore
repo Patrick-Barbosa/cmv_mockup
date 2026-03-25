@@ -2,3 +2,11 @@
 /app/database/__pycache__
 /app/services/__pycache__
 .env
+.github/copilot-instructions.md
+/__pycache__
+/.qwen
+AGENTS.md
+QWEN.md
+/app/routers/__pycache__
+/app/routers/api/__pycache__
+/app/schemas/__pycache__
