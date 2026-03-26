@@ -39,6 +39,7 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 
 ### Frontend
 
+- [x] Landing Page
 - [ ] Tela de Cadastro de Insumos
 - [ ] Tela de Cadastro de Receitas
 - [ ] Tela de Cadastro do custo dos insumos
