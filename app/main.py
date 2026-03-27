@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import traceback
 
@@ -36,11 +35,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Templates
-templates = Jinja2Templates(directory="templates")
-
-# Static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# CORS — permite o frontend estático chamar a API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Routers
 app.include_router(pages.router)

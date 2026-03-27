@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insumos — Prato</title>
+  <meta name="description" content="Cadastre os itens que alimentam o cálculo de custo da operação." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-bg': '#111307',
+            'brand-surface': '#16190B',
+            'brand-surface-2': '#1B1F0F',
+            'brand-primary': '#5E6F37',
+            'brand-highlight': '#8CB84F',
+            'brand-secondary': '#C94CB6',
+            'brand-text': '#F5F4EE',
+            'brand-soft': '#C9C7BA',
+            'brand-muted': '#9B9888',
+            'brand-line': '#6E725E',
+          },
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    .nav-link {
+      display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.5rem 0.75rem; border-radius: 2px;
+      color: #9B9888; font-size: 0.82rem; font-weight: 500;
+      transition: color .18s, background-color .18s; text-decoration: none;
+    }
+    .nav-link:hover { color: #C9C7BA; background-color: rgba(110,114,94,.08); }
+    .nav-link.active { color: #8CB84F; background-color: rgba(140,184,79,.08); }
+
+    .field {
+      width: 100%; background: #16190B;
+      border: 1px solid rgba(110,114,94,.35); color: #F5F4EE;
+      border-radius: 2px; padding: .6rem .875rem;
+      font-size: .875rem; font-family: inherit;
+      transition: border-color .18s, box-shadow .18s;
+      outline: none; -webkit-appearance: none;
+    }
+    .field::placeholder { color: #9B9888; }
+    .field:focus { border-color: rgba(140,184,79,.55); box-shadow: 0 0 0 3px rgba(140,184,79,.07); }
+    .field:disabled { opacity: .45; cursor: not-allowed; }
+    select.field {
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236E725E' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right .75rem center;
+      padding-right: 2rem; cursor: pointer;
+    }
+    select.field option { background: #16190B; color: #F5F4EE; }
+
+    .btn-primary {
+      background: #5E6F37; color: #F5F4EE;
+      font-weight: 500; font-size: .875rem; letter-spacing: .04em;
+      padding: .65rem 1.25rem; border-radius: 2px;
+      border: none; cursor: pointer;
+      transition: background-color .18s, box-shadow .22s; font-family: inherit;
+    }
+    .btn-primary:hover { background: #6b7f41; box-shadow: 0 0 16px rgba(201,76,182,.14), 0 0 6px rgba(94,111,55,.2); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+    .btn-ghost {
+      background: transparent; color: #9B9888; font-size: .875rem; font-weight: 400;
+      padding: .65rem 1rem; border-radius: 2px; border: 1px solid rgba(110,114,94,.28);
+      cursor: pointer; transition: color .18s, border-color .18s; font-family: inherit;
+    }
+    .btn-ghost:hover { color: #C9C7BA; border-color: rgba(110,114,94,.5); }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead tr { border-bottom: 1px solid rgba(110,114,94,.2); }
+    .data-table th {
+      text-align: left; padding: .65rem 1rem;
+      color: #9B9888; font-size: .72rem; font-weight: 500;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .data-table th:last-child { text-align: right; }
+    .data-table tbody tr { border-bottom: 1px solid rgba(110,114,94,.12); transition: background-color .14s; }
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table tbody tr:hover { background-color: rgba(110,114,94,.06); }
+    .data-table td { padding: .85rem 1rem; font-size: .875rem; color: #F5F4EE; vertical-align: middle; }
+    .data-table td.muted { color: #9B9888; font-size: .8rem; }
+    .data-table td.actions { text-align: right; }
+
+    .action-btn {
+      background: none; border: none; cursor: pointer;
+      color: #9B9888; padding: .25rem; border-radius: 2px;
+      transition: color .15s; line-height: 0;
+    }
+    .action-btn:hover { color: #8CB84F; }
+    .action-btn.danger:hover { color: rgba(220,80,80,.85); }
+
+    .field-label { display: block; font-size: .76rem; font-weight: 500; color: #C9C7BA; letter-spacing: .03em; margin-bottom: .4rem; }
+    .field-hint { font-size: .72rem; color: #9B9888; margin-top: .3rem; }
+
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      display: flex; align-items: center; gap: .625rem;
+      padding: .75rem 1.125rem; border-radius: 2px;
+      font-size: .82rem; font-weight: 500;
+      opacity: 0; pointer-events: none; transform: translateY(6px);
+      transition: opacity .28s ease, transform .28s ease; z-index: 100;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #toast.success { background: #1B1F0F; border: 1px solid rgba(140,184,79,.35); color: #8CB84F; }
+    #toast.error { background: #1B1F0F; border: 1px solid rgba(200,80,80,.35); color: rgba(220,110,110,.9); }
+
+    @keyframes rowFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .row-enter { animation: rowFadeIn .26s ease forwards; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(140,184,79,.2); border-top-color: #8CB84F; border-radius: 50%; animation: spin .7s linear infinite; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(110,114,94,.3); border-radius: 3px; }
+  </style>
+</head>
+
+<body class="bg-brand-bg text-brand-text antialiased font-sans min-h-screen flex">
+
+  <!-- SIDEBAR -->
+  <aside class="hidden md:flex flex-col w-52 shrink-0 border-r border-brand-line/20 bg-brand-surface min-h-screen sticky top-0 h-screen overflow-y-auto">
+    <div class="px-5 py-6 border-b border-brand-line/15">
+      <a href="../index.html" class="text-brand-text font-semibold tracking-[0.2em] text-sm uppercase select-none hover:text-brand-highlight transition-colors">Prato</a>
+    </div>
+    <nav class="px-3 py-5 flex flex-col gap-0.5 flex-1">
+      <p class="text-brand-muted text-[0.65rem] tracking-[0.15em] uppercase font-medium px-3 mb-2">Operação</p>
+      <a href="insumos.html" class="nav-link active">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx=".5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Insumos
+      </a>
+      <a href="receitas.html" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx=".5" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 4.5h7M3.5 7h7M3.5 9.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Receitas
+      </a>
+      <div class="border-t border-brand-line/15 my-4"></div>
+      <p class="text-brand-muted text-[0.65rem] tracking-[0.15em] uppercase font-medium px-3 mb-2">Análise</p>
+      <a href="#" class="nav-link" style="opacity:.5;pointer-events:none;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 10.5L5 7.5L7.5 9.5L12 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        CMV
+      </a>
+      <a href="#" class="nav-link" style="opacity:.5;pointer-events:none;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 4.5V7.5L9 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Margem
+      </a>
+    </nav>
+    <div class="px-5 py-4 border-t border-brand-line/15">
+      <p class="text-brand-muted text-[0.7rem]">MVP — Acesso antecipado</p>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+    <header class="md:hidden flex items-center justify-between px-5 py-4 border-b border-brand-line/20 bg-brand-surface sticky top-0 z-20">
+      <a href="../index.html" class="text-brand-text font-semibold tracking-[0.2em] text-sm uppercase">Prato</a>
+      <div class="flex gap-2">
+        <a href="insumos.html" class="text-brand-highlight text-xs font-medium">Insumos</a>
+        <span class="text-brand-line/50">|</span>
+        <a href="receitas.html" class="text-brand-muted text-xs">Receitas</a>
+      </div>
+    </header>
+
+    <main class="flex-1 px-6 md:px-10 py-8 md:py-10 max-w-6xl w-full mx-auto">
+
+      <!-- Page header -->
+      <div class="mb-10">
+        <p class="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Insumos</p>
+        <h1 class="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Insumos</h1>
+        <p class="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">Cadastre os itens que alimentam o cálculo de custo da operação.</p>
+      </div>
+
+      <div class="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
+
+        <!-- LEFT -->
+        <div class="flex flex-col gap-6">
+
+          <!-- Form card -->
+          <div id="form-card" class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-6 md:p-7">
+            <div class="flex items-center justify-between mb-6">
+              <h2 id="form-title" class="text-brand-text font-medium text-base">Novo insumo</h2>
+              <button id="btn-clear" onclick="clearForm()" class="btn-ghost text-xs py-1 px-2 hidden">Limpar</button>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+              <div class="sm:col-span-2">
+                <label for="input-nome" class="field-label">Nome do insumo</label>
+                <input id="input-nome" type="text" class="field" placeholder="Ex.: Filé de frango, Azeite extra virgem…" autocomplete="off" />
+                <p id="err-nome" class="field-hint text-red-400 hidden">Preencha o nome do insumo.</p>
+              </div>
+              <div>
+                <label for="input-unidade" class="field-label">Unidade de medida</label>
+                <select id="input-unidade" class="field">
+                  <option value="" disabled selected>Selecione…</option>
+                  <!-- populated from /api/unidades -->
+                </select>
+                <p id="err-unidade" class="field-hint text-red-400 hidden">Selecione a unidade.</p>
+              </div>
+              <div>
+                <label for="input-qtd-ref" class="field-label">Quantidade de referência</label>
+                <input id="input-qtd-ref" type="number" min="0.001" step="0.001" class="field" placeholder="Ex.: 500, 1, 10" autocomplete="off" />
+                <p class="field-hint">Quanto você comprou? (na unidade selecionada)</p>
+                <p id="err-qtd-ref" class="field-hint text-red-400 hidden">Informe a quantidade.</p>
+              </div>
+              <div>
+                <label for="input-preco-ref" class="field-label">Preço de referência</label>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted text-sm select-none">R$</span>
+                  <input id="input-preco-ref" type="text" inputmode="decimal" class="field" style="padding-left:2.5rem;" placeholder="0,00" autocomplete="off" />
+                </div>
+                <p id="err-preco-ref" class="field-hint text-red-400 hidden">Informe o preço.</p>
+              </div>
+              <div id="custo-unitario-display" class="sm:col-span-2 hidden">
+                <div class="bg-brand-surface border border-brand-line/20 rounded-sm px-4 py-3 flex items-center gap-2">
+                  <span class="text-brand-muted text-xs font-medium uppercase tracking-wide">Custo unitário:</span>
+                  <span id="custo-unitario-valor" class="text-brand-highlight text-sm font-semibold tabular-nums">—</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-3 mt-6 flex-wrap">
+              <button id="btn-salvar" onclick="salvarInsumo()" class="btn-primary">Salvar insumo</button>
+              <button id="btn-cancelar" onclick="cancelarEdicao()" class="btn-ghost hidden">Cancelar</button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">
+              <h2 class="text-brand-soft text-sm font-medium">Insumos cadastrados</h2>
+              <span id="count-badge" class="text-brand-muted text-xs">—</span>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading-state" class="flex items-center justify-center py-16 gap-3">
+              <div class="spinner"></div>
+              <p class="text-brand-muted text-sm">Carregando…</p>
+            </div>
+
+            <!-- Empty -->
+            <div id="empty-state" class="hidden flex-col items-center justify-center py-16 px-6">
+              <div class="mb-5 opacity-30">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="2" stroke="#8CB84F" stroke-width="1.4"/><path d="M20 12v16M12 20h16" stroke="#8CB84F" stroke-width="1.4" stroke-linecap="round"/></svg>
+              </div>
+              <p class="text-brand-soft text-sm font-medium mb-1 text-center">Nenhum insumo cadastrado ainda.</p>
+              <p class="text-brand-muted text-xs text-center max-w-xs leading-relaxed">Comece pela base de custos da sua operação.</p>
+            </div>
+
+            <!-- Table -->
+            <div id="table-wrapper" class="hidden overflow-x-auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Insumo</th>
+                    <th>Unidade</th>
+                    <th>Qtd Ref.</th>
+                    <th>Preço Ref.</th>
+                    <th>Custo/un</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="flex flex-col gap-4">
+          <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-5">
+            <p class="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Total cadastrado</p>
+            <p id="stat-total" class="text-brand-highlight text-3xl font-light tabular-nums">—</p>
+            <p class="text-brand-muted text-xs mt-1">insumos na base</p>
+          </div>
+          <div class="bg-brand-surface border border-brand-line/15 rounded-sm p-5">
+            <div class="flex items-start gap-3">
+              <span class="text-brand-highlight mt-0.5 shrink-0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 6v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="4.5" r=".6" fill="currentColor"/></svg>
+              </span>
+              <p class="text-brand-muted text-xs leading-relaxed">
+                Cada insumo cadastrado aqui alimenta automaticamente o cálculo de custo das <a href="receitas.html" class="text-brand-soft hover:text-brand-highlight transition-colors underline underline-offset-2">receitas</a>.
+              </p>
+            </div>
+          </div>
+          <div id="breakdown-card" class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-5 hidden">
+            <p class="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Por unidade</p>
+            <div id="breakdown-list" class="flex flex-col gap-2"></div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="py-5 px-6 md:px-10 border-t border-brand-line/15">
+      <p class="text-brand-muted text-xs">© 2025 Prato — Inteligência de margem para restaurantes.</p>
+    </footer>
+  </div>
+
+  <div id="toast" role="alert" aria-live="polite">
+    <span id="toast-icon"></span>
+    <span id="toast-msg"></span>
+  </div>
+
+  <script>
+    // ── Config ───────────────────────────────────────────────────────
+    const API = 'http://localhost:8000';   // FastAPI backend
+
+    // ── State ─────────────────────────────────────────────────────────
+    let insumos = [];
+    let editingId = null;
+    let toastTimer = null;
+
+    // ── Utils ─────────────────────────────────────────────────────────
+    function formatBRL(v) {
+      const n = parseFloat(v);
+      if (isNaN(n)) return '—';
+      return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+    function parsePreco(s) {
+      return parseFloat(s.replace(/[^\d,]/g, '').replace(',', '.'));
+    }
+
+    // ── Toast ─────────────────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+      const el = document.getElementById('toast');
+      el.className = `${type} show`;
+      document.getElementById('toast-icon').textContent = type === 'success' ? '✓' : '✕';
+      document.getElementById('toast-msg').textContent = msg;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3400);
+    }
+
+    // ── Currency mask for preço de referência ─────────────────────────
+    document.getElementById('input-preco-ref').addEventListener('input', function () {
+      let v = this.value.replace(/[^\d]/g, '');
+      if (!v) { this.value = ''; updateCustoUnitario(); return; }
+      this.value = (parseInt(v, 10) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      updateCustoUnitario();
+    });
+
+    document.getElementById('input-qtd-ref').addEventListener('input', updateCustoUnitario);
+
+    // ── Live custo unitário calculation ────────────────────────────────
+    function updateCustoUnitario() {
+      const qtd = parseFloat(document.getElementById('input-qtd-ref').value);
+      const preco = parsePreco(document.getElementById('input-preco-ref').value || '0');
+      const display = document.getElementById('custo-unitario-display');
+      const valor = document.getElementById('custo-unitario-valor');
+      const unidade = document.getElementById('input-unidade').value || '';
+
+      if (!isNaN(qtd) && qtd > 0 && !isNaN(preco) && preco > 0) {
+        const custoUn = preco / qtd;
+        valor.textContent = `${formatBRL(custoUn)}/${unidade || 'un'}`;
+        display.classList.remove('hidden');
+      } else {
+        display.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('input-unidade').addEventListener('change', updateCustoUnitario);
+
+    // ── Load units from API ───────────────────────────────────────────
+    async function loadUnidades() {
+      try {
+        const res = await fetch(`${API}/api/unidades`);
+        const data = await res.json();
+        const sel = document.getElementById('input-unidade');
+        data.unidades.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u; opt.textContent = u;
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        ['g','kg','ml','l','un','cx','pct','tb','ds'].forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u; opt.textContent = u;
+          document.getElementById('input-unidade').appendChild(opt);
+        });
+      }
+    }
+
+    // ── Load insumos from API ─────────────────────────────────────────
+    async function loadInsumos() {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API}/api/get_produtos_select2?per_page=500`);
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        insumos = data.items.filter(i => i.tipo === 'Insumo').map(i => ({
+          id: i.id,
+          nome: i.text,
+          unidade: i.unidade,
+          custo: i.custo,
+          quantidade_referencia: i.quantidade_referencia,
+          preco_referencia: i.preco_referencia,
+        }));
+        render();
+      } catch (e) {
+        showToast('Não foi possível carregar os insumos.', 'error');
+        setLoading(false);
+      }
+    }
+
+    function setLoading(v) {
+      document.getElementById('loading-state').classList.toggle('hidden', !v);
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('table-wrapper').classList.add('hidden');
+    }
+
+    // ── Validate ──────────────────────────────────────────────────────
+    function validate() {
+      const nome = document.getElementById('input-nome').value.trim();
+      const unidade = document.getElementById('input-unidade').value;
+      const qtdRef = parseFloat(document.getElementById('input-qtd-ref').value);
+      const precoRef = parsePreco(document.getElementById('input-preco-ref').value || '0');
+
+      document.getElementById('err-nome').classList.toggle('hidden', !!nome);
+      document.getElementById('err-unidade').classList.toggle('hidden', !!unidade);
+      document.getElementById('err-qtd-ref').classList.toggle('hidden', !isNaN(qtdRef) && qtdRef > 0);
+      document.getElementById('err-preco-ref').classList.toggle('hidden', !isNaN(precoRef) && precoRef >= 0);
+
+      return nome && unidade && !isNaN(qtdRef) && qtdRef > 0 && !isNaN(precoRef) && precoRef >= 0;
+    }
+
+    // ── CRUD ──────────────────────────────────────────────────────────
+    async function salvarInsumo() {
+      if (!validate()) { showToast('Preencha os campos obrigatórios.', 'error'); return; }
+
+      const nome = document.getElementById('input-nome').value.trim();
+      const unidade = document.getElementById('input-unidade').value;
+      const quantidade_referencia = parseFloat(document.getElementById('input-qtd-ref').value);
+      const preco_referencia = parsePreco(document.getElementById('input-preco-ref').value);
+
+      setBtnLoading(true);
+      try {
+        let res;
+        if (editingId) {
+          res = await fetch(`${API}/api/insumos/${editingId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, unidade, quantidade_referencia, preco_referencia })
+          });
+          if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+          showToast('Insumo atualizado com sucesso.');
+        } else {
+          res = await fetch(`${API}/api/insumos/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, unidade, quantidade_referencia, preco_referencia })
+          });
+          if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+          showToast('Insumo cadastrado com sucesso.');
+        }
+        clearForm();
+        await loadInsumos();
+      } catch (e) {
+        showToast(e.message || 'Não foi possível salvar agora. Tente novamente.', 'error');
+      } finally {
+        setBtnLoading(false);
+      }
+    }
+
+    function editarInsumo(id) {
+      const item = insumos.find(i => i.id === id);
+      if (!item) return;
+      editingId = id;
+      document.getElementById('input-nome').value = item.nome;
+      document.getElementById('input-unidade').value = item.unidade;
+      document.getElementById('input-qtd-ref').value = item.quantidade_referencia != null
+        ? item.quantidade_referencia : '';
+      document.getElementById('input-preco-ref').value = item.preco_referencia != null
+        ? item.preco_referencia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+        : '';
+      updateCustoUnitario();
+      document.getElementById('form-title').textContent = 'Editar insumo';
+      document.getElementById('btn-cancelar').classList.remove('hidden');
+      document.getElementById('btn-clear').classList.add('hidden');
+      document.getElementById('btn-salvar').textContent = 'Salvar alterações';
+      document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('input-nome').focus();
+    }
+
+    async function excluirInsumo(id) {
+      try {
+        const res = await fetch(`${API}/api/insumos/${id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || res.statusText);
+        }
+        showToast('Insumo removido.');
+        await loadInsumos();
+      } catch (e) {
+        showToast(e.message || 'Não foi possível remover.', 'error');
+      }
+    }
+
+    function clearForm() {
+      ['input-nome','input-qtd-ref','input-preco-ref'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('input-unidade').value = '';
+      ['err-nome','err-unidade','err-qtd-ref','err-preco-ref'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById('custo-unitario-display').classList.add('hidden');
+      document.getElementById('form-title').textContent = 'Novo insumo';
+      document.getElementById('btn-cancelar').classList.add('hidden');
+      document.getElementById('btn-clear').classList.add('hidden');
+      document.getElementById('btn-salvar').textContent = 'Salvar insumo';
+      editingId = null;
+    }
+
+    function cancelarEdicao() { clearForm(); }
+
+    function setBtnLoading(v) {
+      const btn = document.getElementById('btn-salvar');
+      btn.disabled = v;
+      btn.textContent = v ? 'Salvando…' : (editingId ? 'Salvar alterações' : 'Salvar insumo');
+    }
+
+    // Show clear button
+    ['input-nome','input-unidade','input-qtd-ref','input-preco-ref'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        if (!editingId) {
+          const hasContent = document.getElementById('input-nome').value.trim()
+            || document.getElementById('input-unidade').value
+            || document.getElementById('input-qtd-ref').value
+            || document.getElementById('input-preco-ref').value;
+          document.getElementById('btn-clear').classList.toggle('hidden', !hasContent);
+        }
+      });
+    });
+
+    // ── Render ────────────────────────────────────────────────────────
+    function render() {
+      setLoading(false);
+      const isEmpty = insumos.length === 0;
+      document.getElementById('empty-state').classList.toggle('hidden', !isEmpty);
+      document.getElementById('table-wrapper').classList.toggle('hidden', isEmpty);
+      document.getElementById('count-badge').textContent = `${insumos.length} ${insumos.length === 1 ? 'item' : 'itens'}`;
+      document.getElementById('stat-total').textContent = insumos.length;
+
+      // Breakdown
+      const breakdown = {};
+      insumos.forEach(i => { if (i.unidade) breakdown[i.unidade] = (breakdown[i.unidade] || 0) + 1; });
+      const bdCard = document.getElementById('breakdown-card');
+      const bdList = document.getElementById('breakdown-list');
+      const entries = Object.entries(breakdown).sort((a, b) => b[1] - a[1]);
+      if (entries.length) {
+        bdCard.classList.remove('hidden');
+        bdList.innerHTML = entries.map(([u, c]) => `
+          <div class="flex items-center justify-between">
+            <span class="text-brand-soft text-xs font-medium">${u}</span>
+            <div class="flex items-center gap-2">
+              <div class="h-1.5 rounded-full bg-brand-primary/60" style="width:${Math.max(20, c * 18)}px"></div>
+              <span class="text-brand-muted text-xs tabular-nums">${c}</span>
+            </div>
+          </div>`).join('');
+      } else {
+        bdCard.classList.add('hidden');
+      }
+
+      document.getElementById('table-body').innerHTML = insumos.map((item, idx) => {
+        const qtdRef = item.quantidade_referencia != null ? item.quantidade_referencia : '—';
+        const precoRef = item.preco_referencia != null ? formatBRL(item.preco_referencia) : '—';
+        const custoUn = item.custo != null ? `${formatBRL(item.custo)}/${item.unidade || 'un'}` : '—';
+        return `
+        <tr class="row-enter" style="animation-delay:${idx * 30}ms">
+          <td><span class="font-medium">${item.nome}</span></td>
+          <td class="muted"><span class="px-2 py-0.5 bg-brand-surface rounded-sm text-[0.72rem] font-medium border border-brand-line/20">${item.unidade || '—'}</span></td>
+          <td class="muted tabular-nums">${qtdRef}</td>
+          <td><span class="tabular-nums">${precoRef}</span></td>
+          <td><span class="text-brand-highlight font-medium tabular-nums text-xs">${custoUn}</span></td>
+          <td class="actions">
+            <div class="flex items-center justify-end gap-1">
+              <button class="action-btn" onclick="editarInsumo(${item.id})" title="Editar">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L5 11H3v-2l6.5-6.5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="action-btn danger" onclick="excluirInsumo(${item.id})" title="Excluir">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 4h9M5.5 4V2.5h3V4M6 6.5v3.5M8 6.5v3.5M3 4l.75 7.5h6.5L11 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────
+    loadUnidades();
+    loadInsumos();
+  </script>
+</body>
+</html>

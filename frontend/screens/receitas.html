@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Receitas — Prato</title>
+  <meta name="description" content="Monte receitas com insumos e quantidades para calcular custo com precisão." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-bg': '#111307', 'brand-surface': '#16190B',
+            'brand-surface-2': '#1B1F0F', 'brand-primary': '#5E6F37',
+            'brand-highlight': '#8CB84F', 'brand-secondary': '#C94CB6',
+            'brand-text': '#F5F4EE', 'brand-soft': '#C9C7BA',
+            'brand-muted': '#9B9888', 'brand-line': '#6E725E',
+          },
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+        },
+      },
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    .nav-link {
+      display: flex; align-items: center; gap: .625rem;
+      padding: .5rem .75rem; border-radius: 2px;
+      color: #9B9888; font-size: .82rem; font-weight: 500;
+      transition: color .18s, background-color .18s; text-decoration: none;
+    }
+    .nav-link:hover { color: #C9C7BA; background-color: rgba(110,114,94,.08); }
+    .nav-link.active { color: #8CB84F; background-color: rgba(140,184,79,.08); }
+
+    .field {
+      width: 100%; background: #16190B;
+      border: 1px solid rgba(110,114,94,.35); color: #F5F4EE;
+      border-radius: 2px; padding: .6rem .875rem;
+      font-size: .875rem; font-family: inherit;
+      transition: border-color .18s, box-shadow .18s;
+      outline: none; -webkit-appearance: none;
+    }
+    .field::placeholder { color: #9B9888; }
+    .field:focus { border-color: rgba(140,184,79,.55); box-shadow: 0 0 0 3px rgba(140,184,79,.07); }
+    .field:disabled { opacity: .45; cursor: not-allowed; }
+    select.field {
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236E725E' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right .75rem center;
+      padding-right: 2rem; cursor: pointer;
+    }
+    select.field option { background: #16190B; color: #F5F4EE; }
+
+    .btn-primary {
+      background: #5E6F37; color: #F5F4EE;
+      font-weight: 500; font-size: .875rem; letter-spacing: .04em;
+      padding: .65rem 1.25rem; border-radius: 2px;
+      border: none; cursor: pointer;
+      transition: background-color .18s, box-shadow .22s; font-family: inherit;
+    }
+    .btn-primary:hover { background: #6b7f41; box-shadow: 0 0 16px rgba(201,76,182,.14), 0 0 6px rgba(94,111,55,.2); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+    .btn-ghost {
+      background: transparent; color: #9B9888; font-size: .875rem; font-weight: 400;
+      padding: .65rem 1rem; border-radius: 2px; border: 1px solid rgba(110,114,94,.28);
+      cursor: pointer; transition: color .18s, border-color .18s; font-family: inherit;
+    }
+    .btn-ghost:hover { color: #C9C7BA; border-color: rgba(110,114,94,.5); }
+
+    .btn-add {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: transparent; color: #8CB84F; font-size: .8rem; font-weight: 500;
+      padding: .5rem .875rem; border-radius: 2px;
+      border: 1px solid rgba(140,184,79,.3);
+      cursor: pointer; transition: background-color .18s, border-color .18s; font-family: inherit;
+    }
+    .btn-add:hover { background: rgba(140,184,79,.07); border-color: rgba(140,184,79,.45); }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead tr { border-bottom: 1px solid rgba(110,114,94,.2); }
+    .data-table th {
+      text-align: left; padding: .65rem 1rem;
+      color: #9B9888; font-size: .72rem; font-weight: 500;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .data-table th:last-child { text-align: right; }
+    .data-table tbody tr { border-bottom: 1px solid rgba(110,114,94,.12); transition: background-color .14s; }
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table tbody tr:hover { background-color: rgba(110,114,94,.06); }
+    .data-table td { padding: .85rem 1rem; font-size: .875rem; color: #F5F4EE; vertical-align: middle; }
+    .data-table td.muted { color: #9B9888; font-size: .8rem; }
+    .data-table td.actions { text-align: right; }
+
+    .comp-row {
+      display: grid; grid-template-columns: 1fr 90px 70px 28px;
+      gap: .5rem; align-items: center;
+      padding: .45rem 0; border-bottom: 1px solid rgba(110,114,94,.1);
+    }
+    .comp-row:last-child { border-bottom: none; }
+
+    .action-btn {
+      background: none; border: none; cursor: pointer;
+      color: #9B9888; padding: .25rem; border-radius: 2px;
+      transition: color .15s; line-height: 0;
+    }
+    .action-btn:hover { color: #8CB84F; }
+    .action-btn.danger:hover { color: rgba(220,80,80,.85); }
+
+    .detail-row td { padding: 0 !important; }
+    .detail-panel {
+      background: #111307; border-top: 1px solid rgba(110,114,94,.1);
+      padding: 1rem 1.25rem; animation: rowFadeIn .22s ease forwards;
+    }
+    .detail-panel .detail-table { width: 100%; border-collapse: collapse; }
+    .detail-panel .detail-table th {
+      text-align: left; padding: .45rem .75rem; color: #9B9888;
+      font-size: .68rem; font-weight: 500; letter-spacing: .06em;
+      text-transform: uppercase; border-bottom: 1px solid rgba(110,114,94,.15);
+    }
+    .detail-panel .detail-table th:last-child { text-align: right; }
+    .detail-panel .detail-table td {
+      padding: .55rem .75rem; font-size: .82rem; color: #F5F4EE;
+      border-bottom: 1px solid rgba(110,114,94,.08);
+    }
+    .detail-panel .detail-table td:last-child { text-align: right; }
+    .detail-panel .detail-table tbody tr:last-child td { border-bottom: none; }
+    .detail-total {
+      display: flex; justify-content: flex-end; align-items: center; gap: .75rem;
+      padding: .75rem .75rem 0; border-top: 1px solid rgba(110,114,94,.2); margin-top: .5rem;
+    }
+
+    .field-label { display: block; font-size: .76rem; font-weight: 500; color: #C9C7BA; letter-spacing: .03em; margin-bottom: .4rem; }
+    .field-hint { font-size: .72rem; color: #9B9888; margin-top: .3rem; }
+
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      display: flex; align-items: center; gap: .625rem;
+      padding: .75rem 1.125rem; border-radius: 2px;
+      font-size: .82rem; font-weight: 500;
+      opacity: 0; pointer-events: none; transform: translateY(6px);
+      transition: opacity .28s ease, transform .28s ease; z-index: 100;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #toast.success { background: #1B1F0F; border: 1px solid rgba(140,184,79,.35); color: #8CB84F; }
+    #toast.error { background: #1B1F0F; border: 1px solid rgba(200,80,80,.35); color: rgba(220,110,110,.9); }
+    #toast.warn { background: #1B1F0F; border: 1px solid rgba(200,160,80,.35); color: rgba(210,170,80,.9); }
+
+    @keyframes rowFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .row-enter { animation: rowFadeIn .26s ease forwards; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(140,184,79,.2); border-top-color: #8CB84F; border-radius: 50%; animation: spin .7s linear infinite; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(110,114,94,.3); border-radius: 3px; }
+  </style>
+</head>
+
+<body class="bg-brand-bg text-brand-text antialiased font-sans min-h-screen flex">
+
+  <!-- SIDEBAR -->
+  <aside class="hidden md:flex flex-col w-52 shrink-0 border-r border-brand-line/20 bg-brand-surface min-h-screen sticky top-0 h-screen overflow-y-auto">
+    <div class="px-5 py-6 border-b border-brand-line/15">
+      <a href="../index.html" class="text-brand-text font-semibold tracking-[0.2em] text-sm uppercase select-none hover:text-brand-highlight transition-colors">Prato</a>
+    </div>
+    <nav class="px-3 py-5 flex flex-col gap-0.5 flex-1">
+      <p class="text-brand-muted text-[0.65rem] tracking-[0.15em] uppercase font-medium px-3 mb-2">Operação</p>
+      <a href="insumos.html" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx=".5" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7h5M7 4.5v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Insumos
+      </a>
+      <a href="receitas.html" class="nav-link active">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx=".5" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 4.5h7M3.5 7h7M3.5 9.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Receitas
+      </a>
+      <div class="border-t border-brand-line/15 my-4"></div>
+      <p class="text-brand-muted text-[0.65rem] tracking-[0.15em] uppercase font-medium px-3 mb-2">Análise</p>
+      <a href="#" class="nav-link" style="opacity:.5;pointer-events:none;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 10.5L5 7.5L7.5 9.5L12 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        CMV
+      </a>
+      <a href="#" class="nav-link" style="opacity:.5;pointer-events:none;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 4.5V7.5L9 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Margem
+      </a>
+    </nav>
+    <div class="px-5 py-4 border-t border-brand-line/15">
+      <p class="text-brand-muted text-[0.7rem]">MVP — Acesso antecipado</p>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+    <header class="md:hidden flex items-center justify-between px-5 py-4 border-b border-brand-line/20 bg-brand-surface sticky top-0 z-20">
+      <a href="../index.html" class="text-brand-text font-semibold tracking-[0.2em] text-sm uppercase">Prato</a>
+      <div class="flex gap-2">
+        <a href="insumos.html" class="text-brand-muted text-xs">Insumos</a>
+        <span class="text-brand-line/50">|</span>
+        <a href="receitas.html" class="text-brand-highlight text-xs font-medium">Receitas</a>
+      </div>
+    </header>
+
+    <main class="flex-1 px-6 md:px-10 py-8 md:py-10 max-w-6xl w-full mx-auto">
+
+      <!-- Page header -->
+      <div class="mb-10">
+        <p class="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Receitas</p>
+        <h1 class="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Receitas</h1>
+        <p class="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">Monte receitas com insumos e quantidades para calcular custo com precisão.</p>
+      </div>
+
+      <!-- No insumos banner -->
+      <div id="no-insumos-banner" class="hidden mb-6 bg-brand-surface-2 border border-brand-line/20 rounded-sm px-5 py-4 flex items-start gap-3">
+        <svg class="shrink-0 mt-0.5" width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="rgba(210,170,80,.7)" stroke-width="1.3"/><path d="M7.5 5v3.5" stroke="rgba(210,170,80,.7)" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="10.5" r=".6" fill="rgba(210,170,80,.7)"/></svg>
+        <div>
+          <p class="text-brand-soft text-sm font-medium">Você ainda não possui insumos cadastrados.</p>
+          <p class="text-brand-muted text-xs mt-0.5">Cadastre insumos antes de montar uma receita. <a href="insumos.html" class="text-brand-highlight underline underline-offset-2 hover:opacity-80">Ir para Insumos →</a></p>
+        </div>
+      </div>
+
+      <!-- Two-column layout -->
+      <div class="grid lg:grid-cols-[1fr_260px] gap-8 items-start">
+
+        <!-- LEFT -->
+        <div class="flex flex-col gap-6">
+
+          <!-- Form card -->
+          <div id="form-card" class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-6 md:p-7">
+            <div class="flex items-center justify-between mb-6">
+              <h2 id="form-title" class="text-brand-text font-medium text-base">Nova receita</h2>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-5 mb-6">
+              <div class="sm:col-span-2">
+                <label for="input-nome" class="field-label">Nome da receita</label>
+                <input id="input-nome" type="text" class="field" placeholder="Ex.: Risoto de camarão, Molho de tomate especial…" autocomplete="off" />
+                <p id="err-nome" class="field-hint text-red-400 hidden">Preencha o nome da receita.</p>
+              </div>
+              <div>
+                <label for="input-qtd-base" class="field-label">Rendimento (quantidade base)</label>
+                <input id="input-qtd-base" type="number" min="0.001" step="0.001" class="field" placeholder="Ex.: 1, 4, 500" />
+                <p id="err-qtd-base" class="field-hint text-red-400 hidden">Informe o rendimento da receita.</p>
+                <p class="field-hint">Total que essa receita rende (porções, kg, litros…)</p>
+              </div>
+              <div>
+                <label for="input-unidade" class="field-label">Unidade do rendimento</label>
+                <select id="input-unidade" class="field">
+                  <option value="">Sem unidade definida</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Composition -->
+            <div class="mb-5">
+              <div class="flex items-center justify-between mb-3">
+                <p class="text-brand-soft text-sm font-medium">Composição</p>
+                <button class="btn-add" onclick="adicionarLinha()">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  Adicionar insumo
+                </button>
+              </div>
+
+              <div id="comp-header" style="display:none; grid-template-columns: 1fr 90px 70px 28px; gap:.5rem; padding:.2rem 0; margin-bottom:.25rem;">
+                <span class="text-brand-muted text-[.68rem] uppercase tracking-wide font-medium">Insumo</span>
+                <span class="text-brand-muted text-[.68rem] uppercase tracking-wide font-medium">Qtd</span>
+                <span class="text-brand-muted text-[.68rem] uppercase tracking-wide font-medium text-right pr-1">Custo</span>
+                <span></span>
+              </div>
+
+              <div id="comp-rows"></div>
+
+              <div id="comp-empty" class="py-6 flex flex-col items-center justify-center border border-dashed border-brand-line/25 rounded-sm">
+                <p class="text-brand-muted text-xs text-center">Adicione os insumos que compõem esta receita.</p>
+              </div>
+
+              <p id="err-comp" class="field-hint text-red-400 hidden mt-2">Adicione ao menos um insumo à receita.</p>
+            </div>
+
+            <div class="flex gap-3 flex-wrap mt-6 pt-5 border-t border-brand-line/15">
+              <button id="btn-salvar" onclick="salvarReceita()" class="btn-primary">Salvar receita</button>
+              <button id="btn-cancelar" onclick="cancelarEdicao()" class="btn-ghost hidden">Cancelar</button>
+            </div>
+          </div>
+
+          <!-- Receitas loaded from server -->
+          <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">
+              <h2 class="text-brand-soft text-sm font-medium">Receitas cadastradas</h2>
+              <span id="count-badge" class="text-brand-muted text-xs">—</span>
+            </div>
+
+            <div id="loading-receitas" class="flex items-center justify-center py-16 gap-3">
+              <div class="spinner"></div>
+              <p class="text-brand-muted text-sm">Carregando…</p>
+            </div>
+
+            <div id="empty-state" class="hidden flex-col items-center justify-center py-16 px-6">
+              <div class="mb-5 opacity-30">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="2" stroke="#8CB84F" stroke-width="1.4"/><path d="M10 13h20M10 20h20M10 27h12" stroke="#8CB84F" stroke-width="1.4" stroke-linecap="round"/></svg>
+              </div>
+              <p class="text-brand-soft text-sm font-medium text-center mb-1">Nenhuma receita cadastrada ainda.</p>
+              <p class="text-brand-muted text-xs text-center max-w-xs leading-relaxed">Estruture seus preparos para começar a calcular custo real.</p>
+            </div>
+
+            <div id="table-wrapper" class="hidden overflow-x-auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Receita</th>
+                    <th>Rendimento</th>
+                    <th>Custo</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="flex flex-col gap-4">
+          <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-5">
+            <p class="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Custo estimado</p>
+            <p id="stat-custo" class="text-brand-highlight text-3xl font-light tabular-nums">R$ 0,00</p>
+            <p id="stat-insumos-count" class="text-brand-muted text-xs mt-1">0 insumos na composição</p>
+          </div>
+          <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-5">
+            <p class="text-brand-muted text-[.7rem] tracking-[.12em] uppercase font-medium mb-3">Total cadastrado</p>
+            <p id="stat-total" class="text-brand-soft text-3xl font-light tabular-nums">—</p>
+            <p class="text-brand-muted text-xs mt-1">receitas na base</p>
+          </div>
+          <div class="bg-brand-surface border border-brand-line/15 rounded-sm p-5">
+            <div class="flex items-start gap-3">
+              <span class="text-brand-highlight mt-0.5 shrink-0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 6v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="4.5" r=".6" fill="currentColor"/></svg>
+              </span>
+              <p class="text-brand-muted text-xs leading-relaxed">O custo é calculado em tempo real com base nos preços dos <a href="insumos.html" class="text-brand-soft hover:text-brand-highlight transition-colors underline underline-offset-2">insumos cadastrados</a>.</p>
+            </div>
+          </div>
+          <div id="comp-breakdown" class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-5 hidden">
+            <p class="text-brand-muted text-[.7rem] tracking-[.12em] uppercase font-medium mb-3">Composição atual</p>
+            <div id="comp-breakdown-list" class="flex flex-col gap-2.5"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="py-5 px-6 md:px-10 border-t border-brand-line/15">
+      <p class="text-brand-muted text-xs">© 2025 Prato — Inteligência de margem para restaurantes.</p>
+    </footer>
+  </div>
+
+  <div id="toast" role="alert" aria-live="polite">
+    <span id="toast-icon"></span><span id="toast-msg"></span>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8000';   // FastAPI backend
+
+    // ── State ──────────────────────────────────────────────────────────
+    let availableInsumos = [];   // [{id, nome, unidade, custo}]
+    let compLines = [];          // [{lineId, insumoId, qtd}]
+    let receitas = [];           // list from server (name + id + quantidade_base)
+    let editingId = null;
+    let toastTimer = null;
+
+    // ── Utils ──────────────────────────────────────────────────────────
+    function uid() { return Math.random().toString(36).slice(2, 9); }
+    function formatBRL(v) {
+      const n = parseFloat(v);
+      return isNaN(n) ? '—' : n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    // ── Toast ──────────────────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+      const el = document.getElementById('toast');
+      el.className = `${type} show`;
+      document.getElementById('toast-icon').textContent = type === 'success' ? '✓' : (type === 'warn' ? '!' : '✕');
+      document.getElementById('toast-msg').textContent = msg;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3400);
+    }
+
+    // ── Load data ──────────────────────────────────────────────────────
+    async function loadUnidades() {
+      try {
+        const res = await fetch(`${API}/api/unidades`);
+        const data = await res.json();
+        const sel = document.getElementById('input-unidade');
+        data.unidades.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u; opt.textContent = u; sel.appendChild(opt);
+        });
+      } catch {}
+    }
+
+    async function loadInsumos() {
+      try {
+        const res = await fetch(`${API}/api/get_produtos_select2?per_page=500`);
+        if (!res.ok) return;
+        const data = await res.json();
+        availableInsumos = data.items
+          .filter(i => i.tipo === 'Insumo')
+          .map(i => ({ id: i.id, nome: i.text, unidade: i.unidade, custo: i.custo }));
+        document.getElementById('no-insumos-banner').classList.toggle('hidden', availableInsumos.length > 0);
+        // refresh dropdowns in comp rows
+        refreshCompSelects();
+      } catch {}
+    }
+
+    async function loadReceitas() {
+      document.getElementById('loading-receitas').classList.remove('hidden');
+      try {
+        const res = await fetch(`${API}/api/get_produtos_select2?per_page=500`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        receitas = data.items.filter(i => i.tipo === 'Receita').map(i => ({
+          id: i.id, nome: i.text, unidade: i.unidade, custo: i.custo, quantidade_base: i.quantidade_base
+        }));
+        renderReceitas();
+      } catch {
+        showToast('Não foi possível carregar as receitas.', 'error');
+      } finally {
+        document.getElementById('loading-receitas').classList.add('hidden');
+      }
+    }
+
+    function renderReceitas() {
+      const isEmpty = receitas.length === 0;
+      document.getElementById('empty-state').classList.toggle('hidden', !isEmpty);
+      document.getElementById('table-wrapper').classList.toggle('hidden', isEmpty);
+      document.getElementById('count-badge').textContent = `${receitas.length} ${receitas.length === 1 ? 'item' : 'itens'}`;
+      document.getElementById('stat-total').textContent = receitas.length;
+
+      document.getElementById('table-body').innerHTML = receitas.map((r, idx) => {
+        const rendimento = r.quantidade_base != null ? `${r.quantidade_base} ${r.unidade || ''}` : '—';
+        return `
+        <tr class="row-enter" style="animation-delay:${idx * 30}ms" id="receita-row-${r.id}">
+          <td><span class="font-medium">${r.nome}</span></td>
+          <td class="muted"><span class="tabular-nums text-sm">${rendimento}</span></td>
+          <td><span class="text-brand-highlight font-medium tabular-nums text-xs">${r.custo != null ? formatBRL(r.custo) : '—'}</span></td>
+          <td class="actions">
+            <div class="flex items-center justify-end gap-1">
+              <a class="action-btn" href="receita_detalhe.html?id=${r.id}" title="Ver detalhes">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3C3.5 3 1 7 1 7s2.5 4 6 4 6-4 6-4-2.5-4-6-4z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+              </a>
+              <button class="action-btn" onclick="editarReceita(${r.id})" title="Editar">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L5 11H3v-2l6.5-6.5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="action-btn danger" onclick="excluirReceita(${r.id})" title="Excluir">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 4h9M5.5 4V2.5h3V4M6 6.5v3.5M8 6.5v3.5M3 4l.75 7.5h6.5L11 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── View detail ────────────────────────────────────────────────────
+    let openDetailId = null;
+
+    async function verReceita(id) {
+      // Toggle: if same row is open, close it
+      const existing = document.getElementById(`detail-${id}`);
+      if (existing) {
+        existing.remove();
+        openDetailId = null;
+        return;
+      }
+
+      // Close any other open detail
+      if (openDetailId) {
+        const prev = document.getElementById(`detail-${openDetailId}`);
+        if (prev) prev.remove();
+      }
+      openDetailId = id;
+
+      // Show loading indicator in button
+      const btn = document.getElementById(`btn-ver-${id}`);
+      const origHTML = btn.innerHTML;
+      btn.innerHTML = '<div class="spinner" style="width:12px;height:12px;"></div>';
+
+      try {
+        const res = await fetch(`${API}/api/receitas/${id}`);
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        const data = await res.json();
+
+        const comps = data.componentes || [];
+        const custoTotal = comps.reduce((s, c) => s + (c.custo_unitario || 0) * c.quantidade, 0);
+
+        const compRows = comps.length ? comps.map(c => {
+          const custo = (c.custo_unitario || 0) * c.quantidade;
+          return `<tr>
+            <td><span class="text-brand-soft">${c.nome}</span></td>
+            <td class="text-brand-muted">${c.quantidade} ${c.unidade || ''}</td>
+            <td class="text-brand-muted tabular-nums">${c.custo_unitario != null ? formatBRL(c.custo_unitario) + '/' + (c.unidade || 'un') : '—'}</td>
+            <td><span class="text-brand-highlight tabular-nums font-medium">${formatBRL(custo)}</span></td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="4" class="text-brand-muted text-center" style="padding:1rem;">Sem componentes cadastrados.</td></tr>`;
+
+        const detailHTML = `
+          <tr class="detail-row" id="detail-${id}">
+            <td colspan="4">
+              <div class="detail-panel">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+                  <span class="text-brand-soft text-xs font-medium uppercase tracking-wide">Composição — ${data.nome}</span>
+                  <span class="text-brand-muted text-xs">Rendimento: ${data.quantidade_base || '—'} ${data.unidade || ''}</span>
+                </div>
+                <table class="detail-table">
+                  <thead><tr><th>Insumo</th><th>Quantidade</th><th>Custo/un</th><th>Subtotal</th></tr></thead>
+                  <tbody>${compRows}</tbody>
+                </table>
+                ${comps.length ? `<div class="detail-total">
+                  <span class="text-brand-muted text-xs font-medium uppercase tracking-wide">Custo total</span>
+                  <span class="text-brand-highlight text-sm font-semibold tabular-nums">${formatBRL(custoTotal)}</span>
+                </div>` : ''}
+              </div>
+            </td>
+          </tr>`;
+
+        const row = document.getElementById(`receita-row-${id}`);
+        if (row) row.insertAdjacentHTML('afterend', detailHTML);
+      } catch (e) {
+        showToast(e.message || 'Não foi possível carregar os detalhes.', 'error');
+        openDetailId = null;
+      } finally {
+        btn.innerHTML = origHTML;
+      }
+    }
+
+    // ── Edit ───────────────────────────────────────────────────────────
+    async function editarReceita(id) {
+      try {
+        const res = await fetch(`${API}/api/receitas/${id}`);
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        const data = await res.json();
+
+        editingId = data.id;
+        document.getElementById('input-nome').value = data.nome || '';
+        document.getElementById('input-qtd-base').value = data.quantidade_base || '';
+        document.getElementById('input-unidade').value = data.unidade || '';
+
+        // Populate composition lines from API
+        compLines = (data.componentes || []).map(c => ({
+          lineId: uid(),
+          insumoId: String(c.id_componente),
+          qtd: String(c.quantidade),
+        }));
+        renderCompLines();
+
+        document.getElementById('form-title').textContent = 'Editar receita';
+        document.getElementById('btn-cancelar').classList.remove('hidden');
+        document.getElementById('btn-salvar').textContent = 'Salvar alterações';
+        document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('input-nome').focus();
+      } catch (e) {
+        showToast(e.message || 'Não foi possível carregar a receita.', 'error');
+      }
+    }
+
+    // ── Composition ────────────────────────────────────────────────────
+    function adicionarLinha() {
+      if (!availableInsumos.length) {
+        showToast('Cadastre insumos antes de montar uma receita.', 'warn');
+        return;
+      }
+      compLines.push({ lineId: uid(), insumoId: '', qtd: '' });
+      renderCompLines();
+      setTimeout(() => {
+        const sel = document.getElementById('ins-' + compLines[compLines.length - 1].lineId);
+        if (sel) sel.focus();
+      }, 40);
+    }
+
+    function removerLinha(lineId) {
+      compLines = compLines.filter(l => l.lineId !== lineId);
+      renderCompLines();
+      updateLiveSummary();
+    }
+
+    function refreshCompSelects() {
+      compLines.forEach(line => {
+        const sel = document.getElementById('ins-' + line.lineId);
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="" disabled>Selecione…</option>' +
+          availableInsumos.map(i => `<option value="${i.id}" ${i.id == current ? 'selected' : ''}>${i.nome} (${i.unidade || ''})</option>`).join('');
+        sel.value = current;
+      });
+    }
+
+    function renderCompLines() {
+      const container = document.getElementById('comp-rows');
+      const empty = document.getElementById('comp-empty');
+      const header = document.getElementById('comp-header');
+
+      if (!compLines.length) {
+        container.innerHTML = '';
+        empty.style.display = 'flex';
+        header.style.display = 'none';
+        updateLiveSummary();
+        return;
+      }
+      empty.style.display = 'none';
+      header.style.display = 'grid';
+
+      container.innerHTML = compLines.map((line, idx) => {
+        const ins = availableInsumos.find(i => i.id == line.insumoId);
+        const cost = ins && line.qtd ? ins.custo * parseFloat(line.qtd) : 0;
+        const opts = availableInsumos.map(i =>
+          `<option value="${i.id}" ${i.id == line.insumoId ? 'selected' : ''}>${i.nome} (${i.unidade || ''})</option>`
+        ).join('');
+        return `
+          <div class="comp-row row-enter" id="row-${line.lineId}" style="animation-delay:${idx * 20}ms">
+            <select id="ins-${line.lineId}" class="field" onchange="onInsumoChange('${line.lineId}')">
+              <option value="" disabled ${!line.insumoId ? 'selected' : ''}>Selecione…</option>
+              ${opts}
+            </select>
+            <div class="relative">
+              <input id="qty-${line.lineId}" type="number" min="0" step="0.001" class="field text-right"
+                style="padding-right:2.5rem;font-size:.8rem;" placeholder="0" value="${line.qtd || ''}"
+                oninput="onQtyChange('${line.lineId}')" />
+              <span id="unit-${line.lineId}" class="absolute right-2 top-1/2 -translate-y-1/2 text-brand-muted text-[.68rem] select-none pointer-events-none">
+                ${ins ? (ins.unidade || '') : ''}
+              </span>
+            </div>
+            <span id="cost-${line.lineId}" class="text-right text-xs text-brand-highlight font-medium tabular-nums pr-1">
+              ${ins && line.qtd ? formatBRL(cost) : '—'}
+            </span>
+            <button class="action-btn danger" onclick="removerLinha('${line.lineId}')" title="Remover">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9.5 2.5l-7 7M2.5 2.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            </button>
+          </div>`;
+      }).join('');
+
+      updateLiveSummary();
+    }
+
+    function onInsumoChange(lineId) {
+      const line = compLines.find(l => l.lineId === lineId);
+      if (!line) return;
+      line.insumoId = document.getElementById('ins-' + lineId).value;
+      const ins = availableInsumos.find(i => i.id == line.insumoId);
+      const unitEl = document.getElementById('unit-' + lineId);
+      if (unitEl) unitEl.textContent = ins ? (ins.unidade || '') : '';
+      recalcLine(lineId);
+    }
+
+    function onQtyChange(lineId) {
+      const line = compLines.find(l => l.lineId === lineId);
+      if (!line) return;
+      line.qtd = document.getElementById('qty-' + lineId)?.value || '';
+      recalcLine(lineId);
+    }
+
+    function recalcLine(lineId) {
+      const line = compLines.find(l => l.lineId === lineId);
+      if (!line) return;
+      const ins = availableInsumos.find(i => i.id == line.insumoId);
+      const qty = parseFloat(document.getElementById('qty-' + lineId)?.value) || 0;
+      const cost = ins && qty > 0 ? ins.custo * qty : 0;
+      const el = document.getElementById('cost-' + lineId);
+      if (el) el.textContent = ins && qty > 0 ? formatBRL(cost) : '—';
+      updateLiveSummary();
+    }
+
+    function calcTotal() {
+      return compLines.reduce((sum, line) => {
+        const ins = availableInsumos.find(i => i.id == line.insumoId);
+        const qty = parseFloat(document.getElementById('qty-' + line.lineId)?.value) || 0;
+        return sum + (ins && qty > 0 ? ins.custo * qty : 0);
+      }, 0);
+    }
+
+    function updateLiveSummary() {
+      const total = calcTotal();
+      const filled = compLines.filter(l => {
+        const qty = parseFloat(document.getElementById('qty-' + l.lineId)?.value);
+        return l.insumoId && qty > 0;
+      });
+      document.getElementById('stat-custo').textContent = formatBRL(total);
+      document.getElementById('stat-insumos-count').textContent =
+        `${filled.length} ${filled.length === 1 ? 'insumo' : 'insumos'} na composição`;
+
+      const bd = document.getElementById('comp-breakdown');
+      const bdList = document.getElementById('comp-breakdown-list');
+      if (filled.length) {
+        bd.classList.remove('hidden');
+        bdList.innerHTML = filled.map(line => {
+          const ins = availableInsumos.find(i => i.id == line.insumoId);
+          const qty = parseFloat(document.getElementById('qty-' + line.lineId)?.value) || 0;
+          const cost = ins ? ins.custo * qty : 0;
+          const pct = total > 0 ? cost / total * 100 : 0;
+          return `<div>
+            <div class="flex justify-between mb-1">
+              <span class="text-brand-soft text-xs truncate max-w-[120px]">${ins ? ins.nome : '—'}</span>
+              <span class="text-brand-highlight text-xs font-medium tabular-nums shrink-0">${formatBRL(cost)}</span>
+            </div>
+            <div class="h-0.5 rounded-full bg-brand-surface overflow-hidden">
+              <div class="h-full rounded-full bg-brand-primary/70 transition-all duration-300" style="width:${pct.toFixed(1)}%"></div>
+            </div>
+          </div>`;
+        }).join('');
+      } else {
+        bd.classList.add('hidden');
+      }
+    }
+
+    // ── CRUD ───────────────────────────────────────────────────────────
+    async function salvarReceita() {
+      const nome = document.getElementById('input-nome').value.trim();
+      const qtdBase = parseFloat(document.getElementById('input-qtd-base').value);
+      const unidade = document.getElementById('input-unidade').value || null;
+
+      let valid = true;
+      document.getElementById('err-nome').classList.toggle('hidden', !!nome);
+      if (!nome) valid = false;
+
+      document.getElementById('err-qtd-base').classList.toggle('hidden', !isNaN(qtdBase) && qtdBase > 0);
+      if (isNaN(qtdBase) || qtdBase <= 0) valid = false;
+
+      const filledLines = compLines.filter(l => {
+        const qty = parseFloat(document.getElementById('qty-' + l.lineId)?.value);
+        return l.insumoId && qty > 0;
+      });
+      document.getElementById('err-comp').classList.toggle('hidden', filledLines.length > 0);
+      if (!filledLines.length) valid = false;
+
+      if (!valid) { showToast('Preencha todos os campos obrigatórios.', 'error'); return; }
+
+      const componentes = filledLines.map(l => ({
+        id_componente: parseInt(l.insumoId),
+        quantidade: parseFloat(document.getElementById('qty-' + l.lineId)?.value) || 0
+      }));
+
+      setBtnLoading(true);
+      try {
+        let res;
+        if (editingId) {
+          res = await fetch(`${API}/api/receitas/${editingId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, quantidade_base: qtdBase, unidade, componentes })
+          });
+        } else {
+          res = await fetch(`${API}/api/receitas/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, quantidade_base: qtdBase, unidade, componentes })
+          });
+        }
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        showToast(editingId ? 'Receita atualizada com sucesso.' : 'Receita cadastrada com sucesso.');
+        resetForm();
+        await loadReceitas();
+      } catch (e) {
+        showToast(e.message || 'Não foi possível salvar a receita agora.', 'error');
+      } finally {
+        setBtnLoading(false);
+      }
+    }
+
+    async function excluirReceita(id) {
+      try {
+        const res = await fetch(`${API}/api/receitas/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+        showToast('Receita removida.');
+        await loadReceitas();
+      } catch (e) {
+        showToast(e.message || 'Não foi possível remover.', 'error');
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('input-nome').value = '';
+      document.getElementById('input-qtd-base').value = '';
+      document.getElementById('input-unidade').value = '';
+      ['err-nome','err-qtd-base','err-comp'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      compLines = [];
+      renderCompLines();
+      document.getElementById('form-title').textContent = 'Nova receita';
+      document.getElementById('btn-cancelar').classList.add('hidden');
+      document.getElementById('btn-salvar').textContent = 'Salvar receita';
+      editingId = null;
+    }
+
+    function cancelarEdicao() { resetForm(); }
+
+    function setBtnLoading(v) {
+      const btn = document.getElementById('btn-salvar');
+      btn.disabled = v;
+      btn.textContent = v ? 'Salvando…' : (editingId ? 'Salvar alterações' : 'Salvar receita');
+    }
+
+    // ── Init ───────────────────────────────────────────────────────────
+    Promise.all([loadUnidades(), loadInsumos(), loadReceitas()]);
+  </script>
+</body>
+</html>
