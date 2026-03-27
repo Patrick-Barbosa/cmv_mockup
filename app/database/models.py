@@ -18,6 +18,8 @@ class Produto(Base):
   quantidade_base = Column(Float)
   custo = Column(Float)
   unidade = Column(String)
+  quantidade_referencia = Column(Float)  # ex: 500 (g)
+  preco_referencia = Column(Float)       # ex: 25.00 (R$)
   
   __table_args__ = (
     CheckConstraint("tipo IN ('receita', 'insumo')", name="tipo_check"),

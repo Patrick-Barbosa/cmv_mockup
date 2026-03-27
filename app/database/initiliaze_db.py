@@ -2,6 +2,7 @@
 from app.database.session import db_session
 from app.database.models import Base, Produto, ComponenteReceita
 from contextlib import asynccontextmanager
+from sqlalchemy import select
 
 
 async def init_db():
@@ -17,13 +18,13 @@ async def init_db():
         produtos = [
             Produto(nome='Bolo de cenoura', tipo='receita', quantidade_base=0.450),
             Produto(nome='Massa de bolo', tipo='receita', quantidade_base=1),
-            Produto(nome='Nutella', tipo='insumo'),
-            Produto(nome='Granulado de chocolate', tipo='insumo'),
-            Produto(nome='Farinha de trigo', tipo='insumo'),
-            Produto(nome='Óleo', tipo='insumo'),
+            Produto(nome='Nutella', tipo='insumo', unidade='g', quantidade_referencia=650, preco_referencia=32.90, custo=32.90/650),
+            Produto(nome='Granulado de chocolate', tipo='insumo', unidade='g', quantidade_referencia=500, preco_referencia=8.50, custo=8.50/500),
+            Produto(nome='Farinha de trigo', tipo='insumo', unidade='kg', quantidade_referencia=1, preco_referencia=5.90, custo=5.90),
+            Produto(nome='Óleo', tipo='insumo', unidade='ml', quantidade_referencia=900, preco_referencia=9.50, custo=9.50/900),
             Produto(nome='Preparado de chocolate', tipo='receita', quantidade_base=1),
-            Produto(nome='Chocolate em pó', tipo='insumo'),
-            Produto(nome='Leite condensado', tipo='insumo'),
+            Produto(nome='Chocolate em pó', tipo='insumo', unidade='g', quantidade_referencia=400, preco_referencia=12.90, custo=12.90/400),
+            Produto(nome='Leite condensado', tipo='insumo', unidade='g', quantidade_referencia=395, preco_referencia=6.50, custo=6.50/395),
         ]
 
         # outros_produtos_teste = [Produto(nome=f"Produto_{i}", tipo="insumo") for i in range(100)]
@@ -66,4 +67,14 @@ async def init_db():
         session.add_all(componentes)
 
         # 5) Finalmente comita tudo de uma vez só
+        await session.commit()
+
+        # 6) Calcula o custo das receitas (2 passes para receitas aninhadas)
+        from app.services.produto_service import ProdutoService
+        produto_service = ProdutoService(session)
+        result = await session.execute(select(Produto.id).where(Produto.tipo == 'receita'))
+        receita_ids = result.scalars().all()
+        for _ in range(2):
+            for rid in receita_ids:
+                await produto_service.recompute_recipe_cost(rid)
         await session.commit()

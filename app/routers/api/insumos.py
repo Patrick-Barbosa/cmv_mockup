@@ -16,9 +16,19 @@ async def getUnidades():
 
 @router.post('/insumos/create')
 async def create_produto(payload: CreateProductModel):
+    custo_unitario = payload.preco_referencia / payload.quantidade_referencia
+
     try:
         async with db_session.session_factory() as session:
-            insumo = Produto(nome=payload.nome, tipo="insumo", quantidade_base=None, custo=payload.custo, unidade=payload.unidade)
+            insumo = Produto(
+                nome=payload.nome,
+                tipo="insumo",
+                quantidade_base=None,
+                custo=custo_unitario,
+                unidade=payload.unidade,
+                quantidade_referencia=payload.quantidade_referencia,
+                preco_referencia=payload.preco_referencia,
+            )
             session.add(insumo)
             await session.flush()
             await session.commit()
@@ -56,7 +66,13 @@ async def update_custo(payload: UpdateCustoModel):
 async def editInsumo(insumo_id: int, payload: EditInsumoModel):
     async with db_session.session_factory() as session:
         produto_service = ProdutoService(session)
-        insumo = await produto_service.edit_insumo(insumo_id, payload.nome, payload.custo, payload.unidade)
+        insumo = await produto_service.edit_insumo_gramatura(
+            insumo_id,
+            nome=payload.nome,
+            unidade=payload.unidade,
+            quantidade_referencia=payload.quantidade_referencia,
+            preco_referencia=payload.preco_referencia,
+        )
 
     return {"id": insumo.id, "message": "Insumo atualizado com sucesso."}
 

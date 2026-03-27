@@ -30,7 +30,7 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [ ] Cálculo do Custo Unitário
 - [ ] Input de Vendas por Produto e por Loja
 - [ ] CMV Ideal por Produto
-- [ ] Cálculo do CMV Real
+- [x] Cálculo do CMV Real (Descontinuado MVP)
 - [ ] Simulador de Impacto de Insumos
 - [ ] Suporte Multi-Unidade
 - [ ] Comparativo de Fornecedores por Insumo
@@ -39,13 +39,14 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 
 ### Frontend
 
-- [x] Landing Page
-- [ ] Tela de Cadastro de Insumos
-- [ ] Tela de Cadastro de Receitas
-- [ ] Tela de Cadastro do custo dos insumos
+- [x] Tela landing page
+- [x] Tela de Cadastro de Insumos
+- [x] Tela de Cadastro de Receitas
+- [x] Tela de Cadastro do custo dos insumos (dentro do cadastro de insumos)
 - [ ] Tela de Input de Vendas
 - [ ] Tela de CMV Ideal
-- [ ] Tela de CMV Real
+- [ ] Tela de Login
+- [x] Tela de CMV Real (Descontinuado MVP)
 - [ ] Interface do Simulador de Impacto
 - [ ] Dashboard Multi-Unidade
 - [ ] Tela de Comparativo de Fornecedores

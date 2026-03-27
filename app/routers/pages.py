@@ -1,26 +1,25 @@
 from fastapi import APIRouter, Request
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import JSONResponse
 from sqlalchemy.future import select
 from app.database.session import db_session
 from app.database.models import Produto
 from app.services.produto_service import ProdutoService
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
 
 @router.get('/')
-async def index(request: Request):
-    return templates.TemplateResponse(request, 'home.html')
+async def index():
+    return JSONResponse({"status": "ok", "message": "CMV Mockup API is running"})
 
 
 @router.get('/home')
-async def home(request: Request):
-    return templates.TemplateResponse(request, 'home.html')
+async def home():
+    return JSONResponse({"status": "ok", "message": "CMV Mockup API is running"})
 
 
 @router.get('/receitas', name="receitas")
-async def receitas(request: Request):
+async def receitas():
     async with db_session.session_factory() as session:
         result = await session.execute(
             select(Produto)
@@ -28,13 +27,14 @@ async def receitas(request: Request):
         )
         produtos: list[Produto] = result.scalars().all()
 
-    return templates.TemplateResponse(request, 'receita_home.html', {
-        "produtos": produtos
-    })
+    return JSONResponse([
+        {"id": p.id, "nome": p.nome, "tipo": p.tipo}
+        for p in produtos
+    ])
 
 
 @router.get('/receitas/{receita_id}', name="receitas_view")
-async def receitas_view(request: Request, receita_id: int):
+async def receitas_view(receita_id: int):
     async with db_session.session_factory() as session:
         produto_service = ProdutoService(session)
 
@@ -45,33 +45,33 @@ async def receitas_view(request: Request, receita_id: int):
         "id": receita.id,
         "nome": receita.nome,
         "tipo": receita.tipo,
-        "quantidade": receita.quantidade_base
+        "quantidade": receita.quantidade_base,
+        "unidade": receita.unidade,
     }
 
     def get_children(f_componentes, key):
         data_list = []
         f = [row for row in f_componentes if row.previous_key == key]
         for componente in f:
-            data = {
+            item = {
                 "id": componente.id_componente,
                 "nome": componente.nome,
                 "tipo": componente.tipo,
                 "quantidade": componente.quantidade_acumulada,
+                "custo": componente.custo,
+                "unidade": componente.unidade,
                 "children": [] if componente.tipo == "insumo" else get_children(f_componentes, componente.current_key)
             }
-            data_list.append(data)
+            data_list.append(item)
         return data_list
 
     data["children"] = get_children(componentes, None)
 
-    return templates.TemplateResponse(request, 'receita_view.html', {
-        "id": receita_id,
-        "data": data
-    })
+    return JSONResponse(data)
 
 
 @router.get('/insumos', name="insumos")
-async def insumos_home(request: Request):
+async def insumos_home():
     async with db_session.session_factory() as session:
         result = await session.execute(
             select(Produto)
@@ -79,6 +79,7 @@ async def insumos_home(request: Request):
         )
         produtos: list[Produto] = result.scalars().all()
 
-    return templates.TemplateResponse(request, 'produto_home.html', {
-        "produtos": produtos
-    })
+    return JSONResponse([
+        {"id": p.id, "nome": p.nome, "tipo": p.tipo}
+        for p in produtos
+    ])
