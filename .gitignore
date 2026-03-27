@@ -12,3 +12,5 @@ QWEN.md
 /app/schemas/__pycache__
 /.claude
 /tests/__pycache__
+frontend/orientations.md
+frontend/style.md

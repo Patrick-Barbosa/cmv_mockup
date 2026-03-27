@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prato — Inteligência para a margem do seu restaurante</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-bg':        '#111307',
+            'brand-surface':   '#16190B',
+            'brand-surface-2': '#1B1F0F',
+            'brand-primary':   '#5E6F37',
+            'brand-secondary': '#C94CB6',
+            'brand-text':      '#F5F4EE',
+            'brand-soft':      '#C9C7BA',
+            'brand-muted':     '#9B9888',
+            'brand-line':      '#6E725E',
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    html { scroll-behavior: smooth; }
+    *, *::before, *::after { box-sizing: border-box; }
+  </style>
+</head>
+
+<body class="bg-brand-bg text-brand-text antialiased font-sans overflow-x-hidden">
+
+  <!-- ══════════════════════════════════════ HERO ══════════════════════════════════════ -->
+
+  <section class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-6 pb-24 pt-20">
+
+    <!-- Branding — estrutural, sem navegação -->
+    <header class="absolute top-0 left-0 right-0 flex items-center justify-between px-6 md:px-10 py-7 z-20">
+      <span class="text-brand-text font-semibold tracking-[0.2em] text-sm uppercase select-none">Prato</span>
+      <a
+        href="#cta"
+        class="text-brand-muted text-xs tracking-wider hover:text-brand-text transition-colors duration-200 hidden sm:inline"
+      >Solicitar acesso →</a>
+    </header>
+
+    <!-- Arcos concêntricos — linguagem visual inspirada em prato -->
+    <div class="absolute inset-0 flex items-center justify-center z-0 pointer-events-none overflow-hidden">
+      <svg
+        viewBox="0 0 800 800"
+        class="w-[min(128vw,128vh)]"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        aria-hidden="true"
+      >
+        <!-- Camadas de arco — externo é o mais visível (borda do prato) -->
+        <circle cx="400" cy="460" r="375" stroke="rgba(110,114,94,0.35)" stroke-width="1.5"/>
+        <circle cx="400" cy="460" r="295" stroke="rgba(110,114,94,0.20)" stroke-width="1"/>
+        <circle cx="400" cy="460" r="215" stroke="rgba(110,114,94,0.13)" stroke-width="1"/>
+        <circle cx="400" cy="460" r="135" stroke="rgba(110,114,94,0.10)" stroke-width="1"/>
+        <circle cx="400" cy="460" r="58"  stroke="rgba(110,114,94,0.08)" stroke-width="1"/>
+
+        <!-- Ponto central sutil -->
+        <circle cx="400" cy="460" r="3" fill="rgba(94,111,55,0.4)"/>
+
+        <!-- Glow radial no arco externo -->
+        <circle cx="400" cy="460" r="375" stroke="rgba(94,111,55,0.04)" stroke-width="28"/>
+      </svg>
+    </div>
+
+    <!-- Glows ambientais -->
+    <div class="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[280px] rounded-full pointer-events-none z-0"
+         style="background: radial-gradient(ellipse, rgba(94,111,55,0.07) 0%, transparent 70%); filter: blur(60px);"></div>
+    <div class="absolute top-[50%] left-[58%] -translate-x-1/2 -translate-y-1/2 w-[240px] h-[140px] rounded-full pointer-events-none z-0"
+         style="background: radial-gradient(ellipse, rgba(201,76,182,0.05) 0%, transparent 70%); filter: blur(60px);"></div>
+
+    <!-- Conteúdo principal -->
+    <div class="relative z-10 max-w-3xl mx-auto text-center flex flex-col items-center">
+
+      <p class="text-brand-muted text-[10px] md:text-xs tracking-[0.35em] uppercase font-medium mb-10">
+        Inteligência de Margem para Restaurantes
+      </p>
+
+      <h1 class="text-[2.75rem] sm:text-5xl md:text-6xl lg:text-[4.5rem] font-semibold leading-[1.08] tracking-tight mb-6">
+        Clareza sobre a<br class="hidden sm:block"/>
+        <span class="text-brand-primary">margem</span> do seu<br class="hidden sm:block"/>
+        restaurante.
+      </h1>
+
+      <p class="text-brand-soft text-lg md:text-xl font-light leading-relaxed max-w-lg mb-3">
+        Sua operação começa a ficar mais clara aqui.
+      </p>
+
+      <p class="text-brand-muted text-sm md:text-base leading-relaxed max-w-md mb-12 md:mb-14">
+        Compare CMV ideal e real, entenda impactos da operação e encontre oportunidades com mais clareza.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center">
+        <a
+          href="#cta"
+          class="inline-block bg-brand-primary hover:bg-[#6b7f41] focus:outline-none focus:ring-2 focus:ring-brand-secondary/30 text-brand-text font-medium px-7 py-3.5 rounded-sm transition-colors duration-200 text-sm tracking-wide text-center"
+        >Solicitar acesso antecipado</a>
+
+        <a
+          href="#solucao"
+          class="inline-block border border-brand-line/50 hover:border-brand-line text-brand-soft hover:text-brand-text font-medium px-7 py-3.5 rounded-sm transition-all duration-200 text-sm tracking-wide text-center"
+        >Ver como funciona</a>
+      </div>
+
+    </div>
+
+    <!-- Indicador de scroll -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 opacity-25 pointer-events-none">
+      <div class="w-px h-12 bg-brand-line"></div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════ PROBLEMA ══════════════════════════════════════ -->
+
+  <section class="py-24 md:py-32 px-6 bg-brand-surface">
+    <div class="max-w-4xl mx-auto">
+
+      <p class="text-brand-muted text-[10px] tracking-[0.35em] uppercase font-medium mb-6">O problema</p>
+
+      <h2 class="text-2xl sm:text-3xl md:text-4xl font-semibold leading-snug mb-16 max-w-2xl">
+        Você sabe quanto deveria custar cada prato.<br/>
+        Mas raramente sabe quanto <span class="text-brand-primary">está custando</span>.
+      </h2>
+
+      <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-10">
+
+        <div class="border-t border-brand-line/30 pt-6">
+          <h3 class="flex items-center gap-2.5 text-brand-text font-medium mb-2.5 text-[0.95rem]">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-primary shrink-0"></span>
+            CMV invisível
+          </h3>
+          <p class="text-brand-muted text-sm leading-relaxed">
+            Insumos variam, fornecedores mudam, receitas derivam — e o custo real da operação fica opaco.
+          </p>
+        </div>
+
+        <div class="border-t border-brand-line/30 pt-6">
+          <h3 class="flex items-center gap-2.5 text-brand-text font-medium mb-2.5 text-[0.95rem]">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-primary shrink-0"></span>
+            Decisões no escuro
+          </h3>
+          <p class="text-brand-muted text-sm leading-relaxed">
+            Precificação por feeling. Promoções sem análise de impacto. Mix definido sem dados de margem.
+          </p>
+        </div>
+
+        <div class="border-t border-brand-line/30 pt-6">
+          <h3 class="flex items-center gap-2.5 text-brand-text font-medium mb-2.5 text-[0.95rem]">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-primary shrink-0"></span>
+            Vazamento silencioso
+          </h3>
+          <p class="text-brand-muted text-sm leading-relaxed">
+            Frete, delivery e operação consomem margem sem deixar rastro claro de onde está o problema.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════ SOLUÇÃO ══════════════════════════════════════ -->
+
+  <section id="solucao" class="py-24 md:py-32 px-6 bg-brand-bg">
+    <div class="max-w-4xl mx-auto">
+
+      <p class="text-brand-muted text-[10px] tracking-[0.35em] uppercase font-medium mb-6">A solução</p>
+
+      <h2 class="text-2xl sm:text-3xl md:text-4xl font-semibold leading-snug mb-4 max-w-2xl">
+        Prato conecta o que você planejou<br class="hidden md:block"/> com o que está acontecendo.
+      </h2>
+
+      <p class="text-brand-soft text-base leading-relaxed max-w-xl mb-16">
+        Inteligência de margem para operações gastronômicas reais — sem ERP pesado, sem planilha manual.
+      </p>
+
+      <div class="grid sm:grid-cols-2 gap-5">
+
+        <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-6 md:p-7">
+          <div class="mb-5">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="2.5" y="2.5" width="15" height="15" rx="0.75" stroke="#5E6F37" stroke-width="1.4"/>
+              <path d="M10 6v8M6 10h8" stroke="#5E6F37" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3 class="text-brand-text font-medium mb-2 text-[0.95rem]">CMV ideal vs. real</h3>
+          <p class="text-brand-muted text-sm leading-relaxed">
+            Cadastre insumos e receitas. Prato calcula o CMV teórico e mostra o desvio — em reais, não em teoria.
+          </p>
+        </div>
+
+        <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-6 md:p-7">
+          <div class="mb-5">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M3 14L7.5 9L11.5 12.5L17 5" stroke="#5E6F37" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="text-brand-text font-medium mb-2 text-[0.95rem]">Análise de impacto</h3>
+          <p class="text-brand-muted text-sm leading-relaxed">
+            Entenda como frete, delivery e mix afetam sua margem — antes de decisões que já foram tomadas.
+          </p>
+        </div>
+
+        <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-6 md:p-7">
+          <div class="mb-5">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="10" cy="10" r="7.5" stroke="#5E6F37" stroke-width="1.4"/>
+              <path d="M10 6.5V10.5L12.5 12" stroke="#5E6F37" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3 class="text-brand-text font-medium mb-2 text-[0.95rem]">Visibilidade em tempo real</h3>
+          <p class="text-brand-muted text-sm leading-relaxed">
+            Painel claro, sem excesso de dados. Você vê o que importa — e só o que importa.
+          </p>
+        </div>
+
+        <div class="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-6 md:p-7">
+          <div class="mb-5">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M10 2.5L11.9 8.1H17.8L13.0 11.6L14.8 17.2L10 13.7L5.2 17.2L7.0 11.6L2.2 8.1H8.1L10 2.5Z"
+                    stroke="#5E6F37" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="text-brand-text font-medium mb-2 text-[0.95rem]">Oportunidades identificadas</h3>
+          <p class="text-brand-muted text-sm leading-relaxed">
+            O sistema aponta onde está a perda de margem e o que melhora com cada decisão operacional.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════ BENEFÍCIOS ══════════════════════════════════════ -->
+
+  <section class="py-24 md:py-32 px-6 bg-brand-surface">
+    <div class="max-w-4xl mx-auto">
+
+      <p class="text-brand-muted text-[10px] tracking-[0.35em] uppercase font-medium mb-6">Benefícios</p>
+
+      <h2 class="text-2xl sm:text-3xl md:text-4xl font-semibold leading-snug mb-16 max-w-2xl">
+        O que muda quando você tem<br/>
+        <span class="text-brand-primary">clareza sobre a margem</span>.
+      </h2>
+
+      <div class="grid sm:grid-cols-2 gap-x-12 gap-y-10">
+
+        <div class="flex gap-5">
+          <span class="text-brand-primary font-light text-sm shrink-0 mt-0.5 w-5 text-right tabular-nums">01</span>
+          <div>
+            <h4 class="text-brand-text font-medium mb-1.5 text-[0.95rem]">Precificação mais segura</h4>
+            <p class="text-brand-muted text-sm leading-relaxed">Ajuste preços com base em custo real, não em intuição.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-5">
+          <span class="text-brand-primary font-light text-sm shrink-0 mt-0.5 w-5 text-right tabular-nums">02</span>
+          <div>
+            <h4 class="text-brand-text font-medium mb-1.5 text-[0.95rem]">Mix mais inteligente</h4>
+            <p class="text-brand-muted text-sm leading-relaxed">Saiba quais pratos realmente contribuem para a margem.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-5">
+          <span class="text-brand-primary font-light text-sm shrink-0 mt-0.5 w-5 text-right tabular-nums">03</span>
+          <div>
+            <h4 class="text-brand-text font-medium mb-1.5 text-[0.95rem]">Controle sobre delivery</h4>
+            <p class="text-brand-muted text-sm leading-relaxed">Entenda o impacto real das taxas de entrega no seu resultado.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-5">
+          <span class="text-brand-primary font-light text-sm shrink-0 mt-0.5 w-5 text-right tabular-nums">04</span>
+          <div>
+            <h4 class="text-brand-text font-medium mb-1.5 text-[0.95rem]">Menos vazamento operacional</h4>
+            <p class="text-brand-muted text-sm leading-relaxed">Identifique onde a margem está escorregando antes que vire problema.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-5">
+          <span class="text-brand-primary font-light text-sm shrink-0 mt-0.5 w-5 text-right tabular-nums">05</span>
+          <div>
+            <h4 class="text-brand-text font-medium mb-1.5 text-[0.95rem]">Decisões com mais contexto</h4>
+            <p class="text-brand-muted text-sm leading-relaxed">Cada decisão operacional passa a ter dados reais por trás.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-5">
+          <span class="text-brand-primary font-light text-sm shrink-0 mt-0.5 w-5 text-right tabular-nums">06</span>
+          <div>
+            <h4 class="text-brand-text font-medium mb-1.5 text-[0.95rem]">Visão consolidada para redes</h4>
+            <p class="text-brand-muted text-sm leading-relaxed">Múltiplas unidades, um painel. Compare performance sem esforço manual.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════ CTA FINAL ══════════════════════════════════════ -->
+
+  <section id="cta" class="relative py-32 md:py-44 px-6 bg-brand-bg overflow-hidden">
+
+    <!-- Arcos sutis de fundo -->
+    <div class="absolute inset-0 flex items-center justify-center z-0 pointer-events-none overflow-hidden">
+      <svg viewBox="0 0 600 600" class="w-[min(90vw,560px)] opacity-60" fill="none" aria-hidden="true">
+        <circle cx="300" cy="300" r="278" stroke="rgba(110,114,94,0.11)" stroke-width="1"/>
+        <circle cx="300" cy="300" r="198" stroke="rgba(110,114,94,0.15)" stroke-width="1"/>
+        <circle cx="300" cy="300" r="118" stroke="rgba(110,114,94,0.11)" stroke-width="1"/>
+        <circle cx="300" cy="300" r="44"  stroke="rgba(110,114,94,0.09)" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <!-- Glow central -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[200px] rounded-full pointer-events-none z-0"
+         style="background: radial-gradient(ellipse, rgba(94,111,55,0.06) 0%, transparent 70%); filter: blur(80px);"></div>
+
+    <div class="relative z-10 max-w-xl mx-auto text-center">
+
+      <p class="text-brand-muted text-[10px] tracking-[0.35em] uppercase font-medium mb-8">Acesso antecipado</p>
+
+      <h2 class="text-2xl sm:text-3xl md:text-4xl font-semibold leading-tight mb-5">
+        Pronto para ver a margem real<br class="hidden sm:block"/> do seu restaurante?
+      </h2>
+
+      <p class="text-brand-soft text-base leading-relaxed max-w-sm mx-auto mb-10">
+        Prato está em fase de acesso antecipado. Deixe seu e-mail e entre na lista.
+      </p>
+
+      <form
+        class="flex flex-col sm:flex-row gap-3 max-w-sm mx-auto mb-5"
+        onsubmit="return false;"
+      >
+        <input
+          type="email"
+          placeholder="seu@email.com"
+          required
+          class="flex-1 min-w-0 bg-brand-surface border border-brand-line/40 focus:border-brand-primary/60 focus:outline-none text-brand-text placeholder:text-brand-muted px-4 py-3 rounded-sm text-sm transition-colors duration-200"
+        />
+        <button
+          type="submit"
+          class="bg-brand-primary hover:bg-[#6b7f41] focus:outline-none focus:ring-2 focus:ring-brand-secondary/30 text-brand-text font-medium px-6 py-3 rounded-sm transition-colors duration-200 text-sm tracking-wide whitespace-nowrap"
+        >Quero acesso</button>
+      </form>
+
+      <p class="text-brand-muted text-xs">Sem spam. Sem compromisso.</p>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════ FOOTER ══════════════════════════════════════ -->
+
+  <footer class="py-8 px-6 border-t border-brand-line/20 bg-brand-bg">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <span class="text-brand-muted font-semibold tracking-[0.22em] text-sm uppercase">Prato</span>
+      <p class="text-brand-muted text-xs">© 2025 Prato. Inteligência para a margem do seu restaurante.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
