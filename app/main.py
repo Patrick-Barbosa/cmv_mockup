@@ -3,8 +3,9 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import traceback
+import os
 
-from app.database.session import db_session
+from app.database.session import db_session, APP_ENV
 from app.database.initiliaze_db import init_db
 from app.routers import pages
 from app.routers.api import insumos, receitas
@@ -14,7 +15,7 @@ from app.routers.api import insumos, receitas
 async def lifespan(app: FastAPI):
     """Lifespan context manager para inicialização e shutdown do app."""
     # Startup
-    print("Initializing database...")
+    print(f"Starting CMV app in APP_ENV={APP_ENV} mode...")
     try:
         db_session.init()
         await init_db()
@@ -35,10 +36,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS — permite o frontend estático chamar a API
+# CORS — read allowed origins from env; fallback to wildcard only in development
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+if _raw_origins:
+    # Comma-separated list, e.g. "https://prato.vercel.app,http://localhost:8080"
+    allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+else:
+    # No env var set: allow all in development, restrict to nothing in production
+    # (operators should always set ALLOWED_ORIGINS in production)
+    allowed_origins = ["*"] if APP_ENV == "development" else []
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

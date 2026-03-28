@@ -1,0 +1,7 @@
+{
+  "buildCommand": "node frontend/build.js",
+  "outputDirectory": "frontend",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/$1" }
+  ]
+}

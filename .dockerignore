@@ -1,0 +1,35 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files (never bake secrets into image)
+.env
+.env.*
+!.env-example
+
+# Tests
+tests/
+
+# Dev tools & IDE
+.roo/
+.claude/
+.qwen/
+.github/
+.vscode/
+*.md
+plans/
+
+# Frontend (not served by FastAPI)
+frontend/
+
+# Git
+.git/
+.gitignore

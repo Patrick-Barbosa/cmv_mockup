@@ -1,18 +1,43 @@
-
-from app.database.session import db_session
+import os
+from app.database.session import db_session, APP_ENV, DB_SCHEMA
 from app.database.models import Base, Produto, ComponenteReceita
-from contextlib import asynccontextmanager
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 
 async def init_db():
-    """Inicializa o banco de dados: drop, create e populates com dados de exemplo."""
-    
-    async with db_session.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
+    """Inicializa o banco de dados.
 
-    # Popular o banco com dados iniciais
+    - development: recria todas as tabelas (drop + create) e popula com dados de exemplo.
+    - production:  apenas cria tabelas que não existem (create_all sem drop_all).
+
+    Note on Supabase schema routing:
+      We set Base.metadata.schema explicitly so that SQLAlchemy generates DDL with
+      the full schema qualifier (e.g. CREATE TABLE development.produtos …).
+      The engine's connect_args search_path handles DML (SELECT / INSERT / UPDATE).
+    """
+
+    # Set schema on MetaData so DDL is schema-qualified.
+    # 'public' is PostgreSQL's default schema — MetaData.schema = None means "default".
+    Base.metadata.schema = None if DB_SCHEMA == "public" else DB_SCHEMA
+    print(f"[init_db] APP_ENV={APP_ENV} — target schema: '{DB_SCHEMA}'")
+
+    async with db_session.engine.begin() as conn:
+        # Ensure the schema exists (idempotent — safe to run on every startup)
+        if DB_SCHEMA != "public":
+            await conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{DB_SCHEMA}"'))
+
+        if APP_ENV == "development":
+            print(f"[init_db] Dropping and recreating tables in schema '{DB_SCHEMA}'...")
+            await conn.run_sync(Base.metadata.drop_all)
+
+        await conn.run_sync(Base.metadata.create_all)
+        print("[init_db] Tables ready.")
+
+    if APP_ENV != "development":
+        print("[init_db] Production mode — skipping seed data.")
+        return
+
+    # ── Seed de exemplo (development only) ──────────────────────────────
     async with db_session.session_factory() as session:
         # 1) Cria todos os produtos sem especificar IDs
         produtos = [
@@ -27,9 +52,7 @@ async def init_db():
             Produto(nome='Leite condensado', tipo='insumo', unidade='g', quantidade_referencia=395, preco_referencia=6.50, custo=6.50/395),
         ]
 
-        # outros_produtos_teste = [Produto(nome=f"Produto_{i}", tipo="insumo") for i in range(100)]
-        # produtos.extend(outros_produtos_teste)
-        # session.add_all(produtos)
+        session.add_all(produtos)
 
         # 2) Flush para obter IDs sem dar commit
         await session.flush()
@@ -66,7 +89,7 @@ async def init_db():
         ]
         session.add_all(componentes)
 
-        # 5) Finalmente comita tudo de uma vez só
+        # 5) Commit
         await session.commit()
 
         # 6) Calcula o custo das receitas (2 passes para receitas aninhadas)
@@ -78,3 +101,4 @@ async def init_db():
             for rid in receita_ids:
                 await produto_service.recompute_recipe_cost(rid)
         await session.commit()
+        print("[init_db] Seed data inserted.")
