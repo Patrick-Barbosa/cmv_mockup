@@ -129,6 +129,8 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(110,114,94,.3); border-radius: 3px; }
   </style>
+  <!-- Injected by build.js on Vercel; dev default provided by static/config.js -->
+  <script src="../static/config.js"></script>
 </head>
 
 <body class="bg-brand-bg text-brand-text antialiased font-sans min-h-screen flex">
@@ -315,7 +317,7 @@
 
   <script>
     // ── Config ───────────────────────────────────────────────────────
-    const API = 'http://localhost:8000';   // FastAPI backend
+    const API = (window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL) || 'http://localhost:8000';
 
     // ── State ─────────────────────────────────────────────────────────
     let insumos = [];
