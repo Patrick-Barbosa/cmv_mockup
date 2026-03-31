@@ -3,6 +3,9 @@
 // In production:  your deployed backend URL (e.g. https://meu-backend.onrender.com)
 export const API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
+// When VITE_BACKEND_URL is not set, the app runs on mock data
+export const IS_MOCK = !import.meta.env.VITE_BACKEND_URL;
+
 // ─────────────────────────────────────────────
 // Internal fetch helper
 // ─────────────────────────────────────────────

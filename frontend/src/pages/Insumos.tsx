@@ -1,14 +1,14 @@
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { FadeUp } from "@/components/ui/fade-up"
-import { Edit2, Trash2, AlertCircle, Plus } from "lucide-react"
+import { Edit2, Trash2, AlertCircle, Plus, Loader2 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { IS_MOCK, insumosApi } from "@/lib/api"
 
-// Simple mock state management inside component based on user request (keep it simple, simple cache is enough)
 export interface Insumo {
   id: number
   nome: string
@@ -17,53 +17,104 @@ export interface Insumo {
   precoRef: number
 }
 
+// ── Fallback mock data (used when VITE_BACKEND_URL is not set) ──────────────
 const mockInsumos: Insumo[] = [
   { id: 1, nome: "Filé de Frango", unidade: "kg", qtdRef: 1, precoRef: 22.5 },
   { id: 2, nome: "Azeite Extra Virgem", unidade: "l", qtdRef: 5, precoRef: 180.0 },
-  { id: 3, nome: "Tomate Pelati", unidade: "lt", qtdRef: 2.5, precoRef: 45.0 }
+  { id: 3, nome: "Tomate Pelati", unidade: "lt", qtdRef: 2.5, precoRef: 45.0 },
 ]
 
 export default function Insumos() {
-  const [insumos, setInsumos] = useState<Insumo[]>(mockInsumos)
+  const [insumos, setInsumos] = useState<Insumo[]>(IS_MOCK ? mockInsumos : [])
+  const [loading, setLoading] = useState(!IS_MOCK)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
   const [editingId, setEditingId] = useState<number | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  
+
   const [nome, setNome] = useState("")
   const [unidade, setUnidade] = useState("")
   const [qtdRef, setQtdRef] = useState("")
   const [precoRef, setPrecoRef] = useState("")
 
+  // ── Load from API on mount ────────────────────────────────────────────────
+  useEffect(() => {
+    if (IS_MOCK) return
+    insumosApi.list()
+      .then((data) => {
+        // Backend returns {id, nome, tipo} — map to full Insumo shape
+        setInsumos(data.map((d) => ({
+          id: d.id,
+          nome: d.nome,
+          unidade: "",     // not in list endpoint; filled when editing
+          qtdRef: 0,
+          precoRef: 0,
+        })))
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  // ── Derived ───────────────────────────────────────────────────────────────
   const parsedQtd = parseFloat(qtdRef)
   const parsedPreco = parseFloat(precoRef.replace(",", "."))
-  
-  const custoUn = !isNaN(parsedQtd) && parsedQtd > 0 && !isNaN(parsedPreco)
-    ? parsedPreco / parsedQtd
-    : null
+  const custoUn =
+    !isNaN(parsedQtd) && parsedQtd > 0 && !isNaN(parsedPreco)
+      ? parsedPreco / parsedQtd
+      : null
 
-  const handleSalvar = () => {
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const handleSalvar = async () => {
     if (!nome || !unidade || !parsedQtd || isNaN(parsedPreco)) return
-
-    const newData: Insumo = {
-      id: editingId ? editingId : Date.now(),
-      nome,
-      unidade,
-      qtdRef: parsedQtd,
-      precoRef: parsedPreco
+    setSaving(true)
+    try {
+      if (IS_MOCK) {
+        const newData: Insumo = {
+          id: editingId ?? Date.now(),
+          nome, unidade, qtdRef: parsedQtd, precoRef: parsedPreco,
+        }
+        setInsumos((prev) =>
+          editingId ? prev.map((i) => (i.id === editingId ? newData : i)) : [newData, ...prev]
+        )
+      } else {
+        const payload = {
+          nome,
+          unidade,
+          quantidade_referencia: parsedQtd,
+          preco_referencia: parsedPreco,
+        }
+        if (editingId) {
+          await insumosApi.edit(editingId, payload)
+          setInsumos((prev) =>
+            prev.map((i) =>
+              i.id === editingId ? { ...i, nome, unidade, qtdRef: parsedQtd, precoRef: parsedPreco } : i
+            )
+          )
+        } else {
+          const res = await insumosApi.create(payload)
+          setInsumos((prev) => [
+            { id: res.id, nome, unidade, qtdRef: parsedQtd, precoRef: parsedPreco },
+            ...prev,
+          ])
+        }
+      }
+      handleClear()
+      setIsDialogOpen(false)
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setSaving(false)
     }
-
-    if (editingId) {
-      setInsumos(insumos.map(i => i.id === editingId ? newData : i))
-      setEditingId(null)
-    } else {
-      setInsumos([newData, ...insumos])
-    }
-    handleClear()
-    setIsDialogOpen(false)
   }
 
-  const onOpenNew = () => {
-    handleClear()
-    setIsDialogOpen(true)
+  const handleDelete = async (id: number) => {
+    try {
+      if (!IS_MOCK) await insumosApi.delete(id)
+      setInsumos((prev) => prev.filter((i) => i.id !== id))
+    } catch (e: any) {
+      setError(e.message)
+    }
   }
 
   const handleEdit = (item: Insumo) => {
@@ -75,24 +126,22 @@ export default function Insumos() {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = (id: number) => {
-    setInsumos(insumos.filter(i => i.id !== id))
+  const onOpenNew = () => {
+    handleClear()
+    setIsDialogOpen(true)
   }
 
   const handleClear = () => {
-    setNome("")
-    setUnidade("")
-    setQtdRef("")
-    setPrecoRef("")
-    setEditingId(null)
+    setNome(""); setUnidade(""); setQtdRef(""); setPrecoRef(""); setEditingId(null)
   }
 
   const breakdown = useMemo(() => {
     const acc: Record<string, number> = {}
-    insumos.forEach(i => { acc[i.unidade] = (acc[i.unidade] || 0) + 1 })
+    insumos.forEach((i) => { if (i.unidade) acc[i.unidade] = (acc[i.unidade] || 0) + 1 })
     return Object.entries(acc).sort((a, b) => b[1] - a[1])
   }, [insumos])
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <FadeUp>
       <div className="mb-10 flex items-center justify-between">
@@ -104,15 +153,20 @@ export default function Insumos() {
           </p>
         </div>
         <Button onClick={onOpenNew} className="hidden sm:flex bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover shadow-sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Novo insumo
+          <Plus className="w-4 h-4 mr-2" /> Novo insumo
         </Button>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        setIsDialogOpen(open)
-        if (!open) handleClear()
-      }}>
+      {/* Error banner */}
+      {error && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-sm px-4 py-3 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+          <p className="text-red-400 text-xs">{error}</p>
+          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-300 text-xs">×</button>
+        </div>
+      )}
+
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) handleClear() }}>
         <DialogContent className="max-w-2xl bg-brand-surface-2 border-brand-line/20 p-6 md:p-8">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-brand-text font-medium text-lg">
@@ -121,79 +175,78 @@ export default function Insumos() {
           </DialogHeader>
 
           <div className="grid sm:grid-cols-2 gap-5">
-              <div className="sm:col-span-2 space-y-2">
-                <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Nome do insumo</Label>
+            <div className="sm:col-span-2 space-y-2">
+              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Nome do insumo</Label>
+              <Input
+                type="text"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex.: Filé de frango, Azeite extra virgem…"
+                className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Unidade de medida</Label>
+              <Select value={unidade} onValueChange={setUnidade}>
+                <SelectTrigger className="w-full bg-brand-surface border-brand-line/35 focus:ring-brand-highlight/10 focus:border-brand-highlight/55 h-10">
+                  <SelectValue placeholder="Selecione…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["kg", "g", "l", "ml", "un", "lt", "cx"].map((u) => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Quantidade de referência</Label>
+              <Input
+                type="number"
+                value={qtdRef}
+                onChange={(e) => setQtdRef(e.target.value)}
+                placeholder="Ex.: 500, 1, 10"
+                className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Preço de referência</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted text-sm select-none z-10">R$</span>
                 <Input
                   type="text"
-                  value={nome}
-                  onChange={e => setNome(e.target.value)}
-                  placeholder="Ex.: Filé de frango, Azeite extra virgem…"
-                  className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+                  value={precoRef}
+                  onChange={(e) => setPrecoRef(e.target.value.replace(/[^\d,]/g, ""))}
+                  className="pl-10 bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+                  placeholder="0,00"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Unidade de medida</Label>
-                <Select value={unidade} onValueChange={setUnidade}>
-                  <SelectTrigger className="w-full bg-brand-surface border-brand-line/35 focus:ring-brand-highlight/10 focus:border-brand-highlight/55 h-10">
-                    <SelectValue placeholder="Selecione…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["kg", "g", "l", "ml", "un", "lt", "cx"].map(u => (
-                      <SelectItem key={u} value={u}>{u}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Quantidade de referência</Label>
-                <Input
-                  type="number"
-                  value={qtdRef}
-                  onChange={e => setQtdRef(e.target.value)}
-                  placeholder="Ex.: 500, 1, 10"
-                  className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Preço de referência</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted text-sm select-none z-10">R$</span>
-                  <Input
-                    type="text"
-                    value={precoRef}
-                    onChange={e => {
-                      const v = e.target.value.replace(/[^\d,]/g, '')
-                      setPrecoRef(v)
-                    }}
-                    className="pl-10 bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
-                    placeholder="0,00"
-                  />
-                </div>
-              </div>
-
-              {custoUn !== null && (
-                <div className="sm:col-span-2">
-                  <div className="bg-brand-surface border border-brand-line/20 rounded-[2px] px-4 py-3 flex items-center gap-2">
-                    <span className="text-brand-muted text-xs font-medium uppercase tracking-wide">Custo unitário:</span>
-                    <span className="text-brand-highlight text-sm font-semibold tabular-nums">
-                      {custoUn.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/{unidade || 'un'}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div className="flex justify-end gap-3 mt-8">
-              <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-brand-muted hover:text-brand-soft">
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleSalvar}
-                className="bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover hover:shadow-[0_0_16px_rgba(201,76,182,.14),0_0_6px_rgba(94,111,55,.2)]"
-              >
-                {editingId ? "Salvar alterações" : "Adicionar insumo"}
-              </Button>
-            </div>
+            {custoUn !== null && (
+              <div className="sm:col-span-2">
+                <div className="bg-brand-surface border border-brand-line/20 rounded-[2px] px-4 py-3 flex items-center gap-2">
+                  <span className="text-brand-muted text-xs font-medium uppercase tracking-wide">Custo unitário:</span>
+                  <span className="text-brand-highlight text-sm font-semibold tabular-nums">
+                    {custoUn.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/{unidade || "un"}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 mt-8">
+            <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-brand-muted hover:text-brand-soft">
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSalvar}
+              disabled={saving}
+              className="bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover hover:shadow-[0_0_16px_rgba(201,76,182,.14),0_0_6px_rgba(94,111,55,.2)]"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {editingId ? "Salvar alterações" : "Adicionar insumo"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -204,6 +257,7 @@ export default function Insumos() {
               <Plus className="w-4 h-4 mr-2" /> Novo insumo
             </Button>
           </div>
+
           {/* Table */}
           <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">
@@ -211,11 +265,16 @@ export default function Insumos() {
               <span className="text-brand-muted text-xs">{insumos.length} itens</span>
             </div>
 
-            {insumos.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-16 gap-2 text-brand-muted">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-sm">Carregando insumos…</span>
+              </div>
+            ) : insumos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-6">
-                 <AlertCircle className="w-10 h-10 text-brand-highlight opacity-30 mb-5" />
-                 <p className="text-brand-soft text-sm font-medium mb-1 text-center">Nenhum insumo cadastrado ainda.</p>
-                 <p className="text-brand-muted text-xs text-center max-w-xs leading-relaxed">Comece pela base de custos da sua operação.</p>
+                <AlertCircle className="w-10 h-10 text-brand-highlight opacity-30 mb-5" />
+                <p className="text-brand-soft text-sm font-medium mb-1 text-center">Nenhum insumo cadastrado ainda.</p>
+                <p className="text-brand-muted text-xs text-center max-w-xs leading-relaxed">Comece pela base de custos da sua operação.</p>
               </div>
             ) : (
               <div className="overflow-x-auto pb-4">
@@ -235,16 +294,19 @@ export default function Insumos() {
                       <TableRow key={item.id} className="border-b border-brand-line/10 hover:bg-brand-line/5 transition-colors">
                         <TableCell className="font-medium text-brand-text">{item.nome}</TableCell>
                         <TableCell className="text-brand-muted">
-                          <span className="px-2 py-0.5 bg-brand-surface rounded-[2px] text-[0.72rem] font-medium border border-brand-line/20">
-                            {item.unidade}
-                          </span>
+                          {item.unidade
+                            ? <span className="px-2 py-0.5 bg-brand-surface rounded-[2px] text-[0.72rem] font-medium border border-brand-line/20">{item.unidade}</span>
+                            : <span className="text-brand-muted/40 text-xs">—</span>
+                          }
                         </TableCell>
-                        <TableCell className="text-brand-muted tabular-nums">{item.qtdRef}</TableCell>
+                        <TableCell className="text-brand-muted tabular-nums">{item.qtdRef || "—"}</TableCell>
                         <TableCell className="text-brand-text tabular-nums">
-                          {item.precoRef.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          {item.precoRef ? item.precoRef.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
                         </TableCell>
                         <TableCell className="text-brand-highlight font-medium tabular-nums">
-                          {(item.precoRef / item.qtdRef).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/{item.unidade}
+                          {item.qtdRef && item.precoRef
+                            ? `${(item.precoRef / item.qtdRef).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/${item.unidade}`
+                            : "—"}
                         </TableCell>
                         <TableCell className="text-right py-2">
                           <div className="flex justify-end gap-1">
@@ -278,23 +340,25 @@ export default function Insumos() {
                 <AlertCircle className="w-3.5 h-3.5" />
               </span>
               <p className="text-brand-muted text-xs leading-relaxed">
-                Cada insumo cadastrado aqui alimenta automaticamente o cálculo de custo das receitas.
+                {IS_MOCK
+                  ? "Modo demo — configure VITE_BACKEND_URL para conectar ao backend."
+                  : "Cada insumo cadastrado aqui alimenta automaticamente o cálculo de custo das receitas."}
               </p>
             </div>
           </div>
-          
+
           {breakdown.length > 0 && (
             <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
               <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Por unidade</p>
               <div className="flex flex-col gap-2">
                 {breakdown.map(([u, c]) => (
-                 <div key={u} className="flex items-center justify-between">
-                   <span className="text-brand-soft text-xs font-medium">{u}</span>
-                   <div className="flex items-center gap-2">
-                     <div className="h-1.5 rounded-full bg-brand-primary/60" style={{ width: Math.max(20, c * 18) }} />
-                     <span className="text-brand-muted text-xs tabular-nums">{c}</span>
-                   </div>
-                 </div> 
+                  <div key={u} className="flex items-center justify-between">
+                    <span className="text-brand-soft text-xs font-medium">{u}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 rounded-full bg-brand-primary/60" style={{ width: Math.max(20, c * 18) }} />
+                      <span className="text-brand-muted text-xs tabular-nums">{c}</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -304,5 +368,3 @@ export default function Insumos() {
     </FadeUp>
   )
 }
-
-
