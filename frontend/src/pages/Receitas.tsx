@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Mock for available Insumos to compose recipes
 const mockInsumos: Insumo[] = [
@@ -48,6 +49,7 @@ const mockReceitas: Receita[] = [
 export default function Receitas() {
   const [receitas, setReceitas] = useState<Receita[]>(mockReceitas)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   
   const [nome, setNome] = useState("")
   const [rendimento, setRendimento] = useState("")
@@ -95,6 +97,12 @@ export default function Receitas() {
       setReceitas([newData, ...receitas])
     }
     handleClear()
+    setIsDialogOpen(false)
+  }
+
+  const onOpenNew = () => {
+    handleClear()
+    setIsDialogOpen(true)
   }
 
   const handleEdit = (item: Receita) => {
@@ -103,7 +111,7 @@ export default function Receitas() {
     setRendimento(item.rendimento.toString())
     setUnidade(item.unidade)
     setComponentes(item.componentes)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    setIsDialogOpen(true)
   }
 
   const handleDelete = (id: number) => {
@@ -142,13 +150,30 @@ export default function Receitas() {
 
   return (
     <FadeUp>
-      <div className="mb-10">
-        <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Receitas</p>
-        <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Receitas</h1>
-        <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">
-          Monte receitas com insumos e outras receitas para calcular custo com precisão.
-        </p>
+      <div className="mb-10 flex items-center justify-between">
+        <div>
+          <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Receitas</p>
+          <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Receitas</h1>
+          <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">
+            Monte receitas com insumos e outras receitas para calcular custo com precisão.
+          </p>
+        </div>
+        <Button onClick={onOpenNew} className="hidden sm:flex bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover shadow-sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Nova receita
+        </Button>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open)
+        if (!open) handleClear()
+      }}>
+        <DialogContent className="max-w-2xl bg-brand-surface-2 border-brand-line/20 p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-brand-text font-medium text-lg">
+              {editingId ? "Editar receita" : "Nova receita"}
+            </DialogTitle>
+          </DialogHeader>
 
       {mockInsumos.length === 0 && (
          <div className="mb-6 bg-brand-surface-2 border border-brand-line/20 rounded-sm px-5 py-4 flex items-start gap-3">
@@ -160,15 +185,7 @@ export default function Receitas() {
          </div>
       )}
 
-      <div className="grid lg:grid-cols-[1fr_260px] gap-8 items-start">
-        <div className="flex flex-col gap-6">
-          {/* Form */}
-          <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-6 md:p-7">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-brand-text font-medium text-base">{editingId ? "Editar receita" : "Nova receita"}</h2>
-            </div>
-            
-            <div className="grid sm:grid-cols-2 gap-5 mb-6">
+          <div className="grid sm:grid-cols-2 gap-5 mb-6">
               <div className="sm:col-span-2 space-y-2">
                 <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Nome da receita</Label>
                 <Input
@@ -288,21 +305,27 @@ export default function Receitas() {
               )}
             </div>
 
-            <div className="flex gap-3 mt-6 pt-5 border-t border-brand-line/15">
+            <div className="flex justify-end gap-3 mt-8 pt-5 border-t border-brand-line/15">
+              <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-brand-muted hover:text-brand-soft">
+                Cancelar
+              </Button>
               <Button 
                 onClick={handleSalvar}
                 className="bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover hover:shadow-[0_0_16px_rgba(201,76,182,.14),0_0_6px_rgba(94,111,55,.2)]"
               >
-                {editingId ? "Salvar alterações" : "Salvar receita"}
+                {editingId ? "Salvar alterações" : "Adicionar receita"}
               </Button>
-              {editingId && (
-                <Button variant="outline" onClick={handleClear} className="border-brand-line/28 text-brand-muted hover:text-brand-soft hover:border-brand-line/50 transition-all font-normal">
-                  Cancelar
-                </Button>
-              )}
             </div>
-          </div>
+        </DialogContent>
+      </Dialog>
 
+      <div className="grid lg:grid-cols-[1fr_260px] gap-8 items-start">
+        <div className="flex flex-col gap-6">
+          <div className="sm:hidden mb-2">
+            <Button onClick={onOpenNew} className="w-full bg-brand-primary text-brand-button-text focus:ring-2 focus:ring-brand-highlight/20">
+              <Plus className="w-4 h-4 mr-2" /> Nova receita
+            </Button>
+          </div>
           {/* Table */}
           <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">

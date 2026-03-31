@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react"
 import { FadeUp } from "@/components/ui/fade-up"
-import { Edit2, Trash2, AlertCircle } from "lucide-react"
+import { Edit2, Trash2, AlertCircle, Plus } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Simple mock state management inside component based on user request (keep it simple, simple cache is enough)
 export interface Insumo {
@@ -25,6 +26,7 @@ const mockInsumos: Insumo[] = [
 export default function Insumos() {
   const [insumos, setInsumos] = useState<Insumo[]>(mockInsumos)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   
   const [nome, setNome] = useState("")
   const [unidade, setUnidade] = useState("")
@@ -56,6 +58,12 @@ export default function Insumos() {
       setInsumos([newData, ...insumos])
     }
     handleClear()
+    setIsDialogOpen(false)
+  }
+
+  const onOpenNew = () => {
+    handleClear()
+    setIsDialogOpen(true)
   }
 
   const handleEdit = (item: Insumo) => {
@@ -64,6 +72,7 @@ export default function Insumos() {
     setUnidade(item.unidade)
     setQtdRef(item.qtdRef.toString())
     setPrecoRef(item.precoRef.toString().replace(".", ","))
+    setIsDialogOpen(true)
   }
 
   const handleDelete = (id: number) => {
@@ -86,26 +95,32 @@ export default function Insumos() {
 
   return (
     <FadeUp>
-      <div className="mb-10">
-        <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Insumos</p>
-        <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Insumos</h1>
-        <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">
-          Cadastre os itens que alimentam o cálculo de custo da operação.
-        </p>
+      <div className="mb-10 flex items-center justify-between">
+        <div>
+          <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Insumos</p>
+          <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Insumos</h1>
+          <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">
+            Cadastre os itens que alimentam o cálculo de custo da operação.
+          </p>
+        </div>
+        <Button onClick={onOpenNew} className="hidden sm:flex bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover shadow-sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Novo insumo
+        </Button>
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
-        <div className="flex flex-col gap-6">
-          {/* Form */}
-          <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-6 md:p-7">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-brand-text font-medium text-base">{editingId ? "Editar insumo" : "Novo insumo"}</h2>
-              {(nome || unidade || qtdRef || precoRef) && !editingId && (
-                <Button variant="ghost" size="sm" onClick={handleClear} className="text-brand-muted hover:text-brand-soft h-6 px-2 text-xs transition-colors">Limpar</Button>
-              )}
-            </div>
-            
-            <div className="grid sm:grid-cols-2 gap-5">
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open)
+        if (!open) handleClear()
+      }}>
+        <DialogContent className="max-w-2xl bg-brand-surface-2 border-brand-line/20 p-6 md:p-8">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-brand-text font-medium text-lg">
+              {editingId ? "Editar insumo" : "Novo insumo"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid sm:grid-cols-2 gap-5">
               <div className="sm:col-span-2 space-y-2">
                 <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Nome do insumo</Label>
                 <Input
@@ -168,21 +183,27 @@ export default function Insumos() {
               )}
             </div>
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-8">
+              <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-brand-muted hover:text-brand-soft">
+                Cancelar
+              </Button>
               <Button 
                 onClick={handleSalvar}
                 className="bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover hover:shadow-[0_0_16px_rgba(201,76,182,.14),0_0_6px_rgba(94,111,55,.2)]"
               >
-                {editingId ? "Salvar alterações" : "Salvar insumo"}
+                {editingId ? "Salvar alterações" : "Adicionar insumo"}
               </Button>
-              {editingId && (
-                <Button variant="outline" onClick={handleClear} className="border-brand-line/28 text-brand-muted hover:text-brand-soft hover:border-brand-line/50 transition-all font-normal">
-                  Cancelar
-                </Button>
-              )}
             </div>
-          </div>
+        </DialogContent>
+      </Dialog>
 
+      <div className="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
+        <div className="flex flex-col gap-6">
+          <div className="sm:hidden mb-2">
+            <Button onClick={onOpenNew} className="w-full bg-brand-primary text-brand-button-text focus:ring-2 focus:ring-brand-highlight/20">
+              <Plus className="w-4 h-4 mr-2" /> Novo insumo
+            </Button>
+          </div>
           {/* Table */}
           <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">
