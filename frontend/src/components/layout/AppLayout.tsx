@@ -57,8 +57,8 @@ export function AppLayout() {
             Margem
           </div>
         </nav>
-        <div className="px-5 py-5 border-t border-brand-line/15 flex items-center justify-between">
-          <p className="text-brand-muted text-xs">MVP — Acesso antecipado</p>
+        <div className="px-5 h-[60px] shrink-0 border-t border-brand-line/15 flex items-center justify-between">
+          <p className="text-brand-muted text-xs">Acesso antecipado</p>
           <button
             onClick={toggleTheme}
             className="p-1.5 rounded-[2px] text-brand-muted hover:text-brand-highlight hover:bg-brand-line/10 transition-colors"
@@ -104,7 +104,7 @@ export function AppLayout() {
         <main className="flex-1 px-6 md:px-10 py-8 md:py-10 max-w-6xl w-full mx-auto">
           <Outlet />
         </main>
-        <footer className="py-5 px-6 md:px-10 border-t border-brand-line/15 flex items-center">
+        <footer className="h-[60px] shrink-0 px-6 md:px-10 border-t border-brand-line/15 flex items-center">
           <p className="text-brand-muted text-xs">© {new Date().getFullYear()} Prato — Inteligência de margem para restaurantes.</p>
         </footer>
       </div>

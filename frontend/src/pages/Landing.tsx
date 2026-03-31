@@ -25,7 +25,6 @@ export default function Landing() {
             <circle cx="400" cy="460" r="58" stroke="hsl(var(--circle-stroke) / 0.08)" strokeWidth="0.5" />
             <line x1="338" y1="460" x2="346" y2="460" stroke="hsl(var(--circle-stroke) / 0.08)" strokeWidth="1" strokeLinecap="round" />
             <line x1="454" y1="460" x2="462" y2="460" stroke="hsl(var(--circle-stroke) / 0.08)" strokeWidth="1" strokeLinecap="round" />
-            <circle cx="400" cy="460" r="3" fill="rgba(var(--circle-glow),0.4)" />
             <circle cx="400" cy="460" r="375" stroke="rgba(var(--circle-glow),0.04)" strokeWidth="28" />
           </svg>
         </div>
@@ -48,14 +47,21 @@ export default function Landing() {
           <p className="text-brand-muted text-base md:text-lg leading-relaxed max-w-2xl mb-12 md:mb-14">
             Compare CMV ideal e real, entenda impactos da operação<br className="hidden md:block" /> e encontre oportunidades com mais clareza.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center mt-2">
             <Link
               id="hero-cta-acessar"
               to="/login"
               className="bg-brand-primary text-brand-button-text font-medium text-sm tracking-wide px-7 py-3.5 rounded-sm transition-all duration-200 hover:bg-brand-primary-hover hover:shadow-[0_0_18px_rgba(201,76,182,0.18),0_0_6px_rgba(94,111,55,0.25)] flex items-center justify-center"
             >
-              Acessar Plataforma
+              Solicitar acesso antecipado
             </Link>
+            <button
+              id="hero-cta-funcionamento"
+              onClick={() => window.scrollTo({ top: document.body.scrollHeight / 2, behavior: 'smooth' })}
+              className="border border-brand-line text-brand-text font-medium text-sm tracking-wide px-7 py-3.5 rounded-sm transition-all duration-200 hover:bg-white/5 hover:border-brand-line/80 flex items-center justify-center"
+            >
+              Ver como funciona
+            </button>
           </div>
         </div>
       </section>
