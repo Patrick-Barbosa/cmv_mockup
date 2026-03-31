@@ -45,7 +45,8 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [x] Tela de Cadastro do custo dos insumos (dentro do cadastro de insumos)
 - [ ] Tela de Input de Vendas
 - [ ] Tela de CMV Ideal
-- [ ] Tela de Login
+- [x] Tela de Login
+- [ ] Funcionalidade de login
 - [x] Tela de CMV Real (Descontinuado MVP)
 - [ ] Interface do Simulador de Impacto
 - [ ] Dashboard Multi-Unidade
