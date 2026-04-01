@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { IS_MOCK, insumosApi, receitasApi } from "@/lib/api"
 
-// ── Fallback mock data (used when VITE_BACKEND_URL is not set) ──────────────
+// ── Fallback mock data ────────────────────────────────────────────────────────
 const mockInsumos: Insumo[] = [
   { id: 1, nome: "Filé de Frango", unidade: "kg", qtdRef: 1, precoRef: 22.5 },
   { id: 2, nome: "Azeite Extra Virgem", unidade: "l", qtdRef: 5, precoRef: 180.0 },
@@ -19,7 +19,7 @@ const mockInsumos: Insumo[] = [
 ]
 
 export interface ReceitaComponente {
-  id: string
+  id: string            // local uuid, used as React key
   tipo: "insumo" | "receita"
   insumoId?: number
   receitaId?: number
@@ -29,9 +29,10 @@ export interface ReceitaComponente {
 export interface Receita {
   id: number
   nome: string
-  rendimento: number
+  rendimento: number    // maps to quantidade_base in backend
   unidade: string
   componentes: ReceitaComponente[]
+  custoTotal?: number   // pre-computed by backend
 }
 
 const mockReceitas: Receita[] = [
@@ -47,6 +48,24 @@ const mockReceitas: Receita[] = [
   },
 ]
 
+// Helper: convert api componente (which has no tipo) to frontend ReceitaComponente
+// We determine tipo by checking if id_componente is in the insumos list
+function mapApiComponetes(
+  apiComps: { id_componente: number; quantidade: number }[],
+  insumoIds: Set<number>
+): ReceitaComponente[] {
+  return apiComps.map((c) => {
+    const isInsumo = insumoIds.has(c.id_componente)
+    return {
+      id: Math.random().toString(36).slice(2, 9),
+      tipo: isInsumo ? "insumo" : "receita",
+      insumoId: isInsumo ? c.id_componente : undefined,
+      receitaId: isInsumo ? undefined : c.id_componente,
+      quantidade: c.quantidade,
+    }
+  })
+}
+
 export default function Receitas() {
   const [receitas, setReceitas] = useState<Receita[]>(IS_MOCK ? mockReceitas : [])
   const [availableInsumos, setAvailableInsumos] = useState<Insumo[]>(IS_MOCK ? mockInsumos : [])
@@ -57,37 +76,66 @@ export default function Receitas() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
+  // Form state
   const [nome, setNome] = useState("")
   const [rendimento, setRendimento] = useState("")
   const [unidade, setUnidade] = useState("")
   const [componentes, setComponentes] = useState<ReceitaComponente[]>([])
 
-  // ── Load from API on mount ────────────────────────────────────────────────
+  // ── Load from API ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (IS_MOCK) return
-    Promise.all([receitasApi.list(), insumosApi.list()])
-      .then(([receitasList, insumosList]) => {
-        setReceitas(
-          receitasList.map((r) => ({ id: r.id, nome: r.nome, rendimento: 0, unidade: "", componentes: [] }))
+
+    const loadData = async () => {
+      try {
+        // Load insumos list first (needed to determine componente tipo)
+        const insumosList = await insumosApi.list()
+        const mappedInsumos: Insumo[] = insumosList.map((i) => ({
+          id: i.id,
+          nome: i.nome,
+          unidade: i.unidade ?? "",
+          qtdRef: i.quantidade_referencia ?? 0,
+          precoRef: i.preco_referencia ?? 0,
+        }))
+        setAvailableInsumos(mappedInsumos)
+        const insumoIdSet = new Set(mappedInsumos.map((i) => i.id))
+
+        // Load receitas list, then fetch full detail for each
+        const receitasList = await receitasApi.list()
+        const detalhes = await Promise.all(
+          receitasList.map((r) => receitasApi.get(r.id))
         )
-        // insumosApi.list now returns full data from get_produtos_select2
-        setAvailableInsumos(
-          insumosList.map((i) => ({
-            id: i.id,
-            nome: i.nome,
-            unidade: i.unidade ?? "",
-            qtdRef: i.quantidade_referencia ?? 0,
-            precoRef: i.preco_referencia ?? 0,
+
+        setReceitas(
+          detalhes.map((d) => ({
+            id: d.id,
+            nome: d.nome,
+            rendimento: d.quantidade_base ?? 0,
+            unidade: d.unidade ?? "",
+            custoTotal: d.custo_total,
+            // Map API componentes → frontend ReceitaComponente
+            componentes: mapApiComponetes(
+              d.componentes.map((c) => ({
+                id_componente: c.id_componente,
+                quantidade: c.quantidade,
+              })),
+              insumoIdSet
+            ),
           }))
         )
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
   }, [])
 
   const parsedRend = parseFloat(rendimento)
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // ── Component form handlers ───────────────────────────────────────────────
   const handleAddComponent = (tipo: "insumo" | "receita") => {
     setComponentes([
       ...componentes,
@@ -113,43 +161,74 @@ export default function Receitas() {
     setComponentes(componentes.filter((c) => c.id !== id))
   }
 
+  // ── Save handler ──────────────────────────────────────────────────────────
   const handleSalvar = async () => {
-    if (
-      !nome || !parsedRend || componentes.length === 0 ||
-      componentes.some((c) => (c.tipo === "insumo" ? !c.insumoId : !c.receitaId) || c.quantidade <= 0)
-    ) return
+    const validComps = componentes.filter(
+      (c) => (c.tipo === "insumo" ? !!c.insumoId : !!c.receitaId) && c.quantidade > 0
+    )
+    if (!nome || !parsedRend || validComps.length === 0) return
 
     setSaving(true)
     try {
       if (IS_MOCK) {
         const newData: Receita = {
           id: editingId ?? Date.now(),
-          nome, unidade, rendimento: parsedRend, componentes,
+          nome, unidade, rendimento: parsedRend, componentes: validComps,
         }
         setReceitas((prev) =>
           editingId ? prev.map((r) => (r.id === editingId ? newData : r)) : [newData, ...prev]
         )
       } else {
+        // Backend payload fields: nome, quantidade_base, unidade, componentes[{id_componente, quantidade}]
         const payload = {
           nome,
           quantidade_base: parsedRend,
-          unidade,
-          componentes: componentes.map((c) => ({
+          unidade: unidade || undefined,
+          componentes: validComps.map((c) => ({
             id_componente: (c.tipo === "insumo" ? c.insumoId : c.receitaId)!,
             quantidade: c.quantidade,
           })),
         }
+
         if (editingId) {
           await receitasApi.edit(editingId, payload)
+          // Refetch the updated detail to get computed custo_total
+          const updated = await receitasApi.get(editingId)
+          const insumoIdSet = new Set(availableInsumos.map((i) => i.id))
           setReceitas((prev) =>
             prev.map((r) =>
-              r.id === editingId ? { ...r, nome, unidade, rendimento: parsedRend, componentes } : r
+              r.id === editingId
+                ? {
+                    id: updated.id,
+                    nome: updated.nome,
+                    rendimento: updated.quantidade_base ?? 0,
+                    unidade: updated.unidade ?? "",
+                    custoTotal: updated.custo_total,
+                    componentes: mapApiComponetes(
+                      updated.componentes.map((c) => ({ id_componente: c.id_componente, quantidade: c.quantidade })),
+                      insumoIdSet
+                    ),
+                  }
+                : r
             )
           )
         } else {
           const res = await receitasApi.create(payload)
+          // Refetch the new receita to get full data including custo_total
+          const created = await receitasApi.get(res.id)
+          const insumoIdSet = new Set(availableInsumos.map((i) => i.id))
           setReceitas((prev) => [
-            { id: res.id, nome, unidade, rendimento: parsedRend, componentes },
+            {
+              id: created.id,
+              nome: created.nome,
+              rendimento: created.quantidade_base ?? 0,
+              unidade: created.unidade ?? "",
+              custoTotal: created.custo_total,
+              componentes: mapApiComponetes(
+                created.componentes.map((c) => ({ id_componente: c.id_componente, quantidade: c.quantidade })),
+                insumoIdSet
+              ),
+            },
             ...prev,
           ])
         }
@@ -175,8 +254,8 @@ export default function Receitas() {
   const handleEdit = (item: Receita) => {
     setEditingId(item.id)
     setNome(item.nome)
-    setRendimento(item.rendimento.toString())
-    setUnidade(item.unidade)
+    setRendimento(item.rendimento?.toString() ?? "")
+    setUnidade(item.unidade ?? "")
     setComponentes(item.componentes)
     setIsDialogOpen(true)
   }
@@ -187,22 +266,23 @@ export default function Receitas() {
     setNome(""); setRendimento(""); setUnidade(""); setComponentes([]); setEditingId(null)
   }
 
-  const calculateCusto = (comps: ReceitaComponente[], allReceitas = receitas): number => {
+  // Cost preview in the form (local calculation while user is editing)
+  const calculateCusto = (comps: ReceitaComponente[]): number => {
     return comps.reduce((sum, c) => {
       if (c.tipo === "insumo") {
         const ins = availableInsumos.find((i) => i.id === c.insumoId)
         if (!ins || !ins.qtdRef) return sum
         return sum + (ins.precoRef / ins.qtdRef) * c.quantidade
       } else {
-        const sub = allReceitas.find((r) => r.id === c.receitaId)
+        const sub = receitas.find((r) => r.id === c.receitaId)
         if (!sub || sub.id === editingId) return sum
-        const subCost = calculateCusto(sub.componentes, allReceitas)
+        const subCost = sub.custoTotal ?? calculateCusto(sub.componentes)
         return sum + (subCost / (sub.rendimento || 1)) * c.quantidade
       }
     }, 0)
   }
 
-  const custoTotalAtual = calculateCusto(componentes)
+  const custoFormPreview = calculateCusto(componentes)
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -229,6 +309,7 @@ export default function Receitas() {
         </div>
       )}
 
+      {/* ── Edit/Create Dialog ─────────────────────────────────────────────── */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) handleClear() }}>
         <DialogContent className="max-w-2xl bg-brand-surface-2 border-brand-line/20 p-6 md:p-8 max-h-[90vh] overflow-y-auto">
           <DialogHeader className="mb-4">
@@ -237,19 +318,7 @@ export default function Receitas() {
             </DialogTitle>
           </DialogHeader>
 
-          {availableInsumos.length === 0 && !IS_MOCK && (
-            <div className="mb-6 bg-brand-surface-2 border border-brand-line/20 rounded-sm px-5 py-4 flex items-start gap-3">
-              <AlertCircle className="w-4 h-4 text-[rgba(210,170,80,.7)] shrink-0 mt-0.5" />
-              <div>
-                <p className="text-brand-soft text-sm font-medium">Você ainda não possui insumos cadastrados.</p>
-                <p className="text-brand-muted text-xs mt-0.5">
-                  Cadastre insumos antes de montar uma receita.{" "}
-                  <Link to="/insumos" className="text-brand-highlight underline hover:opacity-80">Ir para Insumos →</Link>
-                </p>
-              </div>
-            </div>
-          )}
-
+          {/* Basic fields */}
           <div className="grid sm:grid-cols-2 gap-5 mb-6">
             <div className="sm:col-span-2 space-y-2">
               <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Nome da receita</Label>
@@ -260,7 +329,7 @@ export default function Receitas() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Rendimento</Label>
+              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Rendimento (quantidade_base)</Label>
               <Input
                 type="number" value={rendimento} onChange={(e) => setRendimento(e.target.value)}
                 placeholder="Ex.: 1, 4, 500"
@@ -268,7 +337,7 @@ export default function Receitas() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Unidade de rendimento</Label>
+              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Unidade</Label>
               <Select value={unidade} onValueChange={setUnidade}>
                 <SelectTrigger className="w-full bg-brand-surface border-brand-line/35 focus:ring-brand-highlight/10 focus:border-brand-highlight/55 h-10">
                   <SelectValue placeholder="Selecione…" />
@@ -282,14 +351,17 @@ export default function Receitas() {
             </div>
           </div>
 
+          {/* Composição */}
           <div className="mb-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <p className="text-brand-soft text-sm font-medium">Composição</p>
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => handleAddComponent("receita")} className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 hover:border-brand-highlight/45 hover:text-brand-highlight transition-colors h-8">
+                <Button type="button" variant="outline" size="sm" onClick={() => handleAddComponent("receita")}
+                  className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 hover:border-brand-highlight/45 hover:text-brand-highlight transition-colors h-8">
                   <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar receita
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => handleAddComponent("insumo")} className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 hover:border-brand-highlight/45 hover:text-brand-highlight transition-colors h-8">
+                <Button type="button" variant="outline" size="sm" onClick={() => handleAddComponent("insumo")}
+                  className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 hover:border-brand-highlight/45 hover:text-brand-highlight transition-colors h-8">
                   <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar insumo
                 </Button>
               </div>
@@ -315,7 +387,8 @@ export default function Receitas() {
                     if (ins) unitLabel = ins.unidade
                   } else {
                     const sub = receitas.find((r) => r.id === c.receitaId)
-                    cost = sub && c.quantidade > 0 ? (calculateCusto(sub.componentes) / (sub.rendimento || 1)) * c.quantidade : 0
+                    const subCost = sub?.custoTotal ?? (sub ? calculateCusto(sub.componentes) : 0)
+                    cost = sub && c.quantidade > 0 ? (subCost / (sub.rendimento || 1)) * c.quantidade : 0
                     if (sub) unitLabel = sub.unidade
                   }
                   return (
@@ -330,10 +403,14 @@ export default function Receitas() {
                         <SelectContent>
                           {c.tipo === "insumo"
                             ? availableInsumos.map((i) => (
-                                <SelectItem key={i.id} value={i.id.toString()}>{i.nome}{i.unidade ? ` (${i.unidade})` : ""}</SelectItem>
+                                <SelectItem key={i.id} value={i.id.toString()}>
+                                  {i.nome}{i.unidade ? ` (${i.unidade})` : ""}
+                                </SelectItem>
                               ))
                             : receitas.filter((r) => r.id !== editingId).map((r) => (
-                                <SelectItem key={r.id} value={r.id.toString()}>{r.nome}{r.unidade ? ` (${r.unidade})` : ""}</SelectItem>
+                                <SelectItem key={r.id} value={r.id.toString()}>
+                                  {r.nome}{r.unidade ? ` (${r.unidade})` : ""}
+                                </SelectItem>
                               ))}
                         </SelectContent>
                       </Select>
@@ -376,6 +453,7 @@ export default function Receitas() {
         </DialogContent>
       </Dialog>
 
+      {/* ── Table ──────────────────────────────────────────────────────────── */}
       <div className="grid lg:grid-cols-[1fr_260px] gap-8 items-start">
         <div className="flex flex-col gap-6">
           <div className="sm:hidden mb-2">
@@ -384,7 +462,6 @@ export default function Receitas() {
             </Button>
           </div>
 
-          {/* Table */}
           <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">
               <h2 className="text-brand-soft text-sm font-medium">Receitas cadastradas</h2>
@@ -415,7 +492,8 @@ export default function Receitas() {
                   </TableHeader>
                   <TableBody>
                     {receitas.map((item) => {
-                      const cost = calculateCusto(item.componentes)
+                      // Use backend-computed custo_total when available
+                      const custo = item.custoTotal ?? calculateCusto(item.componentes)
                       return (
                         <TableRow key={item.id} className="border-b border-brand-line/10 hover:bg-brand-line/5 transition-colors">
                           <TableCell className="font-medium text-brand-text">{item.nome}</TableCell>
@@ -423,7 +501,7 @@ export default function Receitas() {
                             {item.rendimento ? `${item.rendimento} ${item.unidade}` : "—"}
                           </TableCell>
                           <TableCell className="text-brand-highlight font-medium tabular-nums">
-                            {cost > 0 ? formatBRL(cost) : "—"}
+                            {custo > 0 ? formatBRL(custo) : "—"}
                           </TableCell>
                           <TableCell className="text-right py-2">
                             <div className="flex justify-end gap-1">
@@ -448,11 +526,11 @@ export default function Receitas() {
           </div>
         </div>
 
-        {/* Right Sidebar Stats */}
+        {/* Sidebar */}
         <div className="flex flex-col gap-4">
           <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
             <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Custo estimado</p>
-            <p className="text-brand-highlight text-3xl font-light tabular-nums">{formatBRL(custoTotalAtual)}</p>
+            <p className="text-brand-highlight text-3xl font-light tabular-nums">{formatBRL(custoFormPreview)}</p>
             <p className="text-brand-muted text-xs mt-1">{componentes.filter((c) => (c.insumoId || c.receitaId) && c.quantidade > 0).length} itens na composição</p>
           </div>
           <div className="bg-brand-surface flex border border-brand-line/15 rounded-[2px] p-5 gap-3">
@@ -460,7 +538,7 @@ export default function Receitas() {
             <p className="text-brand-muted text-xs leading-relaxed">
               {IS_MOCK
                 ? "Modo demo — configure VITE_BACKEND_URL para conectar ao backend."
-                : "O custo é calculado em tempo real através da estrutura de insumos e sub-receitas."}
+                : "O custo é calculado pelo backend com base nos insumos cadastrados."}
             </p>
           </div>
         </div>

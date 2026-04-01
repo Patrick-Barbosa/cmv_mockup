@@ -82,12 +82,12 @@ export interface ReceitaDetalhe {
 }
 
 export interface ComponenteAPI {
-  id: number;
+  id_componente: number;  // field name from get_componentes_diretos
   nome: string;
-  tipo: "insumo" | "receita";
+  unidade: string | null;
   quantidade: number;
   custo_unitario: number | null;
-  unidade: string;
+  // note: tipo is NOT returned by the backend list endpoint
 }
 
 export interface CreateInsumoPayload {
