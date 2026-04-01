@@ -55,13 +55,15 @@ export interface InsumoAPI {
   tipo: string;
 }
 
-export interface InsumoDetalhe {
+export interface InsumoFullAPI {
   id: number;
-  nome: string;
-  unidade: string;
-  quantidade_referencia: number;
-  preco_referencia: number;
-  custo: number;
+  text: string;          // nome
+  tipo: string;
+  custo: number | null;
+  unidade: string | null;
+  quantidade_referencia: number | null;
+  preco_referencia: number | null;
+  quantidade_base: number | null;
 }
 
 export interface ReceitaListItem {
@@ -103,7 +105,7 @@ export interface EditInsumoPayload {
 }
 
 export interface ComponentePayload {
-  produto_id: number;
+  id_componente: number;   // field name expected by backend schema
   quantidade: number;
 }
 
@@ -123,15 +125,21 @@ export interface EditReceitaPayload {
 
 // ─────────────────────────────────────────────
 // Insumos endpoints
-// GET  /insumos               → lista resumida
-// POST /api/insumos/create    → cria insumo
-// PATCH /api/insumos/:id      → edita insumo
-// DELETE /api/insumos/:id     → remove insumo
-// GET  /api/unidades          → lista de unidades padrão
+// GET  /api/get_produtos_select2  → lista completa com todos os campos
+// POST /api/insumos/create        → cria insumo
+// PATCH /api/insumos/:id          → edita insumo
+// DELETE /api/insumos/:id         → remove insumo
+// GET  /api/unidades              → lista de unidades padrão
 // ─────────────────────────────────────────────
 export const insumosApi = {
   list: () =>
-    apiFetch<InsumoAPI[]>("/insumos"),
+    apiFetch<{ items: InsumoFullAPI[]; pagination: { more: boolean } }>(
+      "/api/get_produtos_select2?per_page=200"
+    ).then((res) =>
+      res.items
+        .filter((i) => i.tipo === "Insumo")
+        .map((i) => ({ ...i, nome: i.text }))
+    ),
 
   create: (payload: CreateInsumoPayload) =>
     apiFetch<{ id: number; message: string }>("/api/insumos/create", {

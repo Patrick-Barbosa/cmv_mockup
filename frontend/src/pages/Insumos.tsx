@@ -43,13 +43,13 @@ export default function Insumos() {
     if (IS_MOCK) return
     insumosApi.list()
       .then((data) => {
-        // Backend returns {id, nome, tipo} — map to full Insumo shape
+        // get_produtos_select2 returns full data: unidade, quantidade_referencia, preco_referencia
         setInsumos(data.map((d) => ({
           id: d.id,
           nome: d.nome,
-          unidade: "",     // not in list endpoint; filled when editing
-          qtdRef: 0,
-          precoRef: 0,
+          unidade: d.unidade ?? "",
+          qtdRef: d.quantidade_referencia ?? 0,
+          precoRef: d.preco_referencia ?? 0,
         })))
       })
       .catch((e) => setError(e.message))

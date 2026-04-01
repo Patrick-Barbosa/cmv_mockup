@@ -67,12 +67,18 @@ export default function Receitas() {
     if (IS_MOCK) return
     Promise.all([receitasApi.list(), insumosApi.list()])
       .then(([receitasList, insumosList]) => {
-        // receitas list only has {id, nome, tipo} — componentes loaded on demand
         setReceitas(
           receitasList.map((r) => ({ id: r.id, nome: r.nome, rendimento: 0, unidade: "", componentes: [] }))
         )
+        // insumosApi.list now returns full data from get_produtos_select2
         setAvailableInsumos(
-          insumosList.map((i) => ({ id: i.id, nome: i.nome, unidade: "", qtdRef: 0, precoRef: 0 }))
+          insumosList.map((i) => ({
+            id: i.id,
+            nome: i.nome,
+            unidade: i.unidade ?? "",
+            qtdRef: i.quantidade_referencia ?? 0,
+            precoRef: i.preco_referencia ?? 0,
+          }))
         )
       })
       .catch((e) => setError(e.message))
@@ -129,7 +135,7 @@ export default function Receitas() {
           quantidade_base: parsedRend,
           unidade,
           componentes: componentes.map((c) => ({
-            produto_id: (c.tipo === "insumo" ? c.insumoId : c.receitaId)!,
+            id_componente: (c.tipo === "insumo" ? c.insumoId : c.receitaId)!,
             quantidade: c.quantidade,
           })),
         }
