@@ -90,6 +90,16 @@ export interface ComponenteAPI {
   // note: tipo is NOT returned by the backend list endpoint
 }
 
+export interface ReceitaTreeDetalhe {
+  id: number | string;
+  nome: string;
+  tipo: "receita" | "insumo";
+  quantidade?: number;
+  unidade?: string;
+  custo?: number;
+  children?: ReceitaTreeDetalhe[];
+}
+
 export interface CreateInsumoPayload {
   nome: string;
   unidade: string;
@@ -174,6 +184,9 @@ export const receitasApi = {
 
   get: (id: number) =>
     apiFetch<ReceitaDetalhe>(`/api/receitas/${id}`),
+
+  getTree: (id: number | string) =>
+    apiFetch<ReceitaTreeDetalhe>(`/receitas/${id}`),
 
   create: (payload: CreateReceitaPayload) =>
     apiFetch<{ id: number; message: string }>("/api/receitas/create", {

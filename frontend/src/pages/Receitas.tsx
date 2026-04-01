@@ -498,7 +498,7 @@ export default function Receitas() {
                         <TableRow key={item.id} className="border-b border-brand-line/10 hover:bg-brand-line/5 transition-colors">
                           <TableCell className="font-medium text-brand-text">{item.nome}</TableCell>
                           <TableCell className="text-brand-muted tabular-nums">
-                            {item.rendimento ? `${item.rendimento} ${item.unidade}` : "—"}
+                            {item.rendimento ? `${item.rendimento} ${item.unidade || "un."}` : "—"}
                           </TableCell>
                           <TableCell className="text-brand-highlight font-medium tabular-nums">
                             {custo > 0 ? formatBRL(custo) : "—"}

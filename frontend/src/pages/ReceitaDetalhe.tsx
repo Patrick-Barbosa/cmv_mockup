@@ -1,20 +1,16 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
 import { FadeUp } from "@/components/ui/fade-up"
 import { ArrowLeft, ChevronRight, Box, Layers } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 
-// Mock recursive data for demonstration
-interface MetaNode {
-  id: string
-  nome: string
-  tipo: "receita" | "insumo"
-  unidade: string
-  quantidade?: number
-  custo?: number
-  children?: MetaNode[]
-}
+import { receitasApi, IS_MOCK } from "@/lib/api"
+import type { ReceitaTreeDetalhe } from "@/lib/api"
+import { Loader2, AlertCircle } from "lucide-react"
+
+// MetaNode is the same structure as ReceitaTreeDetalhe from the backend
+type MetaNode = ReceitaTreeDetalhe
 
 const mockTree: MetaNode = {
   id: "r1",
@@ -117,9 +113,50 @@ function TreeNode({ node }: { node: MetaNode }) {
 
 export default function ReceitaDetalhe() {
   const { id } = useParams()
-  // Mock fetching mechanism
-  const receita = mockTree // In a real app we fetch based on id
   
+  const [receita, setReceita] = useState<MetaNode | null>(IS_MOCK ? mockTree as MetaNode : null)
+  const [loading, setLoading] = useState(!IS_MOCK)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (IS_MOCK || !id) return
+    
+    receitasApi.getTree(id)
+      .then((data) => setReceita(data))
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) {
+    return (
+      <FadeUp className="flex items-center justify-center py-20 gap-3 text-brand-muted">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span className="text-sm">Carregando detalhes da receita...</span>
+      </FadeUp>
+    )
+  }
+
+  if (error) {
+    return (
+      <FadeUp className="flex flex-col gap-6">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-sm px-6 py-5 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-1">
+            <h2 className="text-red-500 font-medium pb-1">Erro ao carregar receita</h2>
+            <p className="text-red-400 text-sm leading-relaxed">{error}</p>
+            <div className="mt-3">
+              <Link to="/receitas" className="inline-flex items-center text-red-400 text-sm hover:text-red-300 transition-colors underline underline-offset-2">
+                Voltar para receitas
+              </Link>
+            </div>
+          </div>
+        </div>
+      </FadeUp>
+    )
+  }
+
+  if (!receita) return null
+
   const totalCost = calculateNodeCost(receita)
 
   // flatten insumos
