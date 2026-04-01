@@ -1,13 +1,39 @@
 # Python
+__pycache__/
 **/__pycache__/
-*.pyc
+*.py[cod]
 *.pyo
+*.pyd
+*.so
+
 .venv/
 venv/
+env/
+.python-version
+
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.pyre/
+.tox/
+.nox/
+
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+build/
+dist/
+site/
+.eggs/
+*.egg
+*.egg-info/
+.ipynb_checkpoints/
 
 # Node / React / Vite
 node_modules/
-dist/
 .vite/
 *.log
 
@@ -15,10 +41,12 @@ dist/
 .env
 .env.local
 
-# AI tools
+# AI tools / local workspace
 .aider*
-/.claude
-/.qwen
+.claude/
+.qwen/
+.vscode/
+AGENTS.md
 QWEN.md
 
 # Docs to exclude
