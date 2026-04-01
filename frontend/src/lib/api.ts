@@ -112,15 +112,15 @@ export interface ComponentePayload {
 export interface CreateReceitaPayload {
   nome: string;
   quantidade_base: number;
-  unidade: string;
+  unidade?: string;   // Optional in backend schema
   componentes: ComponentePayload[];
 }
 
 export interface EditReceitaPayload {
-  nome: string;
-  quantidade_base: number;
-  unidade: string;
-  componentes: ComponentePayload[];
+  nome?: string;
+  quantidade_base?: number;
+  unidade?: string;   // Optional in backend schema
+  componentes?: ComponentePayload[];
 }
 
 // ─────────────────────────────────────────────
