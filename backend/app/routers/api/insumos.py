@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy.exc import IntegrityError
-from app.database.session import db_session
-from app.database.models import Produto
-from app.schemas.insumo import CreateProductModel, UpdateCustoModel, EditInsumoModel
-from app.schemas.common import PaginatedParamsModel, UNIDADES_PADRAO
-from app.services.produto_service import ProdutoService
+from backend.app.database.session import db_session
+from backend.app.database.models import Produto
+from backend.app.schemas.insumo import CreateProductModel, UpdateCustoModel, EditInsumoModel
+from backend.app.schemas.common import PaginatedParamsModel, UNIDADES_PADRAO
+from backend.app.services.produto_service import ProdutoService
 
 router = APIRouter(prefix="/api")
 

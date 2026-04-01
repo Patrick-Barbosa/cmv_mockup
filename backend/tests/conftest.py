@@ -3,7 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.routers.api import insumos, receitas
+from backend.app.routers.api import receitas
+from backend.app.routers.api import insumos
 
 
 @pytest.fixture(scope="session")

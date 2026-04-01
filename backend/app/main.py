@@ -5,10 +5,11 @@ from contextlib import asynccontextmanager
 import traceback
 import os
 
-from app.database.session import db_session, APP_ENV
-from app.database.initiliaze_db import init_db
-from app.routers import pages
-from app.routers.api import insumos, receitas
+from backend.app.database.session import db_session, APP_ENV
+from backend.app.database.initiliaze_db import init_db
+from backend.app.routers import pages
+from backend.app.routers.api import receitas
+from backend.app.routers.api import insumos
 
 
 @asynccontextmanager

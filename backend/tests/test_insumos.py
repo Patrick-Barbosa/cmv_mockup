@@ -1,6 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import HTTPException
-from tests.conftest import buildMockSession, buildMockFactory
+from backend.tests.conftest import buildMockSession, buildMockFactory
 
 
 # ---------------------------------------------------------------------------

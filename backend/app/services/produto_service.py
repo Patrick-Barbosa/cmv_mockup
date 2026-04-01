@@ -1,7 +1,8 @@
 from sqlalchemy import select, text, func, delete
 from typing import Literal, Optional, TypeVar
 from pydantic import BaseModel, Field, ConfigDict
-from app.database.models import Produto, ComponenteReceita
+from backend.app.database.models import Produto, ComponenteReceita
+from backend.app.database.session import DB_SCHEMA
 from sqlalchemy.orm import load_only
 from fastapi import HTTPException
 
@@ -29,7 +30,13 @@ class ComponentesReceitaModel(BaseModel):
     custo: Optional[float]      = None
     unidade: Optional[str]      = None
 
-SQL_CTE_RECURSIVO_GET_COMPONENTES_RECEITA = """
+def _qualify_table(table_name: str) -> str:
+    if DB_SCHEMA == "public":
+        return table_name
+    return f'"{DB_SCHEMA}".{table_name}'
+
+
+SQL_CTE_RECURSIVO_GET_COMPONENTES_RECEITA = f"""
 WITH RECURSIVE insumos_recursivo AS (
 -- passo base: pega componentes diretos da receita inicial
 SELECT
@@ -46,12 +53,12 @@ SELECT
     p.custo,
     p.unidade
 FROM 
-    componente_receita AS cr
+    {_qualify_table("componente_receita")} AS cr
     -- Produto insumo
-    INNER JOIN produtos AS p ON
+    INNER JOIN {_qualify_table("produtos")} AS p ON
         p.id = cr.id_componente
     -- Produto receita
-    INNER JOIN produtos AS p_receita ON
+    INNER JOIN {_qualify_table("produtos")} AS p_receita ON
         cr.id_receita = p_receita.id
 WHERE 
     cr.id_receita = :receita_id
@@ -74,13 +81,13 @@ SELECT
     p_comp.unidade
 FROM 
     insumos_recursivo AS ir -- Contém os registros da iteração anterior, id_componente
-    INNER JOIN componente_receita AS cr ON 
+    INNER JOIN {_qualify_table("componente_receita")} AS cr ON 
         cr.id_receita = ir.id_componente
     -- Produto receita
-    INNER JOIN produtos AS p_receita ON
+    INNER JOIN {_qualify_table("produtos")} AS p_receita ON
         p_receita.id = ir.id_componente
     -- Produto insumo
-    INNER JOIN produtos AS p_comp ON -- Produto compoenente da receita.
+    INNER JOIN {_qualify_table("produtos")} AS p_comp ON -- Produto compoenente da receita.
         p_comp.id = cr.id_componente	
 )
 

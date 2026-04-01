@@ -14,4 +14,4 @@ COPY backend/app ./app
 EXPOSE 8000
 
 # Start the app — PORT can be overridden by Koyeb
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
