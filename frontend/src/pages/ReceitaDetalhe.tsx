@@ -45,6 +45,10 @@ function calculateNodeCost(node: MetaNode): number {
   return node.children.reduce((sum, child) => sum + calculateNodeCost(child), 0)
 }
 
+function formatQtd(value: number) {
+  return Number(value.toFixed(4)).toLocaleString('pt-BR')
+}
+
 function formatBRL(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
@@ -89,7 +93,7 @@ function TreeNode({ node }: { node: MetaNode }) {
         <div className="ml-auto flex items-center gap-4 text-[0.78rem]">
           {node.quantidade != null && (
             <span className="text-brand-muted tabular-nums text-xs">
-              {node.quantidade} {node.unidade}
+              {formatQtd(node.quantidade)} {node.unidade || "un."}
             </span>
           )}
           {costDisplay && (
@@ -171,9 +175,10 @@ export default function ReceitaDetalhe() {
   collect(receita)
 
   const summary = leaves.reduce((acc, curr) => {
-    const key = `${curr.id}-${curr.unidade}`
+    const unitFallback = curr.unidade || "un.";
+    const key = `${curr.id}-${unitFallback}`
     if (!acc[key]) {
-      acc[key] = { ...curr, totalCust: (curr.custo || 0) * (curr.quantidade || 0), totalQtd: curr.quantidade || 0 }
+      acc[key] = { ...curr, unidade: unitFallback, totalCust: (curr.custo || 0) * (curr.quantidade || 0), totalQtd: curr.quantidade || 0 }
     } else {
       acc[key].totalQtd += curr.quantidade || 0
       acc[key].totalCust += (curr.custo || 0) * (curr.quantidade || 0)
@@ -195,7 +200,7 @@ export default function ReceitaDetalhe() {
       <FadeUp className="mb-8">
         <h1 className="text-brand-text text-xl font-semibold mb-1">{receita.nome}</h1>
         <p className="text-brand-muted text-sm">
-          Rendimento: {receita.quantidade || "—"} {receita.unidade || ""} · Tipo: Receita ID {id}
+          Rendimento: {receita.quantidade ? formatQtd(receita.quantidade) : "—"} {receita.unidade || "un."} · Tipo: Receita ID {id}
         </p>
       </FadeUp>
 
@@ -235,9 +240,9 @@ export default function ReceitaDetalhe() {
                     <TableRow key={idx} className="border-b border-brand-line/10 last:border-0 hover:bg-brand-line/5 transition-colors">
                       <TableCell className="py-2.5">
                         <span className="text-brand-soft text-sm">{s.nome}</span>
-                        <span className="text-brand-muted text-xs ml-1">({s.unidade || "—"})</span>
+                        <span className="text-brand-muted text-xs ml-1">({s.unidade || "un."})</span>
                       </TableCell>
-                      <TableCell className="py-2.5 text-right text-brand-muted tabular-nums text-sm">{s.totalQtd}</TableCell>
+                      <TableCell className="py-2.5 text-right text-brand-muted tabular-nums text-sm">{formatQtd(s.totalQtd)}</TableCell>
                       <TableCell className="py-2.5 text-right"><span className="text-brand-highlight tabular-nums font-medium text-sm">{formatBRL(s.totalCust)}</span></TableCell>
                     </TableRow>
                   ))}
