@@ -1,7 +1,10 @@
 {
-  "buildCommand": "node frontend/build.js",
-  "outputDirectory": "frontend",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/$1" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ─── LIGHT MODE ─── */
+  /* brand-bg:       #F5F4EE  60° 20% 95%  — warm cream, primary background */
+  /* brand-surface:  #ECEAE2  58° 17% 91%  — alternate sections             */
+  /* brand-surface-2:#E3E1D8  55° 14% 87%  — card backgrounds               */
+  /* brand-text:     #131508  69° 48%  5%  — near-black olive, headings      */
+  /* brand-soft:     #393D28  73° 21% 20%  — subtitles, secondary body       */
+  /* brand-muted:    #696C5B  70°  8% 39%  — labels, captions, footer        */
+  /* brand-line:     #C4C6B5  65°  8% 75%  — borders, dividers               */
+  /* brand-primary:  #526030  80° 32% 28%  — buttons                         */
+  /* brand-highlight:#3E5C1C  88° 52% 23%  — text emphasis, icons, bullets   */
+  /* brand-secondary:#A8349A 306° 53% 43%  — ambient magenta accent          */
+  :root {
+    --background: 60 20% 95%;
+    --foreground: 69 48% 5%;
+
+    --card: 58 17% 91%;
+    --card-foreground: 69 48% 5%;
+
+    --popover: 58 17% 91%;
+    --popover-foreground: 69 48% 5%;
+
+    --primary: 80 32% 28%;
+    --primary-foreground: 60 20% 95%;
+
+    --secondary: 55 14% 87%;
+    --secondary-foreground: 69 48% 5%;
+
+    --muted: 55 14% 87%;
+    --muted-foreground: 70 8% 39%;
+
+    --accent: 55 14% 87%;
+    --accent-foreground: 69 48% 5%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 65 8% 75%;
+    --input: 65 8% 75%;
+    --ring: 88 52% 23%;
+
+    --radius: 0.125rem;
+
+    /* Brand semantic tokens */
+    --brand-bg: 60 20% 95%;
+    --brand-surface: 58 17% 91%;
+    --brand-surface-2: 55 14% 87%;
+    --brand-text: 69 48% 5%;
+    --brand-soft: 73 21% 20%;
+    --brand-muted: 70 8% 39%;
+    --brand-line: 65 8% 75%;
+    --brand-primary: 80 32% 28%;
+    --brand-highlight: 88 52% 23%;
+    --brand-secondary: 306 53% 43%;
+    --brand-primary-hover: 80 34% 33%;
+    --brand-button-text: 60 20% 95%;
+
+    /* SVG arc stroke — uses brand-soft at low opacity: rgba(57,61,40,N) */
+    --circle-stroke: 73 21% 20%;
+    --circle-glow: 62, 92, 28;
+    --glow-magenta: 168, 52, 154;
+  }
+
+  /* ─── DARK MODE ─── */
+  /* brand-bg:        #111307  70° 48%  6%  — main background                */
+  /* brand-surface:   #16190B  74° 38%  8%  — alternate sections             */
+  /* brand-surface-2: #1B1F0F  75° 35% 11%  — card backgrounds               */
+  /* brand-text:      #F5F4EE  50° 25% 95%  — main text                      */
+  /* brand-soft:      #C9C7BA  48° 18% 79%  — secondary text                 */
+  /* brand-muted:     #9B9888  50° 11% 57%  — muted/caption text             */
+  /* brand-line:      #6E725E  66°  9% 40%  — borders, dividers              */
+  /* brand-primary:   #5E6F37  80° 34% 33%  — main buttons                   */
+  /* brand-highlight: #8CB84F  85° 43% 51%  — text emphasis, icons, bullets  */
+  /* brand-secondary: #C94CB6 308° 53% 55%  — ambient magenta accent         */
+  .dark {
+    --background: 70 48% 6%;
+    --foreground: 50 25% 95%;
+
+    --card: 74 38% 8%;
+    --card-foreground: 50 25% 95%;
+
+    --popover: 74 38% 8%;
+    --popover-foreground: 50 25% 95%;
+
+    --primary: 80 34% 33%;
+    --primary-foreground: 50 25% 95%;
+
+    --secondary: 75 35% 11%;
+    --secondary-foreground: 50 25% 95%;
+
+    --muted: 74 38% 8%;
+    --muted-foreground: 50 11% 57%;
+
+    --accent: 75 35% 11%;
+    --accent-foreground: 50 25% 95%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 66 9% 40%;
+    --input: 66 9% 40%;
+    --ring: 85 43% 52%;
+
+    /* Brand semantic tokens */
+    --brand-bg: 70 48% 6%;
+    --brand-surface: 74 38% 8%;
+    --brand-surface-2: 75 35% 11%;
+    --brand-text: 50 25% 95%;
+    --brand-soft: 48 18% 79%;
+    --brand-muted: 50 11% 57%;
+    --brand-line: 66 9% 40%;
+    --brand-primary: 80 34% 33%;
+    --brand-highlight: 85 43% 51%;
+    --brand-secondary: 308 53% 55%;
+    --brand-primary-hover: 80 34% 39%;
+    --brand-button-text: 50 25% 95%;
+
+    /* SVG arc stroke — rgba(110,114,94,N) */
+    --circle-stroke: 66 9% 40%;
+    --circle-glow: 94, 111, 55;
+    --glow-magenta: 201, 76, 182;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    transition: background-color 0.2s ease, color 0.15s ease, border-color 0.2s ease;
+  }
+  body {
+    @apply bg-background text-foreground antialiased font-sans overflow-x-hidden;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Remove spin buttons from number inputs */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}

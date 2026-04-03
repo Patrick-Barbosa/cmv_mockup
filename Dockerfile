@@ -7,8 +7,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project source
-COPY . .
+# Copy only the backend source
+COPY backend/app ./app
 
 # Expose the port Koyeb will route traffic to
 EXPOSE 8000
