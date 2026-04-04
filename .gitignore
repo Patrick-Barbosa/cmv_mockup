@@ -19,7 +19,6 @@ dist/
 .aider*
 /.claude
 /.qwen
-AGENTS.md
 QWEN.md
 
 # Docs to exclude

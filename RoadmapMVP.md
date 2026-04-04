@@ -57,6 +57,12 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [ ] Exportação de Relatórios
 
 ---
+### Side-tasks
+
+- [x] Remover pycache do repositório
+- [x] Criar instrucoes oficiais para os agentes
+
+---
 
 ## Detalhamento das Tarefas
 
