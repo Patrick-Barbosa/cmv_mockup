@@ -1,4 +1,4 @@
-from sqlalchemy import select, text, func, delete
+from sqlalchemy import select, text, func, delete, update, case, and_, literal
 from typing import Literal, Optional, TypeVar
 from pydantic import BaseModel, Field, ConfigDict
 from backend.app.database.models import Produto, ComponenteReceita
@@ -133,23 +133,20 @@ class ProdutoService:
             Produto.unidade, Produto.quantidade_referencia, Produto.preco_referencia,
             Produto.quantidade_base
         ))
-        query_total = select(func.count())
         if q:
             query = query.where(Produto.nome.ilike(f"%{q}%"))
-            query_total = query_total.where(Produto.nome.ilike(f"%{q}%"))
-
-        result_total = await self.session.execute(query_total)
-        total = result_total.scalar_one()
 
         query = (
             query
             .order_by(Produto.id)
             .offset((page-1)*per_page)
-            .limit(per_page)
+            .limit(per_page + 1)
         )
 
         result_items = await self.session.execute(query)
         items = result_items.scalars().all()
+        has_more = len(items) > per_page
+        items = items[:per_page]
 
         data = {
             'items': [{
@@ -163,7 +160,7 @@ class ProdutoService:
                 'quantidade_base': p.quantidade_base,
             } for p in items],
             'pagination': {
-                'more': total > page*per_page
+                'more': has_more
             }
         }
 
@@ -250,9 +247,57 @@ class ProdutoService:
         await self.session.commit()
         return insumo
 
+    async def edit_insumo_gramatura_v2(
+        self, insumo_id: int,
+        nome: Optional[str],
+        unidade: Optional[str],
+        quantidade_referencia: Optional[float],
+        preco_referencia: Optional[float],
+    ) -> Produto:
+        """Atualiza insumo com uma única operação SQL usando UPDATE ... RETURNING."""
+        values_to_update = {}
+
+        if nome is not None:
+            values_to_update["nome"] = nome
+        if unidade is not None:
+            values_to_update["unidade"] = unidade
+        if quantidade_referencia is not None:
+            values_to_update["quantidade_referencia"] = quantidade_referencia
+        if preco_referencia is not None:
+            values_to_update["preco_referencia"] = preco_referencia
+
+        qtd_expr = func.coalesce(literal(quantidade_referencia), Produto.quantidade_referencia)
+        preco_expr = func.coalesce(literal(preco_referencia), Produto.preco_referencia)
+
+        values_to_update["custo"] = case(
+            (
+                and_(
+                    qtd_expr.is_not(None),
+                    qtd_expr > 0,
+                    preco_expr.is_not(None),
+                ),
+                preco_expr / qtd_expr,
+            ),
+            else_=Produto.custo,
+        )
+
+        stmt = (
+            update(Produto)
+            .where(Produto.id == insumo_id, Produto.tipo == 'insumo')
+            .values(**values_to_update)
+            .returning(Produto)
+        )
+
+        result = await self.session.execute(stmt)
+        insumo = result.scalar_one_or_none()
+        if not insumo:
+            raise HTTPException(status_code=404, detail=f"Insumo com id={insumo_id} não encontrado.")
+
+        await self.session.commit()
+        return insumo
+
     async def get_componentes_diretos(self, receita_id: int) -> list[dict]:
         """Retorna componentes diretos (1 nível) de uma receita com dados do insumo."""
-        from sqlalchemy import and_
         result = await self.session.execute(
             select(
                 ComponenteReceita.id_componente,

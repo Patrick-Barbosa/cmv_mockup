@@ -17,6 +17,7 @@ env/
 
 # Tests
 tests/
+backend/tests/
 
 # Dev tools & IDE
 .roo/
