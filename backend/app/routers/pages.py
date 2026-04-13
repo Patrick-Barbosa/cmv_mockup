@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.future import select
-from app.database.session import db_session
-from app.database.models import Produto
-from app.services.produto_service import ProdutoService
+from backend.app.database.session import db_session
+from backend.app.database.models import Produto
+from backend.app.services.produto_service import ProdutoService
 
 router = APIRouter()
 

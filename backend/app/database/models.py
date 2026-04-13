@@ -4,8 +4,6 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
-DATABASE_URL = "postgresql+asyncpg://postgres:123@localhost/cmv_00"
-
 Base = declarative_base()
 
 

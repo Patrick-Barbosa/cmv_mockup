@@ -7,11 +7,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy only the backend source
-COPY backend/app ./app
+# Copy only the backend runtime source
+COPY backend ./backend
 
 # Expose the port Koyeb will route traffic to
 EXPOSE 8000
 
 # Start the app — PORT can be overridden by Koyeb
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from app.database.session import db_session
-from app.schemas.receita import CreateRecipeModel, EditReceitaModel
-from app.services.produto_service import ProdutoService
+from backend.app.database.session import db_session
+from backend.app.schemas.receita import CreateRecipeModel, EditReceitaModel
+from backend.app.services.produto_service import ProdutoService
 
 router = APIRouter(prefix="/api")
 

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional
-from app.schemas.common import UNIDADES_PADRAO
+from backend.app.schemas.common import UNIDADES_PADRAO
 
 
 class CreateProductModel(BaseModel):
