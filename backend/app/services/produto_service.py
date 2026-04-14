@@ -401,6 +401,19 @@ class ProdutoService:
         if not receita:
             raise HTTPException(status_code=404, detail=f"Receita com id={receita_id} não encontrada.")
 
+        # Check if this recipe is used as a component in another recipe
+        uso_result = await self.session.execute(
+            select(ComponenteReceita)
+            .where(ComponenteReceita.id_componente == receita_id)
+            .limit(1)
+        )
+        em_uso = uso_result.scalar_one_or_none()
+        if em_uso:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Receita com id={receita_id} está sendo usada como componente de outra receita e não pode ser deletada."
+            )
+
         # Remove os componentes da receita primeiro
         await self.session.execute(
             delete(ComponenteReceita).where(ComponenteReceita.id_receita == receita_id)

@@ -78,21 +78,25 @@ export default function Insumos() {
           editingId ? prev.map((i) => (i.id === editingId ? newData : i)) : [newData, ...prev]
         )
       } else {
-        const payload = {
-          nome,
-          unidade,
-          quantidade_referencia: parsedQtd,
-          preco_referencia: parsedPreco,
-        }
         if (editingId) {
-          await insumosApi.edit(editingId, payload)
+          await insumosApi.edit(editingId, {
+            nome: nome || undefined,
+            unidade: unidade || undefined,
+            quantidade_referencia: parsedQtd,
+            preco_referencia: parsedPreco,
+          })
           setInsumos((prev) =>
             prev.map((i) =>
               i.id === editingId ? { ...i, nome, unidade, qtdRef: parsedQtd, precoRef: parsedPreco } : i
             )
           )
         } else {
-          const res = await insumosApi.create(payload)
+          const res = await insumosApi.create({
+            nome,
+            unidade,
+            quantidade_referencia: parsedQtd,
+            preco_referencia: parsedPreco,
+          })
           setInsumos((prev) => [
             { id: res.id, nome, unidade, qtdRef: parsedQtd, precoRef: parsedPreco },
             ...prev,
@@ -192,7 +196,7 @@ export default function Insumos() {
                   <SelectValue placeholder="Selecione…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {["kg", "g", "l", "ml", "un", "lt", "cx"].map((u) => (
+                  {["kg", "g", "l", "ml", "un", "pct", "cx"].map((u) => (
                     <SelectItem key={u} value={u}>{u}</SelectItem>
                   ))}
                 </SelectContent>

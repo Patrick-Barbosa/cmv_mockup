@@ -108,10 +108,10 @@ export interface CreateInsumoPayload {
 }
 
 export interface EditInsumoPayload {
-  nome: string;
-  unidade: string;
-  quantidade_referencia: number;
-  preco_referencia: number;
+  nome?: string;
+  unidade?: string;
+  quantidade_referencia?: number;
+  preco_referencia?: number;
 }
 
 export interface ComponentePayload {

@@ -23,8 +23,8 @@ class Produto(Base):
     CheckConstraint("tipo IN ('receita', 'insumo')", name="tipo_check"),
   )
 
-  componentes = relationship("ComponenteReceita", back_populates="receita", foreign_keys='ComponenteReceita.id_receita')
-  usado_em = relationship("ComponenteReceita", back_populates="componente", foreign_keys='ComponenteReceita.id_componente')
+  componentes = relationship("ComponenteReceita", back_populates="receita", foreign_keys='ComponenteReceita.id_receita', passive_deletes=True)
+  usado_em = relationship("ComponenteReceita", back_populates="componente", foreign_keys='ComponenteReceita.id_componente', passive_deletes=True)
 
 class ComponenteReceita(Base):
   __tablename__ = 'componente_receita'
