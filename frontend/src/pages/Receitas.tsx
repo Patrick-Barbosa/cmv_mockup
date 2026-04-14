@@ -343,7 +343,7 @@ export default function Receitas() {
                   <SelectValue placeholder="Selecione…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {["porções", "kg", "g", "l", "ml", "un"].map((u) => (
+                  {["kg", "g", "l", "ml", "un", "pct"].map((u) => (
                     <SelectItem key={u} value={u}>{u}</SelectItem>
                   ))}
                 </SelectContent>
