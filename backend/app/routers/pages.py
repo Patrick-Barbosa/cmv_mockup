@@ -28,7 +28,7 @@ async def receitas():
         produtos: list[Produto] = result.scalars().all()
 
     return JSONResponse([
-        {"id": p.id, "nome": p.nome, "tipo": p.tipo}
+        {"id": p.id, "nome": p.nome, "tipo": p.tipo, "id_produto_externo": p.id_produto_externo}
         for p in produtos
     ])
 
@@ -47,6 +47,7 @@ async def receitas_view(receita_id: int):
         "tipo": receita.tipo,
         "quantidade": receita.quantidade_base,
         "unidade": receita.unidade,
+        "id_produto_externo": receita.id_produto_externo,
     }
 
     def get_children(f_componentes, key):
@@ -80,6 +81,6 @@ async def insumos_home():
         produtos: list[Produto] = result.scalars().all()
 
     return JSONResponse([
-        {"id": p.id, "nome": p.nome, "tipo": p.tipo}
+        {"id": p.id, "nome": p.nome, "tipo": p.tipo, "id_produto_externo": p.id_produto_externo}
         for p in produtos
     ])

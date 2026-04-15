@@ -121,7 +121,7 @@ class ProdutoService:
         if receita:
             return receita
         
-        raise Exception(f"Receita com id={receita_id} não encontrada.")
+        raise HTTPException(status_code=404, detail=f"Receita com id={receita_id} não encontrada.")
     
 
     async def get_produtos_paginated_select2(self, q: str, page: int, per_page: int):
@@ -131,7 +131,7 @@ class ProdutoService:
         query = select(Produto).options(load_only(
             Produto.id, Produto.nome, Produto.tipo, Produto.custo,
             Produto.unidade, Produto.quantidade_referencia, Produto.preco_referencia,
-            Produto.quantidade_base
+            Produto.quantidade_base, Produto.id_produto_externo
         ))
         if q:
             query = query.where(Produto.nome.ilike(f"%{q}%"))
@@ -158,6 +158,7 @@ class ProdutoService:
                 'quantidade_referencia': p.quantidade_referencia,
                 'preco_referencia': p.preco_referencia,
                 'quantidade_base': p.quantidade_base,
+                'id_produto_externo': p.id_produto_externo,
             } for p in items],
             'pagination': {
                 'more': has_more
@@ -165,10 +166,36 @@ class ProdutoService:
         }
 
         return data
+
+    async def ensure_external_product_id_available(
+        self,
+        id_produto_externo: Optional[str],
+        current_product_id: Optional[int] = None,
+    ) -> None:
+        if not id_produto_externo:
+            return
+
+        result = await self.session.execute(
+            select(Produto).where(Produto.id_produto_externo == id_produto_externo)
+        )
+        existing = result.scalar_one_or_none()
+        if existing and existing.id != current_product_id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"id_produto_externo '{id_produto_externo}' já está vinculado ao produto '{existing.nome}'.",
+            )
     
 
     async def create_recipe(self, payload: T) -> int:
-        receita = Produto(nome=payload.nome, tipo='receita', quantidade_base=payload.quantidade_base, unidade=payload.unidade)
+        await self.ensure_external_product_id_available(getattr(payload, "id_produto_externo", None))
+
+        receita = Produto(
+            nome=payload.nome,
+            tipo='receita',
+            quantidade_base=payload.quantidade_base,
+            unidade=payload.unidade,
+            id_produto_externo=getattr(payload, "id_produto_externo", None),
+        )
         # adiciona a receita à sessão
         self.session.add(receita)
         # faz o INSERT e popula receita.id
@@ -221,6 +248,8 @@ class ProdutoService:
         unidade: Optional[str],
         quantidade_referencia: Optional[float],
         preco_referencia: Optional[float],
+        id_produto_externo: Optional[str] = None,
+        update_id_produto_externo: bool = False,
     ) -> Produto:
         result = await self.session.execute(
             select(Produto).where(Produto.id == insumo_id, Produto.tipo == 'insumo')
@@ -228,6 +257,9 @@ class ProdutoService:
         insumo = result.scalar_one_or_none()
         if not insumo:
             raise HTTPException(status_code=404, detail=f"Insumo com id={insumo_id} não encontrado.")
+
+        if update_id_produto_externo:
+            await self.ensure_external_product_id_available(id_produto_externo, insumo_id)
 
         if nome is not None:
             insumo.nome = nome
@@ -237,6 +269,8 @@ class ProdutoService:
             insumo.quantidade_referencia = quantidade_referencia
         if preco_referencia is not None:
             insumo.preco_referencia = preco_referencia
+        if update_id_produto_externo:
+            insumo.id_produto_externo = id_produto_externo
 
         # Recalcular custo unitário se ambos os valores existem
         qtd_ref = quantidade_referencia if quantidade_referencia is not None else insumo.quantidade_referencia
@@ -253,9 +287,14 @@ class ProdutoService:
         unidade: Optional[str],
         quantidade_referencia: Optional[float],
         preco_referencia: Optional[float],
+        id_produto_externo: Optional[str] = None,
+        update_id_produto_externo: bool = False,
     ) -> Produto:
         """Atualiza insumo com uma única operação SQL usando UPDATE ... RETURNING."""
         values_to_update = {}
+
+        if update_id_produto_externo:
+            await self.ensure_external_product_id_available(id_produto_externo, insumo_id)
 
         if nome is not None:
             values_to_update["nome"] = nome
@@ -265,6 +304,8 @@ class ProdutoService:
             values_to_update["quantidade_referencia"] = quantidade_referencia
         if preco_referencia is not None:
             values_to_update["preco_referencia"] = preco_referencia
+        if update_id_produto_externo:
+            values_to_update["id_produto_externo"] = id_produto_externo
 
         qtd_expr = func.coalesce(literal(quantidade_referencia), Produto.quantidade_referencia)
         preco_expr = func.coalesce(literal(preco_referencia), Produto.preco_referencia)
@@ -357,7 +398,16 @@ class ProdutoService:
         await self.session.delete(insumo)
         await self.session.commit()
 
-    async def edit_receita(self, receita_id: int, nome: Optional[str], quantidade_base: Optional[float], unidade: Optional[str], componentes) -> Produto:
+    async def edit_receita(
+        self,
+        receita_id: int,
+        nome: Optional[str],
+        quantidade_base: Optional[float],
+        unidade: Optional[str],
+        id_produto_externo: Optional[str],
+        update_id_produto_externo: bool,
+        componentes,
+    ) -> Produto:
         result = await self.session.execute(
             select(Produto).where(Produto.id == receita_id, Produto.tipo == 'receita')
         )
@@ -365,12 +415,17 @@ class ProdutoService:
         if not receita:
             raise HTTPException(status_code=404, detail=f"Receita com id={receita_id} não encontrada.")
 
+        if update_id_produto_externo:
+            await self.ensure_external_product_id_available(id_produto_externo, receita_id)
+
         if nome is not None:
             receita.nome = nome
         if quantidade_base is not None:
             receita.quantidade_base = quantidade_base
         if unidade is not None:
             receita.unidade = unidade
+        if update_id_produto_externo:
+            receita.id_produto_externo = id_produto_externo
 
         if componentes is not None:
             # Remove todos os componentes atuais da receita

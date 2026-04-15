@@ -9,6 +9,7 @@ class CreateProductModel(BaseModel):
     unidade: str
     quantidade_referencia: float
     preco_referencia: float
+    id_produto_externo: Optional[str] = None
 
     @field_validator('unidade')
     @classmethod
@@ -31,6 +32,14 @@ class CreateProductModel(BaseModel):
             raise ValueError("Preço de referência não pode ser negativo.")
         return v
 
+    @field_validator('id_produto_externo', mode='before')
+    @classmethod
+    def _normalizeIdProdutoExterno(cls, v):
+        if v is None:
+            return None
+        text = str(v).strip()
+        return text or None
+
 
 class UpdateCustoModel(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -52,6 +61,7 @@ class EditInsumoModel(BaseModel):
     unidade: Optional[str] = None
     quantidade_referencia: Optional[float] = None
     preco_referencia: Optional[float] = None
+    id_produto_externo: Optional[str] = None
 
     @field_validator('unidade')
     @classmethod
@@ -73,3 +83,11 @@ class EditInsumoModel(BaseModel):
         if v is not None and v < 0:
             raise ValueError("Preço de referência não pode ser negativo.")
         return v
+
+    @field_validator('id_produto_externo', mode='before')
+    @classmethod
+    def _normalizeIdProdutoExterno(cls, v):
+        if v is None:
+            return None
+        text = str(v).strip()
+        return text or None

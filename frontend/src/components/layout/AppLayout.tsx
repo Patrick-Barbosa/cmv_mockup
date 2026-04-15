@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom"
-import { Box, Layers, PieChart, TrendingUp, Sun, Moon } from "lucide-react"
+import { Box, FileSpreadsheet, Layers, Moon, PieChart, Store, Sun, TrendingUp } from "lucide-react"
 import { useTheme } from "@/components/ThemeProvider"
 
 export function AppLayout() {
@@ -46,8 +46,30 @@ export function AppLayout() {
             <Layers className="w-3.5 h-3.5" />
             Receitas
           </Link>
+          <Link
+            to="/vendas"
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-[2px] text-[0.82rem] font-medium transition-colors ${
+              location.pathname.startsWith("/vendas")
+                ? "text-brand-highlight bg-brand-highlight/10"
+                : "text-brand-muted hover:text-brand-soft hover:bg-brand-line/10"
+            }`}
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            Vendas
+          </Link>
           <div className="border-t border-brand-line/15 my-4"></div>
           <p className="text-brand-muted text-[0.65rem] tracking-[0.15em] uppercase font-medium px-3 mb-2">Análise</p>
+          <Link
+            to="/lojas"
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-[2px] text-[0.82rem] font-medium transition-colors ${
+              location.pathname.startsWith("/lojas")
+                ? "text-brand-highlight bg-brand-highlight/10"
+                : "text-brand-muted hover:text-brand-soft hover:bg-brand-line/10"
+            }`}
+          >
+            <Store className="w-3.5 h-3.5" />
+            Lojas
+          </Link>
           <div className="flex items-center gap-2.5 px-3 py-2 opacity-50 pointer-events-none text-brand-muted text-[0.82rem] font-medium">
             <TrendingUp className="w-3.5 h-3.5" />
             CMV
@@ -83,13 +105,21 @@ export function AppLayout() {
             </span>
             <span className="font-semibold text-base tracking-tight text-brand-text">Prato</span>
           </Link>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap justify-end">
             <Link to="/insumos" className={`text-xs ${location.pathname === "/insumos" ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
               Insumos
             </Link>
             <span className="text-brand-line/50">|</span>
             <Link to="/receitas" className={`text-xs ${location.pathname.startsWith("/receitas") ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
               Receitas
+            </Link>
+            <span className="text-brand-line/50">|</span>
+            <Link to="/vendas" className={`text-xs ${location.pathname.startsWith("/vendas") ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
+              Vendas
+            </Link>
+            <span className="text-brand-line/50">|</span>
+            <Link to="/lojas" className={`text-xs ${location.pathname.startsWith("/lojas") ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
+              Lojas
             </Link>
             <span className="text-brand-line/50">|</span>
             <button
@@ -111,5 +141,4 @@ export function AppLayout() {
     </div>
   )
 }
-
 

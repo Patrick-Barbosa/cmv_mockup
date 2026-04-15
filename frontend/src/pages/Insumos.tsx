@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { FadeUp } from "@/components/ui/fade-up"
-import { Edit2, Trash2, AlertCircle, Plus, Loader2 } from "lucide-react"
+import { AlertCircle, Edit2, Link2, Loader2, Plus, Trash2 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -15,13 +15,13 @@ export interface Insumo {
   unidade: string
   qtdRef: number
   precoRef: number
+  idProdutoExterno: string
 }
 
-// ── Fallback mock data (used when VITE_BACKEND_URL is not set) ──────────────
 const mockInsumos: Insumo[] = [
-  { id: 1, nome: "Filé de Frango", unidade: "kg", qtdRef: 1, precoRef: 22.5 },
-  { id: 2, nome: "Azeite Extra Virgem", unidade: "l", qtdRef: 5, precoRef: 180.0 },
-  { id: 3, nome: "Tomate Pelati", unidade: "lt", qtdRef: 2.5, precoRef: 45.0 },
+  { id: 1, nome: "Filé de Frango", unidade: "kg", qtdRef: 1, precoRef: 22.5, idProdutoExterno: "" },
+  { id: 2, nome: "Azeite Extra Virgem", unidade: "l", qtdRef: 5, precoRef: 180.0, idProdutoExterno: "" },
+  { id: 3, nome: "Tomate Pelati", unidade: "lt", qtdRef: 2.5, precoRef: 45.0, idProdutoExterno: "SKU-TOMATE-001" },
 ]
 
 export default function Insumos() {
@@ -37,76 +37,115 @@ export default function Insumos() {
   const [unidade, setUnidade] = useState("")
   const [qtdRef, setQtdRef] = useState("")
   const [precoRef, setPrecoRef] = useState("")
+  const [idProdutoExterno, setIdProdutoExterno] = useState("")
 
-  // ── Load from API on mount ────────────────────────────────────────────────
   useEffect(() => {
     if (IS_MOCK) return
+
     insumosApi.list()
       .then((data) => {
-        // get_produtos_select2 returns full data: unidade, quantidade_referencia, preco_referencia
-        setInsumos(data.map((d) => ({
-          id: d.id,
-          nome: d.nome,
-          unidade: d.unidade ?? "",
-          qtdRef: d.quantidade_referencia ?? 0,
-          precoRef: d.preco_referencia ?? 0,
+        setInsumos(data.map((item) => ({
+          id: item.id,
+          nome: item.nome,
+          unidade: item.unidade ?? "",
+          qtdRef: item.quantidade_referencia ?? 0,
+          precoRef: item.preco_referencia ?? 0,
+          idProdutoExterno: item.id_produto_externo ?? "",
         })))
       })
-      .catch((e) => setError(e.message))
+      .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
 
-  // ── Derived ───────────────────────────────────────────────────────────────
   const parsedQtd = parseFloat(qtdRef)
   const parsedPreco = parseFloat(precoRef.replace(",", "."))
   const custoUn =
-    !isNaN(parsedQtd) && parsedQtd > 0 && !isNaN(parsedPreco)
+    !Number.isNaN(parsedQtd) && parsedQtd > 0 && !Number.isNaN(parsedPreco)
       ? parsedPreco / parsedQtd
       : null
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  const externalLinksCount = useMemo(
+    () => insumos.filter((item) => item.idProdutoExterno.trim()).length,
+    [insumos],
+  )
+
+  const breakdown = useMemo(() => {
+    const acc: Record<string, number> = {}
+    for (const item of insumos) {
+      if (item.unidade) {
+        acc[item.unidade] = (acc[item.unidade] || 0) + 1
+      }
+    }
+    return Object.entries(acc).sort((a, b) => b[1] - a[1])
+  }, [insumos])
+
   const handleSalvar = async () => {
-    if (!nome || !unidade || !parsedQtd || isNaN(parsedPreco)) return
+    if (!nome || !unidade || !parsedQtd || Number.isNaN(parsedPreco)) {
+      return
+    }
+
+    const normalizedExternalId = idProdutoExterno.trim()
     setSaving(true)
     try {
       if (IS_MOCK) {
-        const newData: Insumo = {
+        const nextItem: Insumo = {
           id: editingId ?? Date.now(),
-          nome, unidade, qtdRef: parsedQtd, precoRef: parsedPreco,
+          nome,
+          unidade,
+          qtdRef: parsedQtd,
+          precoRef: parsedPreco,
+          idProdutoExterno: normalizedExternalId,
         }
+
         setInsumos((prev) =>
-          editingId ? prev.map((i) => (i.id === editingId ? newData : i)) : [newData, ...prev]
+          editingId
+            ? prev.map((item) => (item.id === editingId ? nextItem : item))
+            : [nextItem, ...prev]
         )
       } else {
+        const payload = {
+          nome,
+          unidade,
+          quantidade_referencia: parsedQtd,
+          preco_referencia: parsedPreco,
+          id_produto_externo: normalizedExternalId || null,
+        }
         if (editingId) {
-          await insumosApi.edit(editingId, {
-            nome: nome || undefined,
-            unidade: unidade || undefined,
-            quantidade_referencia: parsedQtd,
-            preco_referencia: parsedPreco,
-          })
+          await insumosApi.edit(editingId, payload)
           setInsumos((prev) =>
-            prev.map((i) =>
-              i.id === editingId ? { ...i, nome, unidade, qtdRef: parsedQtd, precoRef: parsedPreco } : i
+            prev.map((item) =>
+              item.id === editingId
+                ? {
+                    ...item,
+                    nome,
+                    unidade,
+                    qtdRef: parsedQtd,
+                    precoRef: parsedPreco,
+                    idProdutoExterno: normalizedExternalId,
+                  }
+                : item
             )
           )
         } else {
-          const res = await insumosApi.create({
-            nome,
-            unidade,
-            quantidade_referencia: parsedQtd,
-            preco_referencia: parsedPreco,
-          })
+          const res = await insumosApi.create(payload)
           setInsumos((prev) => [
-            { id: res.id, nome, unidade, qtdRef: parsedQtd, precoRef: parsedPreco },
+            {
+              id: res.id,
+              nome,
+              unidade,
+              qtdRef: parsedQtd,
+              precoRef: parsedPreco,
+              idProdutoExterno: normalizedExternalId,
+            },
             ...prev,
           ])
         }
       }
+
       handleClear()
       setIsDialogOpen(false)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao salvar insumo.")
     } finally {
       setSaving(false)
     }
@@ -114,10 +153,12 @@ export default function Insumos() {
 
   const handleDelete = async (id: number) => {
     try {
-      if (!IS_MOCK) await insumosApi.delete(id)
-      setInsumos((prev) => prev.filter((i) => i.id !== id))
-    } catch (e: any) {
-      setError(e.message)
+      if (!IS_MOCK) {
+        await insumosApi.delete(id)
+      }
+      setInsumos((prev) => prev.filter((item) => item.id !== id))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao remover insumo.")
     }
   }
 
@@ -127,7 +168,17 @@ export default function Insumos() {
     setUnidade(item.unidade)
     setQtdRef(item.qtdRef.toString())
     setPrecoRef(item.precoRef.toString().replace(".", ","))
+    setIdProdutoExterno(item.idProdutoExterno)
     setIsDialogOpen(true)
+  }
+
+  const handleClear = () => {
+    setNome("")
+    setUnidade("")
+    setQtdRef("")
+    setPrecoRef("")
+    setIdProdutoExterno("")
+    setEditingId(null)
   }
 
   const onOpenNew = () => {
@@ -135,17 +186,6 @@ export default function Insumos() {
     setIsDialogOpen(true)
   }
 
-  const handleClear = () => {
-    setNome(""); setUnidade(""); setQtdRef(""); setPrecoRef(""); setEditingId(null)
-  }
-
-  const breakdown = useMemo(() => {
-    const acc: Record<string, number> = {}
-    insumos.forEach((i) => { if (i.unidade) acc[i.unidade] = (acc[i.unidade] || 0) + 1 })
-    return Object.entries(acc).sort((a, b) => b[1] - a[1])
-  }, [insumos])
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <FadeUp>
       <div className="mb-10 flex items-center justify-between">
@@ -153,7 +193,7 @@ export default function Insumos() {
           <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Insumos</p>
           <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Insumos</h1>
           <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">
-            Cadastre os itens que alimentam o cálculo de custo da operação.
+            Cadastre os itens que alimentam o cálculo de custo e, se fizer sentido, vincule o identificador externo usado nas vendas.
           </p>
         </div>
         <Button onClick={onOpenNew} className="hidden sm:flex bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover shadow-sm">
@@ -161,7 +201,6 @@ export default function Insumos() {
         </Button>
       </div>
 
-      {/* Error banner */}
       {error && (
         <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-sm px-4 py-3 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
@@ -189,6 +228,21 @@ export default function Insumos() {
                 className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
               />
             </div>
+
+            <div className="sm:col-span-2 space-y-2">
+              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">ID do produto externo</Label>
+              <Input
+                type="text"
+                value={idProdutoExterno}
+                onChange={(e) => setIdProdutoExterno(e.target.value)}
+                placeholder="Opcional. Ex.: SKU-FRANGO-001"
+                className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+              />
+              <p className="text-brand-muted text-[0.7rem] leading-relaxed">
+                Use este campo para ligar o insumo a um `id_produto` vindo do arquivo de vendas.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Unidade de medida</Label>
               <Select value={unidade} onValueChange={setUnidade}>
@@ -196,12 +250,13 @@ export default function Insumos() {
                   <SelectValue placeholder="Selecione…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {["kg", "g", "l", "ml", "un", "pct", "cx"].map((u) => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  {["kg", "g", "l", "ml", "un", "lt", "pct", "cx"].map((option) => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Quantidade de referência</Label>
               <Input
@@ -212,6 +267,7 @@ export default function Insumos() {
                 className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
               />
             </div>
+
             <div className="space-y-2">
               <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Preço de referência</Label>
               <div className="relative">
@@ -262,7 +318,6 @@ export default function Insumos() {
             </Button>
           </div>
 
-          {/* Table */}
           <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">
               <h2 className="text-brand-soft text-sm font-medium">Insumos cadastrados</h2>
@@ -286,6 +341,7 @@ export default function Insumos() {
                   <TableHeader>
                     <TableRow className="border-b border-brand-line/20 text-brand-muted text-[0.72rem] tracking-[0.08em] uppercase hover:bg-transparent">
                       <TableHead className="font-medium h-10">Insumo</TableHead>
+                      <TableHead className="font-medium h-10">ID Externo</TableHead>
                       <TableHead className="font-medium h-10">Unidade</TableHead>
                       <TableHead className="font-medium h-10">Qtd Ref.</TableHead>
                       <TableHead className="font-medium h-10">Preço Ref.</TableHead>
@@ -297,6 +353,12 @@ export default function Insumos() {
                     {insumos.map((item) => (
                       <TableRow key={item.id} className="border-b border-brand-line/10 hover:bg-brand-line/5 transition-colors">
                         <TableCell className="font-medium text-brand-text">{item.nome}</TableCell>
+                        <TableCell className="text-brand-muted">
+                          {item.idProdutoExterno
+                            ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-highlight/10 text-brand-highlight rounded-[2px] text-[0.72rem] font-medium border border-brand-highlight/20"><Link2 className="w-3 h-3" />{item.idProdutoExterno}</span>
+                            : <span className="text-brand-muted/40 text-xs">—</span>
+                          }
+                        </TableCell>
                         <TableCell className="text-brand-muted">
                           {item.unidade
                             ? <span className="px-2 py-0.5 bg-brand-surface rounded-[2px] text-[0.72rem] font-medium border border-brand-line/20">{item.unidade}</span>
@@ -331,13 +393,19 @@ export default function Insumos() {
           </div>
         </div>
 
-        {/* Right Sidebar Stats */}
         <div className="flex flex-col gap-4">
           <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
             <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Total cadastrado</p>
             <p className="text-brand-highlight text-3xl font-light tabular-nums">{insumos.length}</p>
             <p className="text-brand-muted text-xs mt-1">insumos na base</p>
           </div>
+
+          <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
+            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Vínculos de venda</p>
+            <p className="text-brand-highlight text-3xl font-light tabular-nums">{externalLinksCount}</p>
+            <p className="text-brand-muted text-xs mt-1">insumos com `id_produto_externo`</p>
+          </div>
+
           <div className="bg-brand-surface border border-brand-line/15 rounded-[2px] p-5">
             <div className="flex items-start gap-3">
               <span className="text-brand-highlight mt-0.5 shrink-0">
@@ -346,7 +414,7 @@ export default function Insumos() {
               <p className="text-brand-muted text-xs leading-relaxed">
                 {IS_MOCK
                   ? "Modo demo — configure VITE_BACKEND_URL para conectar ao backend."
-                  : "Cada insumo cadastrado aqui alimenta automaticamente o cálculo de custo das receitas."}
+                  : "O vínculo externo é opcional e serve para cruzar o insumo com o arquivo de vendas por loja e por mês."}
               </p>
             </div>
           </div>
@@ -355,12 +423,12 @@ export default function Insumos() {
             <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
               <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Por unidade</p>
               <div className="flex flex-col gap-2">
-                {breakdown.map(([u, c]) => (
-                  <div key={u} className="flex items-center justify-between">
-                    <span className="text-brand-soft text-xs font-medium">{u}</span>
+                {breakdown.map(([unit, count]) => (
+                  <div key={unit} className="flex items-center justify-between">
+                    <span className="text-brand-soft text-xs font-medium">{unit}</span>
                     <div className="flex items-center gap-2">
-                      <div className="h-1.5 rounded-full bg-brand-primary/60" style={{ width: Math.max(20, c * 18) }} />
-                      <span className="text-brand-muted text-xs tabular-nums">{c}</span>
+                      <div className="h-1.5 rounded-full bg-brand-primary/60" style={{ width: Math.max(20, count * 18) }} />
+                      <span className="text-brand-muted text-xs tabular-nums">{count}</span>
                     </div>
                   </div>
                 ))}

@@ -1,73 +1,138 @@
-import { useState, useEffect } from "react"
-import { useParams, Link } from "react-router-dom"
+import { useEffect, useMemo, useState } from "react"
+import { Link, useParams } from "react-router-dom"
+import { AlertCircle, ArrowLeft, Box, ChevronRight, Layers, Link2, Loader2, Store } from "lucide-react"
 import { FadeUp } from "@/components/ui/fade-up"
-import { ArrowLeft, ChevronRight, Box, Layers } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { IS_MOCK, receitasApi } from "@/lib/api"
+import type { ProductSalesAnalysisResponse, ReceitaTreeDetalhe } from "@/lib/api"
 
-import { receitasApi, IS_MOCK } from "@/lib/api"
-import type { ReceitaTreeDetalhe } from "@/lib/api"
-import { Loader2, AlertCircle } from "lucide-react"
-
-// MetaNode is the same structure as ReceitaTreeDetalhe from the backend
 type MetaNode = ReceitaTreeDetalhe
 
 const mockTree: MetaNode = {
-  id: "r1",
-  nome: "Molho de Tomate Rústico",
+  id: 2,
+  nome: "Brownie recheado",
   tipo: "receita",
-  unidade: "l",
-  quantidade: 2,
+  unidade: "un",
+  quantidade: 1,
+  id_produto_externo: "BROWNIE-001",
   children: [
     {
-      id: "i2",
-      nome: "Azeite Extra Virgem",
-      tipo: "insumo",
-      unidade: "l",
-      quantidade: 0.1,
-      custo: 18.0
+      id: 3,
+      nome: "Brownie base",
+      tipo: "receita",
+      unidade: "kg",
+      quantidade: 0.12,
+      children: [
+        {
+          id: 10,
+          nome: "Chocolate em po",
+          tipo: "insumo",
+          unidade: "g",
+          quantidade: 30,
+          custo: 0.038,
+        },
+        {
+          id: 11,
+          nome: "Farinha de trigo",
+          tipo: "insumo",
+          unidade: "g",
+          quantidade: 60,
+          custo: 0.0059,
+        },
+      ],
     },
     {
-      id: "i3",
-      nome: "Tomate Pelati",
-      tipo: "insumo",
-      unidade: "lt",
-      quantidade: 2.5,
-      custo: 45.0
-    }
-  ]
+      id: 4,
+      nome: "Brigadeiro",
+      tipo: "receita",
+      unidade: "kg",
+      quantidade: 0.06,
+      children: [
+        {
+          id: 12,
+          nome: "Leite condensado",
+          tipo: "insumo",
+          unidade: "g",
+          quantidade: 80,
+          custo: 0.021,
+        },
+      ],
+    },
+  ],
+}
+
+const mockSalesAnalysis: ProductSalesAnalysisResponse = {
+  produto: {
+    id: 2,
+    nome: "Brownie recheado",
+    tipo: "receita",
+    id_produto_externo: "BROWNIE-001",
+    custo_unitario_ideal: 3.58,
+  },
+  possui_vinculo_externo: true,
+  linhas: [
+    {
+      mes: "2026-04",
+      loja_id: "RJ-COPA",
+      quantidade_total: 24,
+      valor_total: 300,
+      preco_medio: 12.5,
+      custo_unitario_ideal: 3.58,
+      custo_ideal_total: 85.92,
+      cmv_ideal_percentual: 28.64,
+    },
+    {
+      mes: "2026-03",
+      loja_id: "RJ-COPA",
+      quantidade_total: 18,
+      valor_total: 216,
+      preco_medio: 12,
+      custo_unitario_ideal: 3.58,
+      custo_ideal_total: 64.44,
+      cmv_ideal_percentual: 29.83,
+    },
+  ],
 }
 
 function calculateNodeCost(node: MetaNode): number {
   if (!node.children || node.children.length === 0) {
     return (node.custo || 0) * (node.quantidade || 0)
   }
+
   return node.children.reduce((sum, child) => sum + calculateNodeCost(child), 0)
 }
 
 function formatQtd(value: number) {
-  return Number(value.toFixed(4)).toLocaleString('pt-BR')
+  return Number(value.toFixed(4)).toLocaleString("pt-BR")
 }
 
 function formatBRL(value: number) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+}
+
+function formatPercent(value: number | null) {
+  if (value === null || Number.isNaN(value)) {
+    return "—"
+  }
+  return `${value.toFixed(1)}%`
 }
 
 function TreeNode({ node }: { node: MetaNode }) {
   const [isOpen, setIsOpen] = useState(true)
   const isRecipe = node.tipo === "receita"
-  const hasChildren = node.children && node.children.length > 0
-  
+  const hasChildren = !!node.children && node.children.length > 0
+
   let costDisplay = ""
   if (isRecipe && hasChildren) {
     costDisplay = formatBRL(calculateNodeCost(node))
   } else if (!isRecipe && node.custo != null) {
-    costDisplay = formatBRL((node.custo) * (node.quantidade || 0))
+    costDisplay = formatBRL(node.custo * (node.quantidade || 0))
   }
 
   return (
     <div className="relative">
-      <div 
+      <div
         className={`flex items-center gap-2 py-[0.55rem] px-3 border-b border-brand-line/5 transition-colors ${
           isRecipe ? "cursor-pointer hover:bg-brand-highlight/5" : "hover:bg-brand-line/5"
         }`}
@@ -80,7 +145,7 @@ function TreeNode({ node }: { node: MetaNode }) {
         ) : <span className="w-[18px] shrink-0" />}
 
         {isRecipe ? <Layers className="w-[13px] h-[13px] text-brand-highlight shrink-0" /> : <Box className="w-[13px] h-[13px] text-brand-muted shrink-0" />}
-        
+
         <span className={`text-sm ${isRecipe ? "text-brand-soft font-medium" : "text-brand-text"}`}>
           {node.nome}
         </span>
@@ -106,8 +171,8 @@ function TreeNode({ node }: { node: MetaNode }) {
 
       {hasChildren && isOpen && (
         <div className="ml-5 border-l border-brand-line/15">
-          {node.children!.map((child, idx) => (
-            <TreeNode key={`${child.id}-${idx}`} node={child} />
+          {node.children!.map((child, index) => (
+            <TreeNode key={`${child.id}-${index}`} node={child} />
           ))}
         </div>
       )}
@@ -117,19 +182,65 @@ function TreeNode({ node }: { node: MetaNode }) {
 
 export default function ReceitaDetalhe() {
   const { id } = useParams()
-  
-  const [receita, setReceita] = useState<MetaNode | null>(IS_MOCK ? mockTree as MetaNode : null)
+
+  const [receita, setReceita] = useState<MetaNode | null>(IS_MOCK ? mockTree : null)
+  const [salesAnalysis, setSalesAnalysis] = useState<ProductSalesAnalysisResponse | null>(IS_MOCK ? mockSalesAnalysis : null)
   const [loading, setLoading] = useState(!IS_MOCK)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (IS_MOCK || !id) return
-    
-    receitasApi.getTree(id)
-      .then((data) => setReceita(data))
-      .catch((e) => setError(e.message))
+
+    setLoading(true)
+    Promise.all([
+      receitasApi.getTree(id),
+      receitasApi.getSalesAnalysis(Number(id)),
+    ])
+      .then(([tree, analysis]) => {
+        setReceita(tree)
+        setSalesAnalysis(analysis)
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Erro ao carregar receita."))
       .finally(() => setLoading(false))
   }, [id])
+
+  const totalCost = useMemo(() => (receita ? calculateNodeCost(receita) : 0), [receita])
+
+  const sortedSummary = useMemo(() => {
+    if (!receita) return []
+
+    const leaves: MetaNode[] = []
+    const collect = (node: MetaNode) => {
+      if (!node.children || node.children.length === 0) {
+        if (node.tipo === "insumo") {
+          leaves.push(node)
+        }
+        return
+      }
+      node.children.forEach(collect)
+    }
+
+    collect(receita)
+
+    const grouped = leaves.reduce((acc, current) => {
+      const unit = current.unidade || "un."
+      const key = `${current.id}-${unit}`
+      if (!acc[key]) {
+        acc[key] = {
+          ...current,
+          unidade: unit,
+          totalCust: (current.custo || 0) * (current.quantidade || 0),
+          totalQtd: current.quantidade || 0,
+        }
+      } else {
+        acc[key].totalQtd += current.quantidade || 0
+        acc[key].totalCust += (current.custo || 0) * (current.quantidade || 0)
+      }
+      return acc
+    }, {} as Record<string, MetaNode & { totalCust: number; totalQtd: number }>)
+
+    return Object.values(grouped).sort((a, b) => b.totalCust - a.totalCust)
+  }, [receita])
 
   if (loading) {
     return (
@@ -161,32 +272,7 @@ export default function ReceitaDetalhe() {
 
   if (!receita) return null
 
-  const totalCost = calculateNodeCost(receita)
-
-  // flatten insumos
-  const leaves: MetaNode[] = []
-  const collect = (n: MetaNode) => {
-    if (!n.children || n.children.length === 0) {
-      if (n.tipo === "insumo") leaves.push(n)
-    } else {
-      n.children.forEach(collect)
-    }
-  }
-  collect(receita)
-
-  const summary = leaves.reduce((acc, curr) => {
-    const unitFallback = curr.unidade || "un.";
-    const key = `${curr.id}-${unitFallback}`
-    if (!acc[key]) {
-      acc[key] = { ...curr, unidade: unitFallback, totalCust: (curr.custo || 0) * (curr.quantidade || 0), totalQtd: curr.quantidade || 0 }
-    } else {
-      acc[key].totalQtd += curr.quantidade || 0
-      acc[key].totalCust += (curr.custo || 0) * (curr.quantidade || 0)
-    }
-    return acc
-  }, {} as Record<string, typeof leaves[0] & { totalCust: number, totalQtd: number }>)
-
-  const sortedSummary = Object.values(summary).sort((a,b) => b.totalCust - a.totalCust)
+  const latestSalesLine = salesAnalysis?.linhas[0] ?? null
 
   return (
     <div className="flex flex-col gap-6">
@@ -197,10 +283,11 @@ export default function ReceitaDetalhe() {
         </Link>
       </header>
 
-      <FadeUp className="mb-8">
+      <FadeUp className="mb-2">
         <h1 className="text-brand-text text-xl font-semibold mb-1">{receita.nome}</h1>
         <p className="text-brand-muted text-sm">
-          Rendimento: {receita.quantidade ? formatQtd(receita.quantidade) : "—"} {receita.unidade || "un."} · Tipo: Receita ID {id}
+          Rendimento: {receita.quantidade ? formatQtd(receita.quantidade) : "—"} {receita.unidade || "un."}
+          {receita.id_produto_externo ? ` · ID externo: ${receita.id_produto_externo}` : " · Sem vínculo externo"}
         </p>
       </FadeUp>
 
@@ -222,42 +309,124 @@ export default function ReceitaDetalhe() {
             <p className="text-brand-highlight text-3xl font-light tabular-nums">{formatBRL(totalCost)}</p>
           </FadeUp>
 
-          <FadeUp delay={0.3} className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
-            <div className="px-5 py-3 border-b border-brand-line/15">
-              <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium">Todos os insumos (folha)</p>
+          <FadeUp delay={0.25} className="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-5">
+            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Vínculo de vendas</p>
+            {salesAnalysis?.possui_vinculo_externo ? (
+              <>
+                <p className="text-brand-highlight text-sm font-medium inline-flex items-center gap-2">
+                  <Link2 className="w-3.5 h-3.5" />
+                  {salesAnalysis.produto.id_produto_externo}
+                </p>
+                <p className="text-brand-muted text-xs mt-2">
+                  Custo ideal unitário: {salesAnalysis.produto.custo_unitario_ideal !== null ? formatBRL(salesAnalysis.produto.custo_unitario_ideal) : "—"}
+                </p>
+              </>
+            ) : (
+              <p className="text-brand-muted text-sm leading-relaxed">
+                Esta receita ainda não possui `id_produto_externo`, então não entra no cruzamento de vendas por loja e por mês.
+              </p>
+            )}
+          </FadeUp>
+
+          <FadeUp delay={0.3} className="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-5">
+            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Última leitura de venda</p>
+            {latestSalesLine ? (
+              <>
+                <p className="text-brand-highlight text-3xl font-light tabular-nums">
+                  {latestSalesLine.preco_medio !== null ? formatBRL(latestSalesLine.preco_medio) : "—"}
+                </p>
+                <p className="text-brand-muted text-xs mt-1">{latestSalesLine.loja_id} · {latestSalesLine.mes}</p>
+                <p className="text-brand-soft text-sm mt-3">
+                  CMV ideal: <span className="text-brand-highlight font-medium">{formatPercent(latestSalesLine.cmv_ideal_percentual)}</span>
+                </p>
+              </>
+            ) : (
+              <p className="text-brand-muted text-sm leading-relaxed">
+                Ainda não existem vendas mensais vinculadas para esta receita.
+              </p>
+            )}
+          </FadeUp>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6">
+        <FadeUp delay={0.35} className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-brand-line/15">
+            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium">Todos os insumos (folha)</p>
+          </div>
+          <div className="p-3">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-brand-line/20 text-brand-muted text-[0.68rem] tracking-[0.06em] uppercase hover:bg-transparent">
+                  <TableHead className="py-2.5 font-medium h-8">Insumo</TableHead>
+                  <TableHead className="py-2.5 font-medium h-8 text-right">Qtd</TableHead>
+                  <TableHead className="py-2.5 font-medium h-8 text-right">Custo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedSummary.map((item, index) => (
+                  <TableRow key={index} className="border-b border-brand-line/10 last:border-0 hover:bg-brand-line/5 transition-colors">
+                    <TableCell className="py-2.5">
+                      <span className="text-brand-soft text-sm">{item.nome}</span>
+                      <span className="text-brand-muted text-xs ml-1">({item.unidade || "un."})</span>
+                    </TableCell>
+                    <TableCell className="py-2.5 text-right text-brand-muted tabular-nums text-sm">{formatQtd(item.totalQtd)}</TableCell>
+                    <TableCell className="py-2.5 text-right"><span className="text-brand-highlight tabular-nums font-medium text-sm">{formatBRL(item.totalCust)}</span></TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={2} className="py-3 px-1 text-brand-muted text-xs font-semibold border-t border-brand-line/25">Total</TableCell>
+                  <TableCell className="py-3 px-1 text-right text-brand-highlight tabular-nums font-semibold border-t border-brand-line/25">{formatBRL(totalCost)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </FadeUp>
+
+        <FadeUp delay={0.4} className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-brand-line/15 flex items-center justify-between">
+            <div>
+              <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium">Comparativo mensal por loja</p>
+              <p className="text-brand-muted text-xs mt-1">Preço médio praticado vs. CMV ideal.</p>
             </div>
+            <Store className="w-4 h-4 text-brand-highlight" />
+          </div>
+
+          {salesAnalysis && salesAnalysis.linhas.length > 0 ? (
             <div className="p-3">
               <Table>
                 <TableHeader>
                   <TableRow className="border-b border-brand-line/20 text-brand-muted text-[0.68rem] tracking-[0.06em] uppercase hover:bg-transparent">
-                    <TableHead className="py-2.5 font-medium h-8">Insumo</TableHead>
+                    <TableHead className="py-2.5 font-medium h-8">Mês</TableHead>
+                    <TableHead className="py-2.5 font-medium h-8">Loja</TableHead>
                     <TableHead className="py-2.5 font-medium h-8 text-right">Qtd</TableHead>
-                    <TableHead className="py-2.5 font-medium h-8 text-right">Custo</TableHead>
+                    <TableHead className="py-2.5 font-medium h-8 text-right">Preço Médio</TableHead>
+                    <TableHead className="py-2.5 font-medium h-8 text-right">Custo Ideal</TableHead>
+                    <TableHead className="py-2.5 font-medium h-8 text-right">CMV Ideal</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedSummary.map((s, idx) => (
-                    <TableRow key={idx} className="border-b border-brand-line/10 last:border-0 hover:bg-brand-line/5 transition-colors">
-                      <TableCell className="py-2.5">
-                        <span className="text-brand-soft text-sm">{s.nome}</span>
-                        <span className="text-brand-muted text-xs ml-1">({s.unidade || "un."})</span>
-                      </TableCell>
-                      <TableCell className="py-2.5 text-right text-brand-muted tabular-nums text-sm">{formatQtd(s.totalQtd)}</TableCell>
-                      <TableCell className="py-2.5 text-right"><span className="text-brand-highlight tabular-nums font-medium text-sm">{formatBRL(s.totalCust)}</span></TableCell>
+                  {salesAnalysis.linhas.map((line) => (
+                    <TableRow key={`${line.mes}-${line.loja_id}`} className="border-b border-brand-line/10 last:border-0 hover:bg-brand-line/5 transition-colors">
+                      <TableCell className="py-2.5 text-brand-soft text-sm">{line.mes}</TableCell>
+                      <TableCell className="py-2.5 text-brand-muted text-sm">{line.loja_id}</TableCell>
+                      <TableCell className="py-2.5 text-right text-brand-muted tabular-nums text-sm">{line.quantidade_total}</TableCell>
+                      <TableCell className="py-2.5 text-right text-brand-text tabular-nums text-sm">{line.preco_medio !== null ? formatBRL(line.preco_medio) : "—"}</TableCell>
+                      <TableCell className="py-2.5 text-right text-brand-highlight tabular-nums text-sm">{line.custo_unitario_ideal !== null ? formatBRL(line.custo_unitario_ideal) : "—"}</TableCell>
+                      <TableCell className="py-2.5 text-right text-brand-highlight tabular-nums text-sm">{formatPercent(line.cmv_ideal_percentual)}</TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={2} className="py-3 px-1 text-brand-muted text-xs font-semibold border-t border-brand-line/25">Total</TableCell>
-                    <TableCell className="py-3 px-1 text-right text-brand-highlight tabular-nums font-semibold border-t border-brand-line/25">{formatBRL(totalCost)}</TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
             </div>
-          </FadeUp>
-        </div>
+          ) : (
+            <div className="p-6">
+              <p className="text-brand-soft text-sm font-medium mb-1">Nenhuma venda vinculada para exibir.</p>
+              <p className="text-brand-muted text-xs">Importe vendas e vincule a receita com um `id_produto_externo` para habilitar esse comparativo.</p>
+            </div>
+          )}
+        </FadeUp>
       </div>
     </div>
   )
 }
-
-

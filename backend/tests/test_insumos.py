@@ -1,15 +1,14 @@
 from unittest.mock import AsyncMock, MagicMock, patch
+
 from fastapi import HTTPException
-from backend.tests.conftest import buildMockSession, buildMockFactory
 
+from backend.tests.conftest import buildMockFactory, buildMockSession
 
-# ---------------------------------------------------------------------------
-# GET /api/unidades
-# ---------------------------------------------------------------------------
 
 class TestGetUnidades:
     def test_returnsAllUnidades(self, client):
-        response = client.get('/api/unidades')
+        response = client.get("/api/unidades")
+
         assert response.status_code == 200
         data = response.json()
         assert "unidades" in data
@@ -17,62 +16,70 @@ class TestGetUnidades:
             assert expected in data["unidades"]
 
 
-# ---------------------------------------------------------------------------
-# POST /api/insumos/create
-# ---------------------------------------------------------------------------
-
 class TestCreateInsumo:
     def test_success(self, client):
         session = buildMockSession()
         factory = buildMockFactory(session)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory):
-            response = client.post('/api/insumos/create', json={
+        async def assign_id():
+            session.add.call_args.args[0].id = 1
+
+        session.flush.side_effect = assign_id
+
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
+            MockService.return_value.ensure_external_product_id_available = AsyncMock(return_value=None)
+
+            response = client.post("/api/insumos/create", json={
                 "nome": "Farinha de Trigo",
-                "custo": 5.50,
-                "unidade": "kg"
+                "unidade": "kg",
+                "quantidade_referencia": 1,
+                "preco_referencia": 5.5,
+                "id_produto_externo": "FARINHA-001",
             })
 
         assert response.status_code == 200
-        assert response.json()["message"] == "Insumo criado com sucesso."
+        assert response.json() == {"id": 1, "message": "Insumo criado com sucesso."}
 
     def test_invalidUnidade(self, client):
-        response = client.post('/api/insumos/create', json={
+        response = client.post("/api/insumos/create", json={
             "nome": "Farinha de Trigo",
-            "custo": 5.50,
-            "unidade": "xablau"
+            "unidade": "xablau",
+            "quantidade_referencia": 1,
+            "preco_referencia": 5.5,
         })
+
         assert response.status_code == 422
 
     def test_missingFields(self, client):
-        response = client.post('/api/insumos/create', json={"nome": "Farinha"})
+        response = client.post("/api/insumos/create", json={"nome": "Farinha"})
+
         assert response.status_code == 422
 
     def test_conflict(self, client):
         session = buildMockSession()
         factory = buildMockFactory(session)
 
-        # Patch IntegrityError in the module to use a local exception
         class _FakeIntegrityError(Exception):
             pass
 
         session.flush.side_effect = _FakeIntegrityError()
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.IntegrityError', _FakeIntegrityError):
-            response = client.post('/api/insumos/create', json={
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService, \
+             patch("backend.app.routers.api.insumos.IntegrityError", _FakeIntegrityError):
+            MockService.return_value.ensure_external_product_id_available = AsyncMock(return_value=None)
+
+            response = client.post("/api/insumos/create", json={
                 "nome": "Farinha de Trigo",
-                "custo": 5.50,
-                "unidade": "kg"
+                "unidade": "kg",
+                "quantidade_referencia": 1,
+                "preco_referencia": 5.5,
             })
 
         assert response.status_code == 400
         assert response.json()["detail"] == "Conflict"
 
-
-# ---------------------------------------------------------------------------
-# POST /api/insumos/update_custo
-# ---------------------------------------------------------------------------
 
 class TestUpdateCusto:
     def test_success(self, client):
@@ -80,14 +87,14 @@ class TestUpdateCusto:
         factory = buildMockFactory(session)
         mock_insumo = MagicMock(id=1)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.edit_insumo = AsyncMock(return_value=mock_insumo)
 
-            response = client.post('/api/insumos/update_custo', json={
+            response = client.post("/api/insumos/update_custo", json={
                 "id": 1,
                 "custo": 8.0,
-                "unidade": "kg"
+                "unidade": "kg",
             })
 
         assert response.status_code == 200
@@ -95,35 +102,32 @@ class TestUpdateCusto:
         assert response.json()["message"] == "Custo atualizado com sucesso."
 
     def test_invalidUnidade(self, client):
-        response = client.post('/api/insumos/update_custo', json={
+        response = client.post("/api/insumos/update_custo", json={
             "id": 1,
             "custo": 8.0,
-            "unidade": "arroba"
+            "unidade": "arroba",
         })
+
         assert response.status_code == 422
 
     def test_notFound(self, client):
         session = buildMockSession()
         factory = buildMockFactory(session)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.edit_insumo = AsyncMock(
                 side_effect=HTTPException(status_code=404, detail="Insumo não encontrado.")
             )
 
-            response = client.post('/api/insumos/update_custo', json={
+            response = client.post("/api/insumos/update_custo", json={
                 "id": 999,
                 "custo": 8.0,
-                "unidade": "kg"
+                "unidade": "kg",
             })
 
         assert response.status_code == 404
 
-
-# ---------------------------------------------------------------------------
-# PATCH /api/insumos/{id}
-# ---------------------------------------------------------------------------
 
 class TestEditInsumo:
     def test_success(self, client):
@@ -131,11 +135,14 @@ class TestEditInsumo:
         factory = buildMockFactory(session)
         mock_insumo = MagicMock(id=1)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
-            MockService.return_value.edit_insumo = AsyncMock(return_value=mock_insumo)
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
+            MockService.return_value.edit_insumo_gramatura = AsyncMock(return_value=mock_insumo)
 
-            response = client.patch('/api/insumos/1', json={"nome": "Novo Nome"})
+            response = client.patch("/api/insumos/1", json={
+                "nome": "Novo Nome",
+                "id_produto_externo": "NOVO-001",
+            })
 
         assert response.status_code == 200
         assert response.json()["message"] == "Insumo atualizado com sucesso."
@@ -144,18 +151,19 @@ class TestEditInsumo:
         session = buildMockSession()
         factory = buildMockFactory(session)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
-            MockService.return_value.edit_insumo = AsyncMock(
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
+            MockService.return_value.edit_insumo_gramatura = AsyncMock(
                 side_effect=HTTPException(status_code=404, detail="Insumo não encontrado.")
             )
 
-            response = client.patch('/api/insumos/999', json={"nome": "X"})
+            response = client.patch("/api/insumos/999", json={"nome": "X"})
 
         assert response.status_code == 404
 
     def test_invalidUnidade(self, client):
-        response = client.patch('/api/insumos/1', json={"unidade": "milhas"})
+        response = client.patch("/api/insumos/1", json={"unidade": "milhas"})
+
         assert response.status_code == 422
 
     def test_partialUpdate(self, client):
@@ -163,29 +171,25 @@ class TestEditInsumo:
         factory = buildMockFactory(session)
         mock_insumo = MagicMock(id=1)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
-            MockService.return_value.edit_insumo = AsyncMock(return_value=mock_insumo)
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
+            MockService.return_value.edit_insumo_gramatura = AsyncMock(return_value=mock_insumo)
 
-            response = client.patch('/api/insumos/1', json={"custo": 12.5})
+            response = client.patch("/api/insumos/1", json={"preco_referencia": 12.5})
 
         assert response.status_code == 200
 
-
-# ---------------------------------------------------------------------------
-# DELETE /api/insumos/{id}
-# ---------------------------------------------------------------------------
 
 class TestDeleteInsumo:
     def test_success(self, client):
         session = buildMockSession()
         factory = buildMockFactory(session)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.delete_insumo = AsyncMock(return_value=None)
 
-            response = client.delete('/api/insumos/1')
+            response = client.delete("/api/insumos/1")
 
         assert response.status_code == 200
         assert response.json()["message"] == "Insumo deletado com sucesso."
@@ -194,13 +198,13 @@ class TestDeleteInsumo:
         session = buildMockSession()
         factory = buildMockFactory(session)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.delete_insumo = AsyncMock(
                 side_effect=HTTPException(status_code=404, detail="Insumo não encontrado.")
             )
 
-            response = client.delete('/api/insumos/999')
+            response = client.delete("/api/insumos/999")
 
         assert response.status_code == 404
 
@@ -208,35 +212,38 @@ class TestDeleteInsumo:
         session = buildMockSession()
         factory = buildMockFactory(session)
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.delete_insumo = AsyncMock(
                 side_effect=HTTPException(status_code=409, detail="Insumo está sendo usado em receitas.")
             )
 
-            response = client.delete('/api/insumos/1')
+            response = client.delete("/api/insumos/1")
 
         assert response.status_code == 409
 
-
-# ---------------------------------------------------------------------------
-# GET /api/get_produtos_select2
-# ---------------------------------------------------------------------------
 
 class TestGetProdutosSelect2:
     def test_success(self, client):
         session = buildMockSession()
         factory = buildMockFactory(session)
         mock_data = {
-            "items": [{"id": 1, "text": "Farinha", "tipo": "Insumo", "custo": 5.0, "unidade": "kg"}],
-            "pagination": {"more": False}
+            "items": [{
+                "id": 1,
+                "text": "Farinha",
+                "tipo": "Insumo",
+                "custo": 5.0,
+                "unidade": "kg",
+                "id_produto_externo": "FARINHA-001",
+            }],
+            "pagination": {"more": False},
         }
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.get_produtos_paginated_select2 = AsyncMock(return_value=mock_data)
 
-            response = client.get('/api/get_produtos_select2')
+            response = client.get("/api/get_produtos_select2")
 
         assert response.status_code == 200
         assert "items" in response.json()
@@ -247,10 +254,10 @@ class TestGetProdutosSelect2:
         factory = buildMockFactory(session)
         mock_data = {"items": [], "pagination": {"more": False}}
 
-        with patch('app.routers.api.insumos.db_session.session_factory', factory), \
-             patch('app.routers.api.insumos.ProdutoService') as MockService:
+        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.get_produtos_paginated_select2 = AsyncMock(return_value=mock_data)
 
-            response = client.get('/api/get_produtos_select2?q=far&page=1&per_page=10')
+            response = client.get("/api/get_produtos_select2?q=far&page=1&per_page=10")
 
         assert response.status_code == 200

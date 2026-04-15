@@ -10,6 +10,7 @@ from backend.app.database.initiliaze_db import init_db
 from backend.app.routers import pages
 from backend.app.routers.api import receitas
 from backend.app.routers.api import insumos
+from backend.app.routers.api import vendas
 
 
 @asynccontextmanager
@@ -58,6 +59,7 @@ app.add_middleware(
 app.include_router(pages.router)
 app.include_router(insumos.router)
 app.include_router(receitas.router)
+app.include_router(vendas.router)
 
 
 # Global exception handler for debugging
