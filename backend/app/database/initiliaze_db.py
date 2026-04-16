@@ -9,12 +9,13 @@ async def init_db():
     """Inicializa o banco de dados.
 
     - development: recria todas as tabelas (drop + create) e popula com dados de exemplo.
-    - production:  apenas cria tabelas que não existem (create_all sem drop_all).
+    - production: garante o schema e delega evolução estrutural ao Alembic.
 
     Note on Supabase schema routing:
       We set Base.metadata.schema explicitly so that SQLAlchemy generates DDL with
       the full schema qualifier (e.g. CREATE TABLE development.produtos ...).
-      The engine's connect_args search_path handles DML (SELECT / INSERT / UPDATE).
+      In persistent environments, schema creation stays here while table evolution
+      is handled by Alembic migrations during startup.
     """
 
     Base.metadata.schema = None if DB_SCHEMA == "public" else DB_SCHEMA
@@ -27,9 +28,10 @@ async def init_db():
         if APP_ENV == "development":
             print(f"[init_db] Dropping and recreating tables in schema '{DB_SCHEMA}'...")
             await conn.run_sync(Base.metadata.drop_all)
-
-        await conn.run_sync(Base.metadata.create_all)
-        print("[init_db] Tables ready.")
+            await conn.run_sync(Base.metadata.create_all)
+            print("[init_db] Tables ready.")
+        else:
+            print("[init_db] Persistent environment detected - schema ensured, awaiting migrations.")
 
     if APP_ENV != "development":
         print("[init_db] Production mode - skipping seed data.")

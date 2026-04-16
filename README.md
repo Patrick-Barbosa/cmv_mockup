@@ -20,6 +20,7 @@ Hoje o projeto está dividido em:
 - Cálculo automático de custos de receitas
 - Suporte a diferentes unidades de medida
 - Seed automático em ambiente de desenvolvimento
+- Base de migrations com Alembic para ambientes persistentes
 
 ## Estrutura
 
@@ -27,6 +28,7 @@ Hoje o projeto está dividido em:
 - `backend/app/database/session.py`: engine assíncrono, sessão e leitura de variáveis de ambiente
 - `backend/app/database/models.py`: modelos `Produto` e `ComponenteReceita`
 - `backend/app/database/initiliaze_db.py`: bootstrap do schema e seed de desenvolvimento
+- `backend/app/database/migrations.py`: execução programática das migrations do Alembic
 - `backend/app/services/produto_service.py`: regras de negócio de insumos e receitas
 - `backend/app/routers/api/`: endpoints de insumos e receitas
 - `backend/app/routers/pages.py`: endpoints simples de status e leitura
@@ -45,6 +47,7 @@ Hoje o projeto está dividido em:
 - python-dotenv
 - pytest
 - httpx
+- Alembic
 - Nginx
 - Tailwind via CDN
 
@@ -71,6 +74,7 @@ Notas importantes:
 
 - O backend sobe com `APP_ENV=development`
 - Em `development`, o app recria as tabelas e reinsere seed a cada inicialização
+- Em ambientes persistentes, o app aplica migrations do Alembic no startup
 - O banco no Compose já inicializa a extensão `uuid-ossp`
 
 Para derrubar os containers:
@@ -93,6 +97,39 @@ source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn backend.app.main:app --reload
 ```
+
+## Migrations
+
+Gerar ou aplicar migrations manualmente:
+
+```bash
+alembic upgrade head
+```
+
+Criar uma nova migration:
+
+```bash
+alembic revision -m "describe your change"
+```
+
+Fluxo recomendado para evoluir o schema:
+
+1. altere os modelos em `backend/app/database/models.py`
+2. crie uma migration nova com `alembic revision -m "..."`
+3. implemente o `upgrade()` e o `downgrade()` no arquivo gerado em `alembic/versions/`
+4. aplique localmente com `alembic upgrade head`
+5. suba a aplicação no ambiente persistente para deixar o startup aplicar migrations automaticamente
+
+Comportamento por ambiente:
+
+- `APP_ENV=development`: não usa Alembic no startup; o app recria tabelas e reinsere seed
+- `APP_ENV=production`: o app garante o schema e roda `alembic upgrade head` automaticamente no startup
+
+Observações:
+
+- `APP_ENV=development` continua usando recriação de tabelas + seed
+- `APP_ENV=production` não usa mais `create_all`; o schema é garantido no startup e a evolução estrutural fica a cargo do Alembic
+- o Alembic usa a mesma `DATABASE_URL` configurada no ambiente
 
 ## Variáveis de ambiente
 
