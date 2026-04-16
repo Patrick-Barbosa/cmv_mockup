@@ -1,8 +1,16 @@
+from enum import Enum
 from datetime import date, datetime
+from typing import List
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+class ImportStrategy(str, Enum):
+    APPEND = "append"
+    OVERWRITE = "overwrite"
+
+
 def _normalize_identifier(value):
+# ... (rest of the file)
     if value is None:
         return None
     if isinstance(value, str):
@@ -109,3 +117,9 @@ class AnaliseLojaParamsModel(BaseModel):
         except ValueError as exc:
             raise ValueError("month deve estar no formato YYYY-MM.") from exc
         return value
+
+
+class BulkImportVendasModel(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    strategy: ImportStrategy
+    rows: List[VendaImportRowModel]

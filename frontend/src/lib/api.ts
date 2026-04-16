@@ -152,6 +152,21 @@ export interface VendasUploadResponse extends VendasFiltersResponse {
   linhas_importadas: number
 }
 
+export type ImportStrategy = "append" | "overwrite"
+
+export interface VendaImportRow {
+  data: string
+  id_loja: string
+  id_produto: string
+  quantidade_produto: number
+  valor_total: number
+}
+
+export interface BulkImportVendasPayload {
+  strategy: ImportStrategy
+  rows: VendaImportRow[]
+}
+
 export interface StoreAnalysisSummary {
   receita_total: number
   receita_vinculada: number
@@ -283,4 +298,24 @@ export const vendasApi = {
     apiFetch<StoreAnalysisResponse>(
       `/api/vendas/analise-loja?store_id=${encodeURIComponent(storeId)}&month=${encodeURIComponent(month)}`
     ),
+
+  bulkImport: (payload: BulkImportVendasPayload) =>
+    apiFetch<VendasUploadResponse>("/api/vendas/bulk_import", {
+      method: "POST",
+      body: payload,
+    }),
+
+  downloadTemplate: async (format: "xlsx" | "csv") => {
+    const response = await fetch(`${API_URL}/api/vendas/template?format=${format}`)
+    if (!response.ok) throw new Error("Erro ao baixar template")
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `template_vendas.${format}`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  },
 }
