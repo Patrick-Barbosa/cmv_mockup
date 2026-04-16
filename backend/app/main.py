@@ -7,9 +7,11 @@ import os
 
 from backend.app.database.session import db_session, APP_ENV
 from backend.app.database.initiliaze_db import init_db
+from backend.app.database.migrations import run_migrations
 from backend.app.routers import pages
 from backend.app.routers.api import receitas
 from backend.app.routers.api import insumos
+from backend.app.routers.api import vendas
 
 
 @asynccontextmanager
@@ -20,6 +22,8 @@ async def lifespan(app: FastAPI):
     try:
         db_session.init()
         await init_db()
+        if APP_ENV != "development":
+            await run_migrations()
         print("Database initialized successfully!")
     except Exception as e:
         print(f"Database initialization error: {e}")
@@ -58,6 +62,7 @@ app.add_middleware(
 app.include_router(pages.router)
 app.include_router(insumos.router)
 app.include_router(receitas.router)
+app.include_router(vendas.router)
 
 
 # Global exception handler for debugging

@@ -7,6 +7,8 @@ import Login from "./pages/Login"
 import Insumos from "./pages/Insumos"
 import Receitas from "./pages/Receitas"
 import ReceitaDetalhe from "./pages/ReceitaDetalhe"
+import Vendas from "./pages/Vendas"
+import Lojas from "./pages/Lojas"
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
             <Route path="/insumos" element={<Insumos />} />
             <Route path="/receitas" element={<Receitas />} />
             <Route path="/receitas/:id" element={<ReceitaDetalhe />} />
+            <Route path="/vendas" element={<Vendas />} />
+            <Route path="/lojas" element={<Lojas />} />
           </Route>
         </Routes>
       </BrowserRouter>
@@ -34,6 +38,5 @@ function App() {
 }
 
 export default App
-
 
 

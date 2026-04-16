@@ -9,3 +9,5 @@ asyncpg
 python-dotenv
 pytest
 httpx
+openpyxl
+alembic

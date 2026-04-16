@@ -1,8 +1,14 @@
 from sqlalchemy import (
-  Column, Integer, String, Float, ForeignKey, CheckConstraint, Identity
+  CheckConstraint,
+  Column,
+  Date,
+  Float,
+  ForeignKey,
+  Index,
+  Integer,
+  String,
 )
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -18,6 +24,7 @@ class Produto(Base):
   unidade = Column(String)
   quantidade_referencia = Column(Float)  # ex: 500 (g)
   preco_referencia = Column(Float)       # ex: 25.00 (R$)
+  id_produto_externo = Column(String, nullable=True, index=True)
   
   __table_args__ = (
     CheckConstraint("tipo IN ('receita', 'insumo')", name="tipo_check"),
@@ -35,3 +42,21 @@ class ComponenteReceita(Base):
 
   receita = relationship("Produto", foreign_keys=[id_receita], back_populates="componentes")
   componente = relationship("Produto", foreign_keys=[id_componente], back_populates="usado_em")
+
+
+class Venda(Base):
+  __tablename__ = 'vendas'
+
+  id = Column(Integer, primary_key=True)
+  data = Column(Date, nullable=False)
+  id_loja = Column(String, nullable=False)
+  id_produto = Column(String, nullable=False)
+  quantidade_produto = Column(Integer, nullable=False)
+  valor_total = Column(Float, nullable=False)
+
+  __table_args__ = (
+    CheckConstraint("quantidade_produto > 0", name="vendas_quantidade_produto_positive"),
+    CheckConstraint("valor_total >= 0", name="vendas_valor_total_non_negative"),
+    Index("ix_vendas_loja_data", "id_loja", "data"),
+    Index("ix_vendas_produto_data", "id_produto", "data"),
+  )

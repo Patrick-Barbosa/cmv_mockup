@@ -20,6 +20,8 @@ async def create_produto(payload: CreateProductModel):
 
     try:
         async with db_session.session_factory() as session:
+            produto_service = ProdutoService(session)
+            await produto_service.ensure_external_product_id_available(payload.id_produto_externo)
             insumo = Produto(
                 nome=payload.nome,
                 tipo="insumo",
@@ -28,6 +30,7 @@ async def create_produto(payload: CreateProductModel):
                 unidade=payload.unidade,
                 quantidade_referencia=payload.quantidade_referencia,
                 preco_referencia=payload.preco_referencia,
+                id_produto_externo=payload.id_produto_externo,
             )
             session.add(insumo)
             await session.flush()
@@ -72,6 +75,8 @@ async def editInsumo(insumo_id: int, payload: EditInsumoModel):
             unidade=payload.unidade,
             quantidade_referencia=payload.quantidade_referencia,
             preco_referencia=payload.preco_referencia,
+            id_produto_externo=payload.id_produto_externo,
+            update_id_produto_externo='id_produto_externo' in payload.model_fields_set,
         )
 
     return {"id": insumo.id, "message": "Insumo atualizado com sucesso."}

@@ -1,6 +1,7 @@
 import os
+from datetime import date
 from backend.app.database.session import db_session, APP_ENV, DB_SCHEMA
-from backend.app.database.models import Base, Produto, ComponenteReceita
+from backend.app.database.models import Base, Produto, ComponenteReceita, Venda
 from sqlalchemy import select, text
 
 
@@ -8,12 +9,13 @@ async def init_db():
     """Inicializa o banco de dados.
 
     - development: recria todas as tabelas (drop + create) e popula com dados de exemplo.
-    - production:  apenas cria tabelas que não existem (create_all sem drop_all).
+    - production: garante o schema e delega evolução estrutural ao Alembic.
 
     Note on Supabase schema routing:
       We set Base.metadata.schema explicitly so that SQLAlchemy generates DDL with
       the full schema qualifier (e.g. CREATE TABLE development.produtos ...).
-      The engine's connect_args search_path handles DML (SELECT / INSERT / UPDATE).
+      In persistent environments, schema creation stays here while table evolution
+      is handled by Alembic migrations during startup.
     """
 
     Base.metadata.schema = None if DB_SCHEMA == "public" else DB_SCHEMA
@@ -26,9 +28,10 @@ async def init_db():
         if APP_ENV == "development":
             print(f"[init_db] Dropping and recreating tables in schema '{DB_SCHEMA}'...")
             await conn.run_sync(Base.metadata.drop_all)
-
-        await conn.run_sync(Base.metadata.create_all)
-        print("[init_db] Tables ready.")
+            await conn.run_sync(Base.metadata.create_all)
+            print("[init_db] Tables ready.")
+        else:
+            print("[init_db] Persistent environment detected - schema ensured, awaiting migrations.")
 
     if APP_ENV != "development":
         print("[init_db] Production mode - skipping seed data.")
@@ -39,22 +42,22 @@ async def init_db():
             Produto(nome='Bolo de cenoura', tipo='receita', quantidade_base=0.450),
             Produto(nome='Massa de bolo', tipo='receita', quantidade_base=1),
             Produto(nome='Brigadeiro', tipo='receita', quantidade_base=1),
-            Produto(nome='Bolo de pote de chocolate', tipo='receita', quantidade_base=0.280, unidade='kg'),
-            Produto(nome='Brownie recheado', tipo='receita', quantidade_base=0.180, unidade='kg'),
+            Produto(nome='Bolo de pote de chocolate', tipo='receita', quantidade_base=0.280, unidade='kg', id_produto_externo='POTE-CHOC-001'),
+            Produto(nome='Brownie recheado', tipo='receita', quantidade_base=0.180, unidade='kg', id_produto_externo='BROWNIE-001'),
             Produto(nome='Brownie base', tipo='receita', quantidade_base=1, unidade='kg'),
             Produto(nome='Ganache de chocolate', tipo='receita', quantidade_base=1, unidade='kg'),
-            Produto(nome='Pizza margherita', tipo='receita', quantidade_base=1, unidade='un'),
+            Produto(nome='Pizza margherita', tipo='receita', quantidade_base=1, unidade='un', id_produto_externo='PIZZA-MARG-001'),
             Produto(nome='Massa de pizza', tipo='receita', quantidade_base=1, unidade='un'),
             Produto(nome='Molho de tomate', tipo='receita', quantidade_base=1, unidade='kg'),
-            Produto(nome='Crepe de frango', tipo='receita', quantidade_base=1, unidade='un'),
+            Produto(nome='Crepe de frango', tipo='receita', quantidade_base=1, unidade='un', id_produto_externo='CREPE-FRANGO-001'),
             Produto(nome='Massa de crepe', tipo='receita', quantidade_base=1, unidade='kg'),
             Produto(nome='Recheio de frango', tipo='receita', quantidade_base=1, unidade='kg'),
-            Produto(nome='Torta cremosa de frango', tipo='receita', quantidade_base=1.200, unidade='kg'),
+            Produto(nome='Torta cremosa de frango', tipo='receita', quantidade_base=1.200, unidade='kg', id_produto_externo='TORTA-FRANGO-001'),
             Produto(nome='Massa de torta amanteigada', tipo='receita', quantidade_base=1, unidade='kg'),
             Produto(nome='Recheio cremoso de frango', tipo='receita', quantidade_base=1, unidade='kg'),
             Produto(nome='Refogado base', tipo='receita', quantidade_base=1, unidade='kg'),
             Produto(nome='Creme de queijo', tipo='receita', quantidade_base=1, unidade='kg'),
-            Produto(nome='Nutella', tipo='insumo', unidade='g', quantidade_referencia=650, preco_referencia=32.90, custo=32.90 / 650),
+            Produto(nome='Nutella', tipo='insumo', unidade='g', quantidade_referencia=650, preco_referencia=32.90, custo=32.90 / 650, id_produto_externo='NUTELLA-001'),
             Produto(nome='Granulado de chocolate', tipo='insumo', unidade='g', quantidade_referencia=500, preco_referencia=8.50, custo=8.50 / 500),
             Produto(nome='Farinha de trigo', tipo='insumo', unidade='kg', quantidade_referencia=1, preco_referencia=5.90, custo=5.90),
             Produto(nome='Oleo', tipo='insumo', unidade='ml', quantidade_referencia=900, preco_referencia=9.50, custo=9.50 / 900),
@@ -158,5 +161,21 @@ async def init_db():
         for _ in range(6):
             for rid in receita_ids:
                 await produto_service.recompute_recipe_cost(rid)
+
+        vendas = [
+            Venda(data=date(2026, 3, 2), id_loja='RJ-COPA', id_produto='BROWNIE-001', quantidade_produto=18, valor_total=216.00),
+            Venda(data=date(2026, 3, 5), id_loja='RJ-COPA', id_produto='PIZZA-MARG-001', quantidade_produto=12, valor_total=516.00),
+            Venda(data=date(2026, 3, 8),  id_loja='RJ-COPA', id_produto='CREPE-FRANGO-001', quantidade_produto=21, valor_total=315.00),
+            Venda(data=date(2026, 3, 12), id_loja='RJ-BARRA', id_produto='POTE-CHOC-001', quantidade_produto=30, valor_total=390.00),
+            Venda(data=date(2026, 3, 18), id_loja='RJ-BARRA', id_produto='TORTA-FRANGO-001', quantidade_produto=10, valor_total=280.00),
+            Venda(data=date(2026, 3, 21), id_loja='RJ-BARRA', id_produto='NUTELLA-001', quantidade_produto=14, valor_total=154.00),
+            Venda(data=date(2026, 4, 2), id_loja='RJ-COPA', id_produto='PIZZA-MARG-001', quantidade_produto=16, valor_total=704.00),
+            Venda(data=date(2026, 4, 4), id_loja='RJ-COPA', id_produto='BROWNIE-001', quantidade_produto=24, valor_total=300.00),
+            Venda(data=date(2026, 4, 11), id_loja='RJ-COPA', id_produto='PRODUTO-SEM-VINCULO', quantidade_produto=9, valor_total=81.00),
+            Venda(data=date(2026, 4, 9), id_loja='RJ-BARRA', id_produto='CREPE-FRANGO-001', quantidade_produto=27, valor_total=432.00),
+            Venda(data=date(2026, 4, 12), id_loja='RJ-BARRA', id_produto='TORTA-FRANGO-001', quantidade_produto=11, valor_total=319.00),
+            Venda(data=date(2026, 4, 17), id_loja='RJ-BARRA', id_produto='POTE-CHOC-001', quantidade_produto=22, valor_total=297.00),
+        ]
+        session.add_all(vendas)
         await session.commit()
         print("[init_db] Seed data inserted.")

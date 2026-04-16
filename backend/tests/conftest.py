@@ -3,8 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from backend.app.routers.api import receitas
-from backend.app.routers.api import insumos
+from backend.app.routers.api import insumos, receitas, vendas
 
 
 @pytest.fixture(scope="session")
@@ -12,15 +11,14 @@ def client():
     test_app = FastAPI()
     test_app.include_router(insumos.router)
     test_app.include_router(receitas.router)
+    test_app.include_router(vendas.router)
     return TestClient(test_app)
 
 
 def buildMockSession():
-    """Cria um AsyncMock de sessão SQLAlchemy com add síncrono."""
     session = AsyncMock()
     session.add = MagicMock()
 
-    # begin() deve retornar um async context manager diretamente (não uma coroutine)
     begin_cm = AsyncMock()
     begin_cm.__aenter__ = AsyncMock(return_value=None)
     begin_cm.__aexit__ = AsyncMock(return_value=False)
@@ -30,7 +28,6 @@ def buildMockSession():
 
 
 def buildMockFactory(session):
-    """Cria um mock de session_factory que retorna a sessão fornecida."""
     cm = AsyncMock()
     cm.__aenter__ = AsyncMock(return_value=session)
     cm.__aexit__ = AsyncMock(return_value=False)

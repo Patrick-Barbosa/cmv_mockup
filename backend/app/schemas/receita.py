@@ -14,6 +14,7 @@ class CreateRecipeModel(BaseModel):
     nome: str
     quantidade_base: float
     unidade: Optional[str] = None
+    id_produto_externo: Optional[str] = None
     componentes: List[ComponenteCreateRecipeModel] = Field(..., min_length=1)
 
     @field_validator('unidade')
@@ -23,12 +24,21 @@ class CreateRecipeModel(BaseModel):
             raise ValueError(f"Unidade '{v}' inválida. Opções: {UNIDADES_PADRAO}")
         return v
 
+    @field_validator('id_produto_externo', mode='before')
+    @classmethod
+    def _normalizeIdProdutoExterno(cls, v):
+        if v is None:
+            return None
+        text = str(v).strip()
+        return text or None
+
 
 class EditReceitaModel(BaseModel):
     model_config = ConfigDict(extra='forbid')
     nome: Optional[str] = None
     quantidade_base: Optional[float] = None
     unidade: Optional[str] = None
+    id_produto_externo: Optional[str] = None
     componentes: Optional[List[ComponenteCreateRecipeModel]] = None
 
     @field_validator('unidade')
@@ -37,3 +47,11 @@ class EditReceitaModel(BaseModel):
         if v is not None and v not in UNIDADES_PADRAO:
             raise ValueError(f"Unidade '{v}' inválida. Opções: {UNIDADES_PADRAO}")
         return v
+
+    @field_validator('id_produto_externo', mode='before')
+    @classmethod
+    def _normalizeIdProdutoExterno(cls, v):
+        if v is None:
+            return None
+        text = str(v).strip()
+        return text or None
