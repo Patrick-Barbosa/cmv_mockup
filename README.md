@@ -64,6 +64,22 @@ Suba o ambiente:
 docker compose up --build
 ```
 
+Para sobrescrever variáveis do Compose sem editar o arquivo principal:
+
+```bash
+cp .env.compose.example .env.compose.local
+docker compose --env-file .env.compose.local up --build
+```
+
+Exemplo de uso para apontar o backend ao banco remoto:
+
+```bash
+APP_ENV=production
+DATABASE_URL=postgresql+asyncpg://postgres.[host]:[password]@[pooler-host]:5432/postgres
+ALLOWED_ORIGINS=https://seu-frontend.vercel.app
+VITE_BACKEND_URL=https://sua-api.example.com
+```
+
 Serviços:
 
 - Frontend: `http://localhost:8080`
