@@ -27,15 +27,16 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [x] Cadastro de Receitas
 - [x] Migrar para FastAPI
 - [x] Cadastro do custo dos insumos
-- [ ] Cálculo do Custo Unitário
-- [ ] Input de Vendas por Produto e por Loja
+- [x] Input de Vendas por Produto e por Loja
+- [ ] Ajuste do schema de desenvolvimento e producao
+- [ ] Cálculo do Custo Unitário (ajustar schema)
 - [ ] CMV Ideal por Produto
-- [x] Cálculo do CMV Real (Descontinuado MVP)
 - [ ] Simulador de Impacto de Insumos
 - [ ] Suporte Multi-Unidade
 - [ ] Comparativo de Fornecedores por Insumo
 - [ ] Engine de Alertas de Desvio de CMV
 - [ ] Geração de Relatórios Exportáveis
+- [x] Cálculo do CMV Real (Descontinuado MVP)
 
 ### Frontend
 
@@ -43,18 +44,20 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [x] Tela de Cadastro de Insumos
 - [x] Tela de Cadastro de Receitas
 - [x] Tela de Cadastro do custo dos insumos (dentro do cadastro de insumos)
-- [ ] Tela de Input de Vendas
-- [ ] Tela de CMV Ideal
+- [x] Tela de Input de Vendas
+- [ ] Templates de Importação de Dados
+- [ ] Permitir importacao de .csv e .parquet
 - [x] Tela de Login
-- [ ] Funcionalidade de login
-- [x] Tela de CMV Real (Descontinuado MVP)
+- [ ] Tela de CMV Ideal
+- [ ] Tela para alertas de produtos com SKU ausentes
 - [ ] Interface do Simulador de Impacto
 - [ ] Dashboard Multi-Unidade
 - [ ] Tela de Comparativo de Fornecedores
 - [ ] Dashboard Principal de Indicadores
-- [ ] Templates de Importação de Dados
 - [ ] Tela de Alertas
 - [ ] Exportação de Relatórios
+- [ ] Funcionalidade de login
+- [x] Tela de CMV Real (Descontinuado MVP)
 
 ---
 ### Side-tasks
