@@ -45,15 +45,16 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [x] Tela de Cadastro de Receitas
 - [x] Tela de Cadastro do custo dos insumos (dentro do cadastro de insumos)
 - [x] Tela de Input de Vendas
-- [ ] Templates de Importação de Dados
-- [ ] Permitir importacao de .csv e .parquet
+- [x] Templates de Importação de Dados
+- [x] Permitir importacao de .csv
 - [x] Tela de Login
-- [ ] Tela de CMV Ideal
+- [x] Tela de Lojas
+- [x] Tela de CMV Ideal
 - [ ] Tela para alertas de produtos com SKU ausentes
+- [ ] Dashboard Principal de Indicadores
 - [ ] Interface do Simulador de Impacto
 - [ ] Dashboard Multi-Unidade
 - [ ] Tela de Comparativo de Fornecedores
-- [ ] Dashboard Principal de Indicadores
 - [ ] Tela de Alertas
 - [ ] Exportação de Relatórios
 - [ ] Funcionalidade de login
@@ -65,6 +66,10 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [x] Remover pycache do repositório
 - [x] Criar instrucoes oficiais para os agentes
 
+#### Página de Lojas
+- [ ] Melhorar filtro da página de lojas (filtrar mes nao faz nada)
+- [ ] Melhorar filtro qnd loja tem cmv baixo (gráfico de linhas tende a zero)
+- [ ] Redefinir label de status do cmv
 ---
 
 ## Detalhamento das Tarefas
