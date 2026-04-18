@@ -3,12 +3,14 @@ from io import BytesIO
 
 from fastapi import HTTPException
 from openpyxl import load_workbook
-from sqlalchemy import func, select
+from sqlalchemy import func, select, delete, insert, and_
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from backend.app.database.models import Produto, Venda
-from backend.app.schemas.venda import VendaImportRowModel
+from backend.app.schemas.venda import VendaImportRowModel, BulkImportVendasModel, ImportStrategy
 
 EXPECTED_UPLOAD_COLUMNS = [
+# ... (rest of imports and class start)
     "data",
     "id_loja",
     "id_produto",
@@ -317,4 +319,54 @@ class VendaService:
             },
             "possui_vinculo_externo": True,
             "linhas": linhas,
+        }
+
+    async def bulk_import(self, payload: BulkImportVendasModel):
+        if not payload.rows:
+            return {"message": "Nenhuma linha para importar.", "linhas_importadas": 0}
+
+        if payload.strategy == ImportStrategy.OVERWRITE:
+            # Delete combinations of (data, id_loja) present in the payload
+            # Replace exactly what's being sent for those days/stores
+            days_lojas = {(row.data, row.id_loja) for row in payload.rows}
+            for d, l in days_lojas:
+                await self.session.execute(
+                    delete(Venda).where(and_(Venda.data == d, Venda.id_loja == l))
+                )
+
+        # Prepare for insertion
+        insert_data = [
+            {
+                "data": row.data,
+                "id_loja": row.id_loja,
+                "id_produto": row.id_produto,
+                "quantidade_produto": row.quantidade_produto,
+                "valor_total": row.valor_total,
+            }
+            for row in payload.rows
+        ]
+
+        stmt = pg_insert(Venda).values(insert_data)
+        
+        if payload.strategy == ImportStrategy.APPEND:
+            stmt = stmt.on_conflict_do_nothing(constraint='uq_venda_data_loja_produto')
+        else:
+            # For overwrite strategy, we already deleted, but if the payload itself 
+            # has internal duplicates (though frontend aggregates), handle with update
+            stmt = stmt.on_conflict_do_update(
+                constraint='uq_venda_data_loja_produto',
+                set_={
+                    "quantidade_produto": stmt.excluded.quantidade_produto,
+                    "valor_total": stmt.excluded.valor_total,
+                }
+            )
+
+        await self.session.execute(stmt)
+        await self.session.commit()
+
+        filtros = await self.get_filters()
+        return {
+            "message": "Vendas importadas com sucesso.",
+            "linhas_importadas": len(payload.rows),
+            **filtros,
         }

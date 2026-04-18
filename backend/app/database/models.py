@@ -7,6 +7,7 @@ from sqlalchemy import (
   Index,
   Integer,
   String,
+  UniqueConstraint,
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -25,7 +26,7 @@ class Produto(Base):
   quantidade_referencia = Column(Float)  # ex: 500 (g)
   preco_referencia = Column(Float)       # ex: 25.00 (R$)
   id_produto_externo = Column(String, nullable=True, index=True)
-  
+
   __table_args__ = (
     CheckConstraint("tipo IN ('receita', 'insumo')", name="tipo_check"),
   )
@@ -57,6 +58,8 @@ class Venda(Base):
   __table_args__ = (
     CheckConstraint("quantidade_produto > 0", name="vendas_quantidade_produto_positive"),
     CheckConstraint("valor_total >= 0", name="vendas_valor_total_non_negative"),
+    UniqueConstraint('data', 'id_loja', 'id_produto', name='uq_venda_data_loja_produto'),
     Index("ix_vendas_loja_data", "id_loja", "data"),
     Index("ix_vendas_produto_data", "id_produto", "data"),
   )
+

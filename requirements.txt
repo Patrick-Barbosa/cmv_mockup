@@ -11,3 +11,6 @@ pytest
 httpx
 openpyxl
 alembic
+pandas
+pyarrow
+xlsxwriter
