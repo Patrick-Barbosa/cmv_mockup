@@ -17,5 +17,15 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
+  "resolvedPaths": {
+    "cwd": "frontend",
+    "tailwindConfig": "tailwind.config.ts",
+    "tailwindCss": "src/index.css",
+    "utils": "src/lib/utils",
+    "components": "src/components",
+    "lib": "src/lib",
+    "hooks": "src/hooks",
+    "ui": "src/components/ui"
+  },
   "iconLibrary": "lucide"
 }

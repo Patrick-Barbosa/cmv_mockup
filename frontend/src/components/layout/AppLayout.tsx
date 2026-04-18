@@ -131,7 +131,9 @@ export function AppLayout() {
             </button>
           </div>
         </header>
-        <main className="flex-1 px-6 md:px-10 py-8 md:py-10 max-w-6xl w-full mx-auto">
+        <main className={`flex-1 px-6 md:px-10 py-8 md:py-10 mx-auto w-full ${
+          location.pathname.startsWith("/lojas") ? "max-w-[1600px]" : "max-w-6xl"
+        }`}>
           <Outlet />
         </main>
         <footer className="h-[60px] shrink-0 px-6 md:px-10 border-t border-brand-line/15 flex items-center">
