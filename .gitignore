@@ -47,7 +47,6 @@ node_modules/
 .claude/
 .qwen/
 .vscode/
-AGENTS.md
 QWEN.md
 
 # Docs to exclude
