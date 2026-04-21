@@ -370,3 +370,54 @@ class VendaService:
             "linhas_importadas": len(payload.rows),
             **filtros,
         }
+
+    async def get_missing_skus(self, page: int = 1, size: int = 50):
+        # Base query to identify SKUs in Venda that are NOT in Produto.id_produto_externo
+        # Using a subquery or outer join to find missing links
+        
+        # 1. First, get total count of unique missing SKUs
+        count_stmt = (
+            select(func.count(func.distinct(Venda.id_produto)))
+            .select_from(Venda)
+            .outerjoin(Produto, Venda.id_produto == Produto.id_produto_externo)
+            .where(Produto.id.is_(None))
+        )
+        total_count_result = await self.session.execute(count_stmt)
+        total_count = total_count_result.scalar() or 0
+
+        # 2. Get the paginated results
+        stmt = (
+            select(
+                Venda.id_produto.label("id_produto_externo"),
+                func.sum(Venda.quantidade_produto).label("quantidade_total"),
+                func.sum(Venda.valor_total).label("valor_total"),
+                func.count(Venda.id).label("vendas_count")
+            )
+            .outerjoin(Produto, Venda.id_produto == Produto.id_produto_externo)
+            .where(Produto.id.is_(None))
+            .group_by(Venda.id_produto)
+            .order_by(func.sum(Venda.valor_total).desc())
+            .limit(size)
+            .offset((page - 1) * size)
+        )
+        
+        result = await self.session.execute(stmt)
+        items = []
+        for row in result.all():
+            items.append({
+                "id_produto_externo": row.id_produto_externo,
+                "quantidade_total": int(row.quantidade_total),
+                "valor_total": float(row.valor_total),
+                "vendas_count": int(row.vendas_count)
+            })
+
+        import math
+        pages = math.ceil(total_count / size) if size > 0 else 0
+
+        return {
+            "total": total_count,
+            "page": page,
+            "size": size,
+            "pages": pages,
+            "items": items
+        }

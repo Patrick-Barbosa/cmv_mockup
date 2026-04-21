@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 
 from backend.app.database.session import db_session
-from backend.app.schemas.venda import AnaliseLojaParamsModel, BulkImportVendasModel
+from backend.app.schemas.venda import AnaliseLojaParamsModel, BulkImportVendasModel, PaginatedSkusAusentesModel
 from backend.app.services.venda_service import VendaService, EXPECTED_UPLOAD_COLUMNS
 
 router = APIRouter(prefix="/api")
@@ -86,3 +86,10 @@ async def getAnaliseLoja(store_id: str, month: str):
     async with db_session.session_factory() as session:
         venda_service = VendaService(session)
         return await venda_service.get_store_month_analysis(payload.store_id, payload.month)
+
+
+@router.get("/vendas/skus-ausentes", response_model=PaginatedSkusAusentesModel)
+async def get_skus_ausentes(page: int = 1, size: int = 50):
+    async with db_session.session_factory() as session:
+        venda_service = VendaService(session)
+        return await venda_service.get_missing_skus(page=page, size=size)

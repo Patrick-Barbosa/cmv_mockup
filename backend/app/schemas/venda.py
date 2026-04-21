@@ -123,3 +123,18 @@ class BulkImportVendasModel(BaseModel):
     model_config = ConfigDict(extra='forbid')
     strategy: ImportStrategy
     rows: List[VendaImportRowModel]
+
+
+class SkuAusenteModel(BaseModel):
+    id_produto_externo: str
+    quantidade_total: int
+    valor_total: float
+    vendas_count: int
+
+
+class PaginatedSkusAusentesModel(BaseModel):
+    total: int
+    page: int
+    size: int
+    pages: int
+    items: List[SkuAusenteModel]
