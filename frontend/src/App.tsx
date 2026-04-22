@@ -2,12 +2,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { ThemeProvider } from "./components/ThemeProvider"
 import { MainLayout } from "./components/layout/MainLayout"
 import { AppLayout } from "./components/layout/AppLayout"
+import { Toaster } from "@/components/ui/sonner"
 import Landing from "./pages/Landing"
 import Login from "./pages/Login"
 import Insumos from "./pages/Insumos"
 import Receitas from "./pages/Receitas"
 import ReceitaDetalhe from "./pages/ReceitaDetalhe"
 import Vendas from "./pages/Vendas"
+import SkusAusentes from "./pages/SkusAusentes"
 import Lojas from "./pages/Lojas"
 
 function App() {
@@ -29,14 +31,14 @@ function App() {
             <Route path="/receitas" element={<Receitas />} />
             <Route path="/receitas/:id" element={<ReceitaDetalhe />} />
             <Route path="/vendas" element={<Vendas />} />
+            <Route path="/vendas/ausentes" element={<SkusAusentes />} />
             <Route path="/lojas" element={<Lojas />} />
           </Route>
         </Routes>
       </BrowserRouter>
+      <Toaster position="top-center" richColors />
     </ThemeProvider>
   )
 }
 
 export default App
-
-

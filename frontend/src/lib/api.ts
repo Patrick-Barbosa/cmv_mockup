@@ -1,4 +1,6 @@
-export const API_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000"
+export const API_URL = import.meta.env.DEV 
+  ? "" 
+  : (import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000")
 export const IS_MOCK = !import.meta.env.VITE_BACKEND_URL
 
 interface FetchOptions extends Omit<RequestInit, "body"> {
@@ -281,6 +283,21 @@ export const receitasApi = {
     }),
 }
 
+export interface SkuAusente {
+  id_produto_externo: string
+  quantidade_total: number
+  valor_total: number
+  vendas_count: number
+}
+
+export interface SkusAusentesResponse {
+  total: number
+  page: number
+  size: number
+  pages: number
+  items: SkuAusente[]
+}
+
 export const vendasApi = {
   upload: (file: File) => {
     const formData = new FormData()
@@ -305,6 +322,9 @@ export const vendasApi = {
       body: payload,
     }),
 
+  getSkusAusentes: (page = 1, size = 50) =>
+    apiFetch<SkusAusentesResponse>(`/api/vendas/skus-ausentes?page=${page}&size=${size}`),
+
   downloadTemplate: async (format: "xlsx" | "csv") => {
     const response = await fetch(`${API_URL}/api/vendas/template?format=${format}`)
     if (!response.ok) throw new Error("Erro ao baixar template")
@@ -317,5 +337,33 @@ export const vendasApi = {
     a.click()
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
+  },
+}
+
+export const commonApi = {
+  searchProdutos: async (q: string) => {
+    if (IS_MOCK) {
+      await new Promise((resolve) => setTimeout(resolve, 400))
+      const mockResults = [
+        { id: 1, text: "Hambúrguer de Wagyu", tipo: "Receita" },
+        { id: 2, text: "Pão de Brioche", tipo: "Insumo" },
+        { id: 3, text: "Queijo Cheddar Inglês", tipo: "Insumo" },
+        { id: 4, text: "Molho Especial Prato", tipo: "Receita" },
+        { id: 5, text: "Batata Rústica", tipo: "Insumo" },
+      ]
+      return mockResults.filter((r) =>
+        r.text.toLowerCase().includes(q.toLowerCase())
+      )
+    }
+
+    // O backend pode retornar 'items' ou 'results' dependendo da versão/padronização
+    type Select2Response = { 
+      results?: { id: number; text: string; tipo: string }[]
+      items?: { id: number; text: string; tipo: string }[] 
+    }
+
+    return apiFetch<Select2Response>(
+      `/api/get_produtos_select2?q=${encodeURIComponent(q)}&per_page=100`
+    ).then((res) => res.items || res.results || [])
   },
 }
