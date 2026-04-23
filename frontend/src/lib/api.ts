@@ -1,7 +1,5 @@
-export const API_URL = import.meta.env.DEV 
-  ? "" 
-  : (import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000")
-export const IS_MOCK = !import.meta.env.VITE_BACKEND_URL
+export const API_URL = import.meta.env.VITE_BACKEND_URL || ""
+export const IS_MOCK = import.meta.env.VITE_USE_MOCK === "true"
 
 interface FetchOptions extends Omit<RequestInit, "body"> {
   body?: unknown

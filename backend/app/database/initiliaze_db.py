@@ -13,17 +13,16 @@ async def init_db():
 
     Note on Supabase schema routing:
       We set Base.metadata.schema explicitly so that SQLAlchemy generates DDL with
-      the full schema qualifier (e.g. CREATE TABLE development.produtos ...).
+      the full schema qualifier (e.g. dev.produtos ...).
       In persistent environments, schema creation stays here while table evolution
       is handled by Alembic migrations during startup.
     """
 
-    Base.metadata.schema = None if DB_SCHEMA == "public" else DB_SCHEMA
+    Base.metadata.schema = DB_SCHEMA
     print(f"[init_db] APP_ENV={APP_ENV} - target schema: '{DB_SCHEMA}'")
 
     async with db_session.engine.begin() as conn:
-        if DB_SCHEMA != "public":
-            await conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{DB_SCHEMA}"'))
+        await conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{DB_SCHEMA}"'))
 
         if APP_ENV == "development":
             print(f"[init_db] Dropping and recreating tables in schema '{DB_SCHEMA}'...")
