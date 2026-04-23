@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react"
 import type { ChangeEvent } from "react"
-import { AlertCircle, CheckCircle2, FileSpreadsheet, Loader2, Upload, Download } from "lucide-react"
+import { AlertCircle, CheckCircle2, FileSpreadsheet, Loader2, Upload, Download, Link as LinkIcon } from "lucide-react"
 import { FadeUp } from "@/components/ui/fade-up"
 import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { vendasApi, IS_MOCK } from "@/lib/api"
@@ -151,11 +152,21 @@ export default function Vendas() {
   return (
     <div className="flex flex-col gap-6">
       <FadeUp>
-        <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Vendas</p>
-        <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Importação de vendas</h1>
-        <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-2xl">
-          Envie seus dados de vendas. O sistema agrega os dados localmente por dia, loja e produto antes de enviar para o servidor.
-        </p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Vendas</p>
+            <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Importação de vendas</h1>
+            <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-2xl">
+              Envie seus dados de vendas. O sistema agrega os dados localmente por dia, loja e produto antes de enviar para o servidor.
+            </p>
+          </div>
+          <Link to="/vendas/ausentes">
+            <Button variant="outline" className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 h-9 text-xs">
+              <LinkIcon className="w-3.5 h-3.5 mr-2" />
+              Ver SKUs não vinculados
+            </Button>
+          </Link>
+        </div>
       </FadeUp>
 
       {error && (

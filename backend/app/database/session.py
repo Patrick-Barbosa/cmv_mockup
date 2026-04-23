@@ -11,9 +11,9 @@ load_dotenv()
 APP_ENV: str = os.getenv("APP_ENV", "development")
 
 # Schema used for all table references.
-# production → public  (default Supabase schema, schema_translate_map passes None = no prefix)
-# development → development (separate schema, created automatically on startup)
-DB_SCHEMA: str = "public" if APP_ENV == "production" else "development"
+# production → prd
+# development → dev
+DB_SCHEMA: str = "prd" if APP_ENV == "production" else "dev"
 
 DATABASE_URL: str = os.getenv(
     "DATABASE_URL",
@@ -32,16 +32,15 @@ class DatabaseSession:
         """Inicializa o engine e o session factory.
 
         We use schema_translate_map instead of search_path so that SQLAlchemy
-        emits fully-qualified table names (e.g. development.produtos) in ALL
+        emits fully-qualified table names (e.g. dev.produtos) in ALL
         SQL — both DDL (CREATE TABLE) and DML (SELECT/INSERT/UPDATE).
         This works correctly through Supabase's pgBouncer pooler, which does
         not forward server_settings / search_path overrides.
 
-        schema_translate_map={None: "development"} means:
-          "whenever a table has no explicit schema (schema=None), use 'development'".
-        For production we map None → None (i.e. no prefix, uses PostgreSQL default).
+        schema_translate_map={None: "dev"} means:
+          "whenever a table has no explicit schema (schema=None), use 'dev'".
         """
-        translate_map = {None: DB_SCHEMA} if DB_SCHEMA != "public" else {}
+        translate_map = {None: DB_SCHEMA}
 
         self.engine = create_async_engine(
             DATABASE_URL,

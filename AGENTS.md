@@ -7,12 +7,12 @@ Bem-vindo ao monorepo `cmv_mockup_empresa`. Este documento é um **ponto de entr
 ## 🎯 Como Começar
 
 ### 1. Você está trabalhando no **FRONTEND**?
-👉 Leia: `frontend/agent_knowledge/AGENTS.md`
+👉 Leia: `frontend/AGENTS.md`
 
 **Descrição:** Componentes React, páginas, estilização, roteamento, conexão com API.
 
 ### 2. Você está trabalhando no **BACKEND**?
-👉 Leia: `backend/agent_knowledge/AGENTS.md`
+👉 Leia: `backend/AGENTS.md`
 
 **Descrição:** Endpoints de API, modelos de banco de dados, validação, lógica de negócio, testes.
 

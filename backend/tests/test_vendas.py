@@ -95,3 +95,33 @@ class TestAnaliseLoja:
         response = client.get("/api/vendas/analise-loja?store_id=RJ-COPA&month=04-2026")
 
         assert response.status_code == 422
+
+
+class TestSkusAusentes:
+    def test_success(self, client):
+        session = buildMockSession()
+        factory = buildMockFactory(session)
+
+        with patch("backend.app.routers.api.vendas.db_session.session_factory", factory), \
+             patch("backend.app.routers.api.vendas.VendaService") as MockService:
+            MockService.return_value.get_missing_skus = AsyncMock(return_value={
+                "total": 1,
+                "page": 1,
+                "size": 50,
+                "pages": 1,
+                "items": [
+                    {
+                        "id_produto_externo": "SKU-AUSENTE-01",
+                        "quantidade_total": 10,
+                        "valor_total": 500.0,
+                        "vendas_count": 2
+                    }
+                ]
+            })
+
+            response = client.get("/api/vendas/skus-ausentes?page=1&size=50")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["id_produto_externo"] == "SKU-AUSENTE-01"

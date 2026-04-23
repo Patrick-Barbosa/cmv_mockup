@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom"
-import { Box, FileSpreadsheet, Layers, Moon, PieChart, Store, Sun, TrendingUp } from "lucide-react"
+import { Box, FileSpreadsheet, Layers, Moon, PieChart, Store, Sun, TrendingUp, Unlink } from "lucide-react"
 import { useTheme } from "@/components/ThemeProvider"
 
 export function AppLayout() {
@@ -49,13 +49,24 @@ export function AppLayout() {
           <Link
             to="/vendas"
             className={`flex items-center gap-2.5 px-3 py-2 rounded-[2px] text-[0.82rem] font-medium transition-colors ${
-              location.pathname.startsWith("/vendas")
+              location.pathname === "/vendas"
                 ? "text-brand-highlight bg-brand-highlight/10"
                 : "text-brand-muted hover:text-brand-soft hover:bg-brand-line/10"
             }`}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             Vendas
+          </Link>
+          <Link
+            to="/vendas/ausentes"
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-[2px] text-[0.82rem] font-medium transition-colors ${
+              location.pathname === "/vendas/ausentes"
+                ? "text-brand-highlight bg-brand-highlight/10"
+                : "text-brand-muted hover:text-brand-soft hover:bg-brand-line/10"
+            }`}
+          >
+            <Unlink className="w-3.5 h-3.5" />
+            SKUs não vinculados
           </Link>
           <div className="border-t border-brand-line/15 my-4"></div>
           <p className="text-brand-muted text-[0.65rem] tracking-[0.15em] uppercase font-medium px-3 mb-2">Análise</p>
@@ -114,8 +125,12 @@ export function AppLayout() {
               Receitas
             </Link>
             <span className="text-brand-line/50">|</span>
-            <Link to="/vendas" className={`text-xs ${location.pathname.startsWith("/vendas") ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
+            <Link to="/vendas" className={`text-xs ${location.pathname === "/vendas" ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
               Vendas
+            </Link>
+            <span className="text-brand-line/50">|</span>
+            <Link to="/vendas/ausentes" className={`text-xs ${location.pathname === "/vendas/ausentes" ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
+              Vínculos
             </Link>
             <span className="text-brand-line/50">|</span>
             <Link to="/lojas" className={`text-xs ${location.pathname.startsWith("/lojas") ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
