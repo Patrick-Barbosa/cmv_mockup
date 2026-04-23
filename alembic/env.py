@@ -17,11 +17,14 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-target_metadata.schema = None if DB_SCHEMA == "public" else DB_SCHEMA
+target_metadata.schema = DB_SCHEMA
 
 
 def include_object(object_, name, type_, reflected, compare_to):
-    if type_ == "table" and DB_SCHEMA != "public":
+    # Permite a tabela de versão do alembic e objetos do schema alvo
+    if type_ == "table":
+        if name == "alembic_version":
+            return True
         return getattr(object_, "schema", None) == DB_SCHEMA
     return True
 
@@ -33,9 +36,9 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_schemas=(DB_SCHEMA != "public"),
+        include_schemas=True,
         include_object=include_object,
-        version_table_schema=None if DB_SCHEMA == "public" else DB_SCHEMA,
+        version_table_schema=DB_SCHEMA,
     )
 
     with context.begin_transaction():
@@ -55,8 +58,7 @@ def run_migrations_online() -> None:
 
     async def _run() -> None:
         async with connectable.connect() as connection:
-            if DB_SCHEMA != "public":
-                await connection.exec_driver_sql(f'CREATE SCHEMA IF NOT EXISTS "{DB_SCHEMA}"')
+            await connection.exec_driver_sql(f'CREATE SCHEMA IF NOT EXISTS "{DB_SCHEMA}"')
 
             await connection.run_sync(_configure_and_run_migrations)
 
@@ -69,9 +71,9 @@ def _configure_and_run_migrations(connection) -> None:
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
-        include_schemas=(DB_SCHEMA != "public"),
+        include_schemas=True,
         include_object=include_object,
-        version_table_schema=None if DB_SCHEMA == "public" else DB_SCHEMA,
+        version_table_schema=DB_SCHEMA,
     )
 
     with context.begin_transaction():

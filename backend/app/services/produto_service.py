@@ -31,8 +31,6 @@ class ComponentesReceitaModel(BaseModel):
     unidade: Optional[str]      = None
 
 def _qualify_table(table_name: str) -> str:
-    if DB_SCHEMA == "public":
-        return table_name
     return f'"{DB_SCHEMA}".{table_name}'
 
 
