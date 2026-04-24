@@ -1,6 +1,13 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, AsyncEngine
-from typing import AsyncGenerator
+from typing import Annotated, Any, AsyncGenerator
+
 from dotenv import load_dotenv
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 import os
 
 # Carrega variáveis do arquivo .env
@@ -61,13 +68,52 @@ class DatabaseSession:
             await self.engine.dispose()
 
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
-        """Dependency que fornece sessões do banco de dados."""
+        """Fornece uma sessão do banco de dados.
+
+        O async with do session_factory garante o fechamento via __aexit__,
+        sem necessidade de try/finally.
+
+        Toda operação com o banco deve abrir um bloco explícito:
+            - Leitura:  async with session.begin(): ...
+            - Escrita:  async with session.begin(): ...
+
+        Para reads avulsos, prefira os helpers fetch_one() e fetch_all(),
+        que encapsulam o begin() internamente e simplificam o código.
+        """
         async with self.session_factory() as session:
-            try:
-                yield session
-            finally:
-                await session.close()
+            yield session
 
 
 # Instância global para ser usada no lifespan do FastAPI
 db_session = DatabaseSession()
+
+
+# ---------------------------------------------------------------------------
+# Helpers de leitura
+# ---------------------------------------------------------------------------
+
+# Helpers para reads AVULSOS e independentes.
+# Eles abrem e fecham sua própria transação internamente.
+# NUNCA os chame com uma transação já aberta na sessão — session.begin()
+# vai lançar InvalidRequestError se a sessão já estiver em transação.
+# Para reads dentro de um bloco existente, use session.execute() diretamente.
+
+async def fetch_one(session: AsyncSession, stmt) -> Any | None:
+    """Executa um read avulso e retorna um único resultado ou None."""
+    async with session.begin():
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+async def fetch_all(session: AsyncSession, stmt) -> list[Any]:
+    """Executa um read avulso e retorna todos os resultados."""
+    async with session.begin():
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+
+# ---------------------------------------------------------------------------
+# FastAPI dependencies
+# ---------------------------------------------------------------------------
+
+DbSession = Annotated[AsyncSession, Depends(db_session.get_session)]

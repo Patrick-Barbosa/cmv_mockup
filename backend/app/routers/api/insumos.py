@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy.exc import IntegrityError
-from backend.app.database.session import db_session
+from backend.app.database.session import DbSession
 from backend.app.database.models import Produto
 from backend.app.schemas.insumo import CreateProductModel, UpdateCustoModel, EditInsumoModel
 from backend.app.schemas.common import PaginatedParamsModel, UNIDADES_PADRAO
@@ -15,11 +15,11 @@ async def getUnidades():
 
 
 @router.post('/insumos/create')
-async def create_produto(payload: CreateProductModel):
+async def create_produto(payload: CreateProductModel, session: DbSession):
     custo_unitario = payload.preco_referencia / payload.quantidade_referencia
 
     try:
-        async with db_session.session_factory() as session:
+        async with session.begin():
             produto_service = ProdutoService(session)
             await produto_service.ensure_external_product_id_available(payload.id_produto_externo)
             insumo = Produto(
@@ -34,7 +34,6 @@ async def create_produto(payload: CreateProductModel):
             )
             session.add(insumo)
             await session.flush()
-            await session.commit()
     except IntegrityError:
         raise HTTPException(status_code=400, detail="Conflict")
 
@@ -42,10 +41,15 @@ async def create_produto(payload: CreateProductModel):
 
 
 @router.get('/get_produtos_select2')
-async def get_produtos_select2(q: str = None, page: int = 1, per_page: int = 20):
+async def get_produtos_select2(
+    session: DbSession,
+    q: str = None,
+    page: int = 1,
+    per_page: int = 20,
+):
     payload = PaginatedParamsModel(q=q, page=page, per_page=per_page)
 
-    async with db_session.session_factory() as session:
+    async with session.begin():
         produto_service = ProdutoService(session)
         data = await produto_service.get_produtos_paginated_select2(
             payload.q,
@@ -57,8 +61,8 @@ async def get_produtos_select2(q: str = None, page: int = 1, per_page: int = 20)
 
 
 @router.post('/insumos/update_custo')
-async def update_custo(payload: UpdateCustoModel):
-    async with db_session.session_factory() as session:
+async def update_custo(payload: UpdateCustoModel, session: DbSession):
+    async with session.begin():
         produto_service = ProdutoService(session)
         insumo = await produto_service.edit_insumo(payload.id, nome=None, custo=payload.custo, unidade=payload.unidade)
 
@@ -66,8 +70,8 @@ async def update_custo(payload: UpdateCustoModel):
 
 
 @router.patch('/insumos/{insumo_id}')
-async def editInsumo(insumo_id: int, payload: EditInsumoModel):
-    async with db_session.session_factory() as session:
+async def editInsumo(insumo_id: int, payload: EditInsumoModel, session: DbSession):
+    async with session.begin():
         produto_service = ProdutoService(session)
         insumo = await produto_service.edit_insumo_gramatura(
             insumo_id,
@@ -83,8 +87,8 @@ async def editInsumo(insumo_id: int, payload: EditInsumoModel):
 
 
 @router.delete('/insumos/{insumo_id}')
-async def deleteInsumo(insumo_id: int):
-    async with db_session.session_factory() as session:
+async def deleteInsumo(insumo_id: int, session: DbSession):
+    async with session.begin():
         produto_service = ProdutoService(session)
         await produto_service.delete_insumo(insumo_id)
 
