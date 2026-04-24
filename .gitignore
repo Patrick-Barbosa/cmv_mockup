@@ -47,6 +47,7 @@ node_modules/
 .claude/
 .qwen/
 .vscode/
+untracked_files/
 QWEN.md
 
 # Docs to exclude
