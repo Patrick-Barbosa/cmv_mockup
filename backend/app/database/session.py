@@ -24,7 +24,7 @@ DB_SCHEMA: str = "prd" if APP_ENV == "production" else "dev"
 
 DATABASE_URL: str = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://postgres:123@localhost/cmv_00",
+    "postgresql+asyncpg://postgres:postgres@localhost/postgres",
 )
 
 

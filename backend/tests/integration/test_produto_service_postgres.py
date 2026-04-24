@@ -12,7 +12,7 @@ from backend.app.services.produto_service import ProdutoService
 from backend.app.services.venda_service import VendaService
 
 
-POSTGRES_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/cmv_00"
+POSTGRES_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5431/postgres"
 
 
 @pytest.fixture
@@ -41,7 +41,11 @@ async def postgres_session_factory(postgres_database_url):
             await conn.run_sync(Base.metadata.create_all)
     except (ConnectionRefusedError, OSError, OperationalError) as exc:
         await engine.dispose()
-        pytest.skip(f"Postgres de integracao indisponivel. Rode `docker compose up -d db`: {exc}")
+        pytest.skip(
+            "Postgres de integracao indisponivel. "
+            "Rode `docker compose -f docker-compose.test.yml -p cmv_test up -d db-test`: "
+            f"{exc}"
+        )
 
     try:
         yield async_sessionmaker(engine, expire_on_commit=False)
