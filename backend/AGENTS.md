@@ -68,8 +68,8 @@ Sempre que um endpoint for criado, alterado ou removido, o arquivo `API-ROUTES.m
 3.  **Comportamento:** Verifique nos `app/services/` se há regras de negócio que resultam em códigos de erro específicos (ex: 400, 404, 422).
 4.  **Exemplos:** Forneça payloads de exemplo reais (Request e Response) para facilitar a integração do frontend.
 
-### Consistência do `GEMINI.md`
-Este arquivo (`GEMINI.md`) atua como o índice principal. Se novos diretórios de documentação ou arquivos de conhecimento forem criados dentro de `agent_knowledge/`, eles devem ser listados na seção "Estrutura de Arquivos" e na tabela "Onde encontrar informações?".
+### Consistência do `AGENTS.md`
+Este arquivo (`AGENTS.md`) atua como o índice principal. Se novos diretórios de documentação ou arquivos de conhecimento foram criados dentro de `agent_knowledge/`, eles devem ser listados na seção "Estrutura de Arquivos" e na tabela "Onde encontrar informações?".
 
 ---
 
