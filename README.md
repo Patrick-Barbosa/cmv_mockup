@@ -20,7 +20,7 @@ Hoje o projeto está dividido em:
 - Cálculo automático de custos de receitas
 - Suporte a diferentes unidades de medida
 - Seed automático em ambiente de desenvolvimento
-- Base de migrations com Alembic para ambientes persistentes
+- Pasta de migrations SQL manuais para ambientes persistentes
 
 ## Estrutura
 
@@ -28,7 +28,7 @@ Hoje o projeto está dividido em:
 - `backend/app/database/session.py`: engine assíncrono, sessão e leitura de variáveis de ambiente
 - `backend/app/database/models.py`: modelos `Produto` e `ComponenteReceita`
 - `backend/app/database/initiliaze_db.py`: bootstrap do schema e seed de desenvolvimento
-- `backend/app/database/migrations.py`: execução programática das migrations do Alembic
+- `migrations/versions/`: scripts SQL versionados para mudanças manuais de schema e dados
 - `backend/app/services/produto_service.py`: regras de negócio de insumos e receitas
 - `backend/app/routers/api/`: endpoints de insumos e receitas
 - `backend/app/routers/pages.py`: endpoints simples de status e leitura
@@ -47,7 +47,6 @@ Hoje o projeto está dividido em:
 - python-dotenv
 - pytest
 - httpx
-- Alembic
 - Nginx
 - Tailwind via CDN
 
@@ -90,7 +89,7 @@ Notas importantes:
 
 - O backend sobe com `APP_ENV=development`
 - Em `development`, o app recria as tabelas e reinsere seed a cada inicialização
-- Em ambientes persistentes, o app aplica migrations do Alembic no startup
+- Em ambientes persistentes, mudanças de schema e dados são aplicadas manualmente com SQL
 - O banco no Compose já inicializa a extensão `uuid-ossp`
 
 Para derrubar os containers:
@@ -116,36 +115,47 @@ uvicorn backend.app.main:app --reload
 
 ## Migrations
 
-Gerar ou aplicar migrations manualmente:
+Carregar o `.env.compose.local` na sessão atual:
 
 ```bash
-alembic upgrade head
+set -a
+source .env.compose.local
+set +a
 ```
 
-Criar uma nova migration:
+Executar um script SQL manual:
 
 ```bash
-alembic revision -m "describe your change"
+psql "postgresql://USER:PASSWORD@HOST:5432/postgres" -f migrations/versions/20260423_01_clone_public_to_prd.sql
+```
+
+Criar um novo script:
+
+```bash
+touch migrations/versions/20260424_01_describe_change.sql
 ```
 
 Fluxo recomendado para evoluir o schema:
 
 1. altere os modelos em `backend/app/database/models.py`
-2. crie uma migration nova com `alembic revision -m "..."`
-3. implemente o `upgrade()` e o `downgrade()` no arquivo gerado em `alembic/versions/`
-4. aplique localmente com `alembic upgrade head`
-5. suba a aplicação no ambiente persistente para deixar o startup aplicar migrations automaticamente
+2. crie um novo arquivo SQL em `migrations/versions/`
+3. escreva o SQL manualmente, preferindo scripts idempotentes quando possível
+4. carregue o ambiente com `set -a`, `source .env.compose.local`, `set +a`
+5. execute manualmente o script no banco alvo
+6. valide os resultados diretamente no banco
 
 Comportamento por ambiente:
 
-- `APP_ENV=development`: não usa Alembic no startup; o app recria tabelas e reinsere seed
-- `APP_ENV=production`: o app garante o schema e roda `alembic upgrade head` automaticamente no startup
+- `APP_ENV=development`: o app recria tabelas e reinsere seed no startup
+- `APP_ENV=production`: o app garante o schema; migrations devem ser rodadas manualmente com SQL
 
 Observações:
 
 - `APP_ENV=development` continua usando recriação de tabelas + seed
-- `APP_ENV=production` não usa mais `create_all`; o schema é garantido no startup e a evolução estrutural fica a cargo do Alembic
-- o Alembic usa a mesma `DATABASE_URL` configurada no ambiente
+- `APP_ENV=production` não executa migrations automaticamente
+- o projeto deixou de usar Alembic devido a comportamento inconsistente observado ao trafegar por pooler do Supabase
+- os scripts SQL ficam versionados em `migrations/versions/`
+- a `DATABASE_URL` da aplicação usa formato do SQLAlchemy (`postgresql+asyncpg://...`) e pode não ser reutilizada diretamente em ferramentas como `psql`
 
 ## Variáveis de ambiente
 

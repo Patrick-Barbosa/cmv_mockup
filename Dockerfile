@@ -7,10 +7,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend runtime source and Alembic assets used on startup
+# Copy backend runtime source
 COPY backend ./backend
-COPY alembic.ini ./alembic.ini
-COPY alembic ./alembic
 
 # Expose the port Koyeb will route traffic to
 EXPOSE 8000

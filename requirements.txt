@@ -10,7 +10,6 @@ python-dotenv
 pytest
 httpx
 openpyxl
-alembic
 pandas
 pyarrow
 xlsxwriter

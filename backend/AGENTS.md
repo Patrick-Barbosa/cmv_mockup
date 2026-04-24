@@ -39,7 +39,7 @@ Este diretório contém guias detalhados que devem ser lidos por agentes antes d
 - **Framework:** FastAPI (Python 3.12+)
 - **Banco de Dados:** PostgreSQL (Supabase em produção)
 - **ORM:** SQLAlchemy (Assíncrono)
-- **Migrações:** Alembic
+- **Migrações:** SQL manual versionado em `migrations/versions/`
 - **Análise de Dados:** Pandas / XlsxWriter (para relatórios de vendas)
 - **Validação:** Pydantic v2
 
@@ -52,7 +52,7 @@ Este diretório contém guias detalhados que devem ser lidos por agentes antes d
 | **Modelos de Dados** | `app/database/models.py` |
 | **Lógica de CMV** | `app/services/produto_service.py` |
 | **Rotas da API** | `agent_knowledge/API-ROUTES.md` |
-| **Migrações DB** | `alembic/versions/` |
+| **Migrações DB** | `migrations/versions/` |
 | **Configuração de Env** | `backend/.env-example` |
 
 ---
@@ -75,6 +75,6 @@ Este arquivo (`GEMINI.md`) atua como o índice principal. Se novos diretórios d
 
 ## ⚠️ Lembretes Importantes
 - **Sincronização:** Documentação e código devem andar juntos. **Não considere uma tarefa de backend completa sem atualizar o `API-ROUTES.md`.**
-- **Migrations:** Sempre use Alembic para qualquer alteração de schema no banco de dados.
+- **Migrations:** Use SQL manual versionado em `migrations/versions/` para qualquer alteração de schema ou migração de dados.
 - **Async:** O backend é quase inteiramente assíncrono. Use `await` corretamente em chamadas de DB e IO.
 - **Ambientes:** O `APP_ENV` controla comportamentos de migração automática e CORS.
