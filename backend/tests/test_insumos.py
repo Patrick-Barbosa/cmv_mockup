@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import HTTPException
 
-from backend.tests.conftest import buildMockFactory, buildMockSession
+from backend.tests.conftest import buildMockSession, overrideSession
 
 
 class TestGetUnidades:
@@ -19,14 +19,13 @@ class TestGetUnidades:
 class TestCreateInsumo:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
         async def assign_id():
             session.add.call_args.args[0].id = 1
 
         session.flush.side_effect = assign_id
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.ensure_external_product_id_available = AsyncMock(return_value=None)
 
@@ -58,14 +57,13 @@ class TestCreateInsumo:
 
     def test_conflict(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
         class _FakeIntegrityError(Exception):
             pass
 
         session.flush.side_effect = _FakeIntegrityError()
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService, \
              patch("backend.app.routers.api.insumos.IntegrityError", _FakeIntegrityError):
             MockService.return_value.ensure_external_product_id_available = AsyncMock(return_value=None)
@@ -84,10 +82,9 @@ class TestCreateInsumo:
 class TestUpdateCusto:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         mock_insumo = MagicMock(id=1)
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.edit_insumo = AsyncMock(return_value=mock_insumo)
 
@@ -112,9 +109,8 @@ class TestUpdateCusto:
 
     def test_notFound(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.edit_insumo = AsyncMock(
                 side_effect=HTTPException(status_code=404, detail="Insumo não encontrado.")
@@ -132,10 +128,9 @@ class TestUpdateCusto:
 class TestEditInsumo:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         mock_insumo = MagicMock(id=1)
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.edit_insumo_gramatura = AsyncMock(return_value=mock_insumo)
 
@@ -149,9 +144,8 @@ class TestEditInsumo:
 
     def test_notFound(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.edit_insumo_gramatura = AsyncMock(
                 side_effect=HTTPException(status_code=404, detail="Insumo não encontrado.")
@@ -168,10 +162,9 @@ class TestEditInsumo:
 
     def test_partialUpdate(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         mock_insumo = MagicMock(id=1)
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.edit_insumo_gramatura = AsyncMock(return_value=mock_insumo)
 
@@ -183,9 +176,8 @@ class TestEditInsumo:
 class TestDeleteInsumo:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.delete_insumo = AsyncMock(return_value=None)
 
@@ -196,9 +188,8 @@ class TestDeleteInsumo:
 
     def test_notFound(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.delete_insumo = AsyncMock(
                 side_effect=HTTPException(status_code=404, detail="Insumo não encontrado.")
@@ -210,9 +201,8 @@ class TestDeleteInsumo:
 
     def test_inUseConflict(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.delete_insumo = AsyncMock(
                 side_effect=HTTPException(status_code=409, detail="Insumo está sendo usado em receitas.")
@@ -226,7 +216,6 @@ class TestDeleteInsumo:
 class TestGetProdutosSelect2:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         mock_data = {
             "items": [{
                 "id": 1,
@@ -239,7 +228,7 @@ class TestGetProdutosSelect2:
             "pagination": {"more": False},
         }
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.get_produtos_paginated_select2 = AsyncMock(return_value=mock_data)
 
@@ -251,10 +240,9 @@ class TestGetProdutosSelect2:
 
     def test_withSearch(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         mock_data = {"items": [], "pagination": {"more": False}}
 
-        with patch("backend.app.routers.api.insumos.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.insumos.ProdutoService") as MockService:
             MockService.return_value.get_produtos_paginated_select2 = AsyncMock(return_value=mock_data)
 

@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, patch
 
 from openpyxl import Workbook
 
-from backend.tests.conftest import buildMockFactory, buildMockSession
+from backend.tests.conftest import buildMockSession, overrideSession
 
 
 class TestUploadVendas:
@@ -18,7 +18,6 @@ class TestUploadVendas:
 
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         workbook = Workbook()
         worksheet = workbook.active
         worksheet.append(["data", "id_loja", "id_produto", "quantidade_produto", "valor_total"])
@@ -27,7 +26,7 @@ class TestUploadVendas:
         file_bytes = BytesIO()
         workbook.save(file_bytes)
 
-        with patch("backend.app.routers.api.vendas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.vendas.VendaService") as MockService:
             MockService.return_value.import_excel = AsyncMock(return_value={
                 "message": "Vendas importadas com sucesso.",
@@ -48,9 +47,8 @@ class TestUploadVendas:
 class TestVendasFiltros:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.vendas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.vendas.VendaService") as MockService:
             MockService.return_value.get_filters = AsyncMock(return_value={
                 "lojas": ["RJ-COPA"],
@@ -66,9 +64,8 @@ class TestVendasFiltros:
 class TestAnaliseLoja:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.vendas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.vendas.VendaService") as MockService:
             MockService.return_value.get_store_month_analysis = AsyncMock(return_value={
                 "loja_id": "RJ-COPA",
@@ -100,9 +97,8 @@ class TestAnaliseLoja:
 class TestSkusAusentes:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.vendas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.vendas.VendaService") as MockService:
             MockService.return_value.get_missing_skus = AsyncMock(return_value={
                 "total": 1,
