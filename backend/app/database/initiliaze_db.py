@@ -2,20 +2,26 @@ import os
 from datetime import date
 from backend.app.database.session import db_session, APP_ENV, DB_SCHEMA
 from backend.app.database.models import Base, Produto, ComponenteReceita, Venda
-from sqlalchemy import select, text
+from sqlalchemy import inspect, select, text
+
+
+def _schema_has_tables(sync_connection, schema: str) -> bool:
+    inspector = inspect(sync_connection)
+    return bool(inspector.get_table_names(schema=schema))
 
 
 async def init_db():
     """Inicializa o banco de dados.
 
     - development: recria todas as tabelas (drop + create) e popula com dados de exemplo.
-    - production: garante o schema e delega evolução estrutural ao Alembic.
+    - production: garante o schema e cria a estrutura base apenas se o schema estiver vazio.
 
     Note on Supabase schema routing:
       We set Base.metadata.schema explicitly so that SQLAlchemy generates DDL with
       the full schema qualifier (e.g. dev.produtos ...).
-      In persistent environments, schema creation stays here while table evolution
-      is handled by Alembic migrations during startup.
+      In persistent environments, schema bootstrap stays here and subsequent
+      schema/data changes are applied manually with SQL scripts versioned in
+      `migrations/versions/`.
     """
 
     Base.metadata.schema = DB_SCHEMA
@@ -30,7 +36,13 @@ async def init_db():
             await conn.run_sync(Base.metadata.create_all)
             print("[init_db] Tables ready.")
         else:
-            print("[init_db] Persistent environment detected - schema ensured, awaiting migrations.")
+            schema_has_tables = await conn.run_sync(_schema_has_tables, DB_SCHEMA)
+            if not schema_has_tables:
+                print(f"[init_db] Schema '{DB_SCHEMA}' vazio em produção - criando tabelas base.")
+                await conn.run_sync(Base.metadata.create_all)
+                print("[init_db] Base tables created in production schema.")
+            else:
+                print("[init_db] Persistent environment detected - schema already has tables.")
 
     if APP_ENV != "development":
         print("[init_db] Production mode - skipping seed data.")

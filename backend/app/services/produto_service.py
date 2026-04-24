@@ -237,7 +237,6 @@ class ProdutoService:
         if unidade is not None:
             insumo.unidade = unidade
 
-        await self.session.commit()
         return insumo
 
     async def edit_insumo_gramatura(
@@ -276,7 +275,6 @@ class ProdutoService:
         if qtd_ref and preco_ref is not None and qtd_ref > 0:
             insumo.custo = preco_ref / qtd_ref
 
-        await self.session.commit()
         return insumo
 
     async def edit_insumo_gramatura_v2(
@@ -332,7 +330,6 @@ class ProdutoService:
         if not insumo:
             raise HTTPException(status_code=404, detail=f"Insumo com id={insumo_id} não encontrado.")
 
-        await self.session.commit()
         return insumo
 
     async def get_componentes_diretos(self, receita_id: int) -> list[dict]:
@@ -394,8 +391,6 @@ class ProdutoService:
             )
 
         await self.session.delete(insumo)
-        await self.session.commit()
-
     async def edit_receita(
         self,
         receita_id: int,
@@ -443,7 +438,6 @@ class ProdutoService:
                     )
                     self.session.add(cr)
 
-        await self.session.commit()
         return receita
 
     async def delete_receita(self, receita_id: int) -> None:
@@ -473,4 +467,3 @@ class ProdutoService:
         )
 
         await self.session.delete(receita)
-        await self.session.commit()

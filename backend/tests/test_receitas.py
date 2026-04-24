@@ -2,15 +2,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import HTTPException
 
-from backend.tests.conftest import buildMockFactory, buildMockSession
+from backend.tests.conftest import buildMockSession, overrideSession
 
 
 class TestCreateReceita:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.receitas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.receitas.ProdutoService") as MockService:
             MockService.return_value.create_recipe = AsyncMock(return_value=42)
             MockService.return_value.recompute_recipe_cost = AsyncMock(return_value=None)
@@ -53,9 +52,8 @@ class TestCreateReceita:
 
     def test_withoutUnidade(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.receitas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.receitas.ProdutoService") as MockService:
             MockService.return_value.create_recipe = AsyncMock(return_value=1)
             MockService.return_value.recompute_recipe_cost = AsyncMock(return_value=None)
@@ -72,10 +70,9 @@ class TestCreateReceita:
 class TestEditReceita:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         mock_receita = MagicMock(id=1)
 
-        with patch("backend.app.routers.api.receitas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.receitas.ProdutoService") as MockService:
             MockService.return_value.edit_receita = AsyncMock(return_value=mock_receita)
             MockService.return_value.recompute_recipe_cost = AsyncMock(return_value=None)
@@ -87,9 +84,8 @@ class TestEditReceita:
 
     def test_notFound(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.receitas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.receitas.ProdutoService") as MockService:
             MockService.return_value.edit_receita = AsyncMock(
                 side_effect=HTTPException(status_code=404, detail="Receita não encontrada.")
@@ -106,10 +102,9 @@ class TestEditReceita:
 
     def test_updateComponentes(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         mock_receita = MagicMock(id=1)
 
-        with patch("backend.app.routers.api.receitas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.receitas.ProdutoService") as MockService:
             MockService.return_value.edit_receita = AsyncMock(return_value=mock_receita)
             MockService.return_value.recompute_recipe_cost = AsyncMock(return_value=None)
@@ -124,9 +119,8 @@ class TestEditReceita:
 class TestDeleteReceita:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.receitas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.receitas.ProdutoService") as MockService:
             MockService.return_value.delete_receita = AsyncMock(return_value=None)
 
@@ -137,9 +131,8 @@ class TestDeleteReceita:
 
     def test_notFound(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
 
-        with patch("backend.app.routers.api.receitas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.receitas.ProdutoService") as MockService:
             MockService.return_value.delete_receita = AsyncMock(
                 side_effect=HTTPException(status_code=404, detail="Receita não encontrada.")
@@ -153,7 +146,6 @@ class TestDeleteReceita:
 class TestReceitaAnaliseVendas:
     def test_success(self, client):
         session = buildMockSession()
-        factory = buildMockFactory(session)
         mock_receita = MagicMock(id=1)
         mock_analysis = {
             "produto": {"id": 1, "nome": "Pizza", "tipo": "receita", "id_produto_externo": "PIZZA-001", "custo_unitario_ideal": 10.0},
@@ -161,7 +153,7 @@ class TestReceitaAnaliseVendas:
             "linhas": [],
         }
 
-        with patch("backend.app.routers.api.receitas.db_session.session_factory", factory), \
+        with overrideSession(client, session), \
              patch("backend.app.routers.api.receitas.ProdutoService") as MockProdutoService, \
              patch("backend.app.routers.api.receitas.VendaService") as MockVendaService:
             MockProdutoService.return_value.get_receita = AsyncMock(return_value=mock_receita)

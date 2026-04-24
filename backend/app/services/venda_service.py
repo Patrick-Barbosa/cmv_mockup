@@ -111,8 +111,6 @@ class VendaService:
             )
             for venda in vendas_validas
         ])
-        await self.session.commit()
-
         filtros = await self.get_filters()
         return {
             "message": "Vendas importadas com sucesso.",
@@ -362,8 +360,6 @@ class VendaService:
             )
 
         await self.session.execute(stmt)
-        await self.session.commit()
-
         filtros = await self.get_filters()
         return {
             "message": "Vendas importadas com sucesso.",
