@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import date, datetime
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -138,3 +138,40 @@ class PaginatedSkusAusentesModel(BaseModel):
     size: int
     pages: int
     items: List[SkuAusenteModel]
+
+
+class DashboardKpis(BaseModel):
+    faturamento: float
+    cmv_percent: Optional[float]
+    lucro_liquido: float
+    lojas_alerta: int
+
+
+class DashboardHistory(BaseModel):
+    mes: str
+    faturamento: float
+    custo: float
+    imposto: float
+    cmv_percent: Optional[float]
+    lucro_liquido: float
+
+
+class DashboardWaterfall(BaseModel):
+    label: str
+    value: float
+    type: str
+
+
+class DashboardTopLojas(BaseModel):
+    loja_id: str
+    custo_total: float
+    imposto_total: float
+    cmv_percent: Optional[float]
+
+
+class DashboardCmvResponse(BaseModel):
+    kpis: DashboardKpis
+    history: List[DashboardHistory]
+    waterfall: List[DashboardWaterfall]
+    top_custo_lojas: List[DashboardTopLojas]
+

@@ -28,8 +28,9 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [x] Migrar para FastAPI
 - [x] Cadastro do custo dos insumos
 - [x] Input de Vendas por Produto e por Loja
-- [ ] Ajuste do schema de desenvolvimento e producao
+- [x] Ajuste do schema de desenvolvimento e producao
 - [ ] Cálculo do Custo Unitário (ajustar schema)
+- [x] Endpoint para dashboard de cmv
 - [ ] CMV Ideal por Produto
 - [ ] Simulador de Impacto de Insumos
 - [ ] Suporte Multi-Unidade
@@ -50,8 +51,8 @@ Usar a Crepelocks como referência significa que as decisões de escopo, priorid
 - [x] Tela de Login
 - [x] Tela de Lojas
 - [x] Tela de CMV Ideal
-- [ ] Tela para alertas de produtos com SKU ausentes
-- [ ] Dashboard Principal de Indicadores
+- [x] Tela para alertas de produtos com SKU ausentes
+- [ ] Dashboard Principal de Indicadores (Em Progresso)
 - [ ] Interface do Simulador de Impacto
 - [ ] Dashboard Multi-Unidade
 - [ ] Tela de Comparativo de Fornecedores

@@ -264,3 +264,62 @@ async def test_venda_service_analysis_and_missing_skus_use_real_aggregations(pos
             }
         ],
     }
+
+@pytest.mark.anyio
+async def test_venda_service_dashboard_cmv(postgres_session_factory):
+    from backend.app.database.models import LojaImposto
+    async with postgres_session_factory() as session:
+        async with session.begin():
+            session.add(
+                Produto(
+                    nome="Pizza Media",
+                    tipo="receita",
+                    quantidade_base=1,
+                    custo=25,
+                    unidade="un",
+                    id_produto_externo="PIZZA-002",
+                )
+            )
+            # Custom tax for RJ-COPA (10%)
+            session.add(LojaImposto(id_loja="RJ-COPA", imposto_percentual=10.0))
+            await session.flush()
+            
+            service = VendaService(session)
+            await service.bulk_import(
+                BulkImportVendasModel.model_validate({
+                    "strategy": ImportStrategy.APPEND,
+                    "rows": [
+                        {
+                            "data": "2026-04-01",
+                            "id_loja": "RJ-COPA",
+                            "id_produto": "PIZZA-002",
+                            "quantidade_produto": 10,
+                            "valor_total": 500,  # 50 each
+                        },
+                        {
+                            "data": "2026-04-01",
+                            "id_loja": "SP-BARRA", # no custom tax, uses 14.0 fallback
+                            "id_produto": "PIZZA-002",
+                            "quantidade_produto": 10,
+                            "valor_total": 400,  # 40 each
+                        }
+                    ],
+                })
+            )
+            
+        async with session.begin():
+            service = VendaService(session)
+            dashboard = await service.get_dashboard_cmv(month="2026-04")
+            
+    kpis = dashboard["kpis"]
+    assert kpis["faturamento"] == 900.0
+    # Custo: 20 pizzas * 25 = 500.0
+    # Imposto RJ-COPA: 10% of 500 = 50
+    # Imposto SP-BARRA: 14% of 400 = 56
+    # Total Imposto = 106.0
+    # Lucro: 900 - 500 - 106 = 294.0
+    assert kpis["lucro_liquido"] == 294.0
+    assert len(dashboard["history"]) == 1
+    assert dashboard["waterfall"][-1]["value"] == 294.0
+    assert dashboard["top_custo_lojas"][0]["loja_id"] == "RJ-COPA" or dashboard["top_custo_lojas"][1]["loja_id"] == "RJ-COPA"
+

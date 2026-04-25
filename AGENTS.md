@@ -28,6 +28,15 @@ O projeto usa os seguintes serviços:
 
 ---
 
+## 🚀 Commits e Pull Requests
+
+- **Idioma:** Sempre em Português (pt-br).
+- **Commits:** Curtos, objetivos e no padrão [Conventional Commits](https://www.conventionalcommits.org/) (ex: `feat:`, `fix:`, `docs:`).
+- **PRs:** Descrição clara do *que* e *por que*. Mencione mudanças visuais se houver.
+- **Mensagens:** Evite termos genéricos como "ajustes". Seja específico.
+
+---
+
 ## 💬 Pedindo Ajuda
 
 **Importante:** Sempre que tiver dúvida sobre uma tarefa, **pergunte ao usuário antes de fazer algo**.

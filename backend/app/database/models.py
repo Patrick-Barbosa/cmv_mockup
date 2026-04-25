@@ -2,12 +2,14 @@ from sqlalchemy import (
   CheckConstraint,
   Column,
   Date,
+  DateTime,
   Float,
   ForeignKey,
   Index,
   Integer,
   String,
   UniqueConstraint,
+  func
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -62,4 +64,14 @@ class Venda(Base):
     Index("ix_vendas_loja_data", "id_loja", "data"),
     Index("ix_vendas_produto_data", "id_produto", "data"),
   )
+
+
+class LojaImposto(Base):
+  __tablename__ = 'loja_imposto'
+
+  id = Column(Integer, primary_key=True)
+  id_loja = Column(String, nullable=False, index=True)
+  imposto_percentual = Column(Float, nullable=False, default=14.0)
+  data_criacao = Column(DateTime, nullable=False, default=func.now())
+
 

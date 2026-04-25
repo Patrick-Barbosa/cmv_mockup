@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 
 from backend.app.database.session import DbSession
-from backend.app.schemas.venda import AnaliseLojaParamsModel, BulkImportVendasModel, PaginatedSkusAusentesModel
+from backend.app.schemas.venda import AnaliseLojaParamsModel, BulkImportVendasModel, PaginatedSkusAusentesModel, DashboardCmvResponse
 from backend.app.services.venda_service import VendaService, EXPECTED_UPLOAD_COLUMNS
 
 router = APIRouter(prefix="/api")
@@ -93,3 +93,9 @@ async def get_skus_ausentes(session: DbSession, page: int = 1, size: int = 50):
     async with session.begin():
         venda_service = VendaService(session)
         return await venda_service.get_missing_skus(page=page, size=size)
+
+@router.get("/vendas/dashboard-cmv", response_model=DashboardCmvResponse)
+async def get_dashboard_cmv(session: DbSession, month: str = None, store_id: str = None):
+    async with session.begin():
+        venda_service = VendaService(session)
+        return await venda_service.get_dashboard_cmv(month=month, store_id=store_id)
