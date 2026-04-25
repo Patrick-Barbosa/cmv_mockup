@@ -149,6 +149,45 @@ Lista SKUs que constam nas vendas mas não estão mapeados no sistema.
   }
   ```
 
+### `GET /api/vendas/dashboard-cmv`
+Retorna dados consolidados globais de faturamento, custo (CMV), impostos médios (14% ou por loja) e lucro líquido para alimentar o Dashboard.
+- **Argumentos (Query):** `month` (opcional, YYYY-MM), `store_id` (opcional).
+- **Resposta Sucesso (200):**
+  ```json
+  {
+    "kpis": {
+      "faturamento": 250000.0,
+      "cmv_percent": 34.5,
+      "lucro_liquido": 128750.0,
+      "lojas_alerta": 3
+    },
+    "history": [
+      {
+        "mes": "2026-03",
+        "faturamento": 200000.0,
+        "custo": 65000.0,
+        "imposto": 28000.0,
+        "cmv_percent": 32.5,
+        "lucro_liquido": 107000.0
+      }
+    ],
+    "waterfall": [
+      {"label": "Faturamento", "value": 250000.0, "type": "positive"},
+      {"label": "Custo Insumos", "value": -86250.0, "type": "negative"},
+      {"label": "Impostos", "value": -35000.0, "type": "negative"},
+      {"label": "Lucro Líquido", "value": 128750.0, "type": "total"}
+    ],
+    "top_custo_lojas": [
+      {
+        "loja_id": "LOJA-01",
+        "custo_total": 45000.0,
+        "imposto_total": 15000.0,
+        "cmv_percent": 38.0
+      }
+    ]
+  }
+  ```
+
 ---
 
 ## 🏠 Endpoints de Base (Legacy/View)

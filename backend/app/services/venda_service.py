@@ -3,10 +3,10 @@ from io import BytesIO
 
 from fastapi import HTTPException
 from openpyxl import load_workbook
-from sqlalchemy import func, select, delete, insert, and_
+from sqlalchemy import func, select, delete, insert, and_, case
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from backend.app.database.models import Produto, Venda
+from backend.app.database.models import Produto, Venda, LojaImposto
 from backend.app.schemas.venda import VendaImportRowModel, BulkImportVendasModel, ImportStrategy
 
 EXPECTED_UPLOAD_COLUMNS = [
@@ -417,3 +417,129 @@ class VendaService:
             "pages": pages,
             "items": items
         }
+
+    async def get_dashboard_cmv(self, month: str | None = None, store_id: str | None = None):
+        # 1. Fetch tax rates for all stores (keep the latest per store)
+        imposto_stmt = select(LojaImposto.id_loja, LojaImposto.imposto_percentual).order_by(LojaImposto.data_criacao.asc())
+        imposto_result = await self.session.execute(imposto_stmt)
+        impostos_loja = {row.id_loja: row.imposto_percentual for row in imposto_result.all()}
+        
+        def get_imposto(loja_id):
+            return impostos_loja.get(loja_id, 14.0)
+
+        # 2. Aggregate sales and costs by month and store
+        mes_expr = func.to_char(Venda.data, 'YYYY-MM').label("mes")
+        
+        custo_calc = func.coalesce(
+            case(
+                (Produto.tipo == 'insumo', Produto.preco_referencia)
+            ),
+            Produto.custo,
+            0.0
+        )
+        
+        query = (
+            select(
+                mes_expr,
+                Venda.id_loja,
+                func.sum(Venda.valor_total).label("faturamento"),
+                func.sum(Venda.quantidade_produto * custo_calc).label("custo_total")
+            )
+            .select_from(Venda)
+            .outerjoin(Produto, Venda.id_produto == Produto.id_produto_externo)
+            .group_by(mes_expr, Venda.id_loja)
+        )
+        
+        if store_id:
+            query = query.where(Venda.id_loja == store_id)
+            
+        result = await self.session.execute(query)
+        raw_data = result.all()
+        
+        from collections import defaultdict
+        history_by_month = defaultdict(lambda: {"faturamento": 0.0, "custo": 0.0, "imposto": 0.0})
+        
+        available_months = sorted(list(set(row.mes for row in raw_data)))
+        if not available_months:
+            return {
+                "kpis": {"faturamento": 0.0, "cmv_percent": None, "lucro_liquido": 0.0, "lojas_alerta": 0},
+                "history": [],
+                "waterfall": [],
+                "top_custo_lojas": []
+            }
+            
+        target_month = month if month and month in available_months else available_months[-1]
+        lojas_target_month = {}
+        
+        for row in raw_data:
+            faturamento = self._to_float(row.faturamento)
+            custo = self._to_float(row.custo_total)
+            imposto_perc = get_imposto(row.id_loja)
+            imposto = faturamento * (imposto_perc / 100.0)
+            
+            history_by_month[row.mes]["faturamento"] += faturamento
+            history_by_month[row.mes]["custo"] += custo
+            history_by_month[row.mes]["imposto"] += imposto
+            
+            if row.mes == target_month:
+                lojas_target_month[row.id_loja] = {
+                    "faturamento": faturamento,
+                    "custo": custo,
+                    "imposto": imposto,
+                    "cmv_percent": (custo / faturamento * 100) if faturamento > 0 else 0
+                }
+                
+        history = []
+        for m in sorted(history_by_month.keys()):
+            h = history_by_month[m]
+            lucro = h["faturamento"] - h["custo"] - h["imposto"]
+            cmv_perc = (h["custo"] / h["faturamento"] * 100) if h["faturamento"] > 0 else None
+            history.append({
+                "mes": m,
+                "faturamento": h["faturamento"],
+                "custo": h["custo"],
+                "imposto": h["imposto"],
+                "cmv_percent": cmv_perc,
+                "lucro_liquido": lucro
+            })
+            
+        current = history_by_month[target_month]
+        kpi_faturamento = current["faturamento"]
+        kpi_custo = current["custo"]
+        kpi_imposto = current["imposto"]
+        kpi_lucro = kpi_faturamento - kpi_custo - kpi_imposto
+        kpi_cmv_perc = (kpi_custo / kpi_faturamento * 100) if kpi_faturamento > 0 else None
+        
+        lojas_alerta = sum(1 for l in lojas_target_month.values() if l["cmv_percent"] and l["cmv_percent"] >= 35.0)
+        
+        kpis = {
+            "faturamento": kpi_faturamento,
+            "cmv_percent": kpi_cmv_perc,
+            "lucro_liquido": kpi_lucro,
+            "lojas_alerta": lojas_alerta
+        }
+        
+        waterfall = [
+            {"label": "Faturamento", "value": kpi_faturamento, "type": "positive"},
+            {"label": "Custo Insumos", "value": -kpi_custo, "type": "negative"},
+            {"label": "Impostos", "value": -kpi_imposto, "type": "negative"},
+            {"label": "Lucro Líquido", "value": kpi_lucro, "type": "total"}
+        ]
+        
+        top_lojas_list = []
+        for l_id, l_data in lojas_target_month.items():
+            top_lojas_list.append({
+                "loja_id": l_id,
+                "custo_total": l_data["custo"],
+                "imposto_total": l_data["imposto"],
+                "cmv_percent": l_data["cmv_percent"] if l_data["cmv_percent"] > 0 else None
+            })
+        top_lojas_list.sort(key=lambda x: x["custo_total"], reverse=True)
+        
+        return {
+            "kpis": kpis,
+            "history": history,
+            "waterfall": waterfall,
+            "top_custo_lojas": top_lojas_list
+        }
+
