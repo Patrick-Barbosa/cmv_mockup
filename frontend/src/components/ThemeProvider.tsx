@@ -16,7 +16,9 @@ export function ThemeProvider({ children, defaultTheme = "dark" }: { children: R
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored === "light" || stored === "dark") return stored
-    } catch {}
+    } catch {
+      // ignore
+    }
     return defaultTheme
   })
 
@@ -26,7 +28,9 @@ export function ThemeProvider({ children, defaultTheme = "dark" }: { children: R
     root.classList.add(theme)
     try {
       localStorage.setItem(STORAGE_KEY, theme)
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [theme])
 
   const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"))
@@ -38,6 +42,7 @@ export function ThemeProvider({ children, defaultTheme = "dark" }: { children: R
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const ctx = useContext(ThemeContext)
   if (!ctx) throw new Error("useTheme must be used within a ThemeProvider")

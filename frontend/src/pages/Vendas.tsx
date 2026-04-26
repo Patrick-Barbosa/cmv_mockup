@@ -47,6 +47,7 @@ export default function Vendas() {
     setSelectedFile(file)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const aggregateData = (rows: any[]): VendaImportRow[] => {
     const map = new Map<string, VendaImportRow>()
 
@@ -84,6 +85,7 @@ export default function Vendas() {
     return Array.from(map.values())
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const parseFile = async (file: File): Promise<any[]> => {
     const extension = file.name.split('.').pop()?.toLowerCase()
 

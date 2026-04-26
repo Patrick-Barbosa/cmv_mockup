@@ -133,6 +133,7 @@ export default function Lojas() {
   const [selectedStore, setSelectedStore] = useState("todas")
   const [selectedMonth, setSelectedMonth] = useState("todos")
   const [analysis, setAnalysis] = useState<StoreAnalysisResponse | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [trendData, setTrendData] = useState<any[]>([])
   const [loadingFilters, setLoadingFilters] = useState(!IS_MOCK)
   const [loadingAnalysis, setLoadingAnalysis] = useState(false)
@@ -533,6 +534,7 @@ export default function Lojas() {
                       <LabelList 
                         dataKey="cmv" 
                         position="right" 
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         formatter={(v: any) => `${v?.toFixed(0)}%`}
                         className="fill-brand-muted text-sm font-bold"
                         offset={12}

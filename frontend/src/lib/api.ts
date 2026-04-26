@@ -223,6 +223,42 @@ export interface ProductSalesAnalysisResponse {
   linhas: ProductSalesAnalysisLine[]
 }
 
+export interface DashboardKpis {
+  faturamento: number
+  cmv_percent: number
+  lucro_liquido: number
+  lojas_alerta: number
+}
+
+export interface DashboardHistoryItem {
+  mes: string
+  faturamento: number
+  custo: number
+  imposto: number
+  cmv_percent: number
+  lucro_liquido: number
+}
+
+export interface DashboardWaterfallItem {
+  label: string
+  value: number
+  type: "positive" | "negative" | "total"
+}
+
+export interface DashboardTopCustoLoja {
+  loja_id: string
+  custo_total: number
+  imposto_total: number
+  cmv_percent: number
+}
+
+export interface DashboardCmvResponse {
+  kpis: DashboardKpis
+  history: DashboardHistoryItem[]
+  waterfall: DashboardWaterfallItem[]
+  top_custo_lojas: DashboardTopCustoLoja[]
+}
+
 export const insumosApi = {
   list: () =>
     apiFetch<{ items: ProdutoSelectAPI[]; pagination: { more: boolean } }>(
@@ -322,6 +358,16 @@ export const vendasApi = {
 
   getSkusAusentes: (page = 1, size = 50) =>
     apiFetch<SkusAusentesResponse>(`/api/vendas/skus-ausentes?page=${page}&size=${size}`),
+
+  getDashboardCmv: (month?: string, storeId?: string) => {
+    const params = new URLSearchParams()
+    if (month) params.append("month", month)
+    if (storeId) params.append("store_id", storeId)
+    const queryString = params.toString()
+    return apiFetch<DashboardCmvResponse>(
+      `/api/vendas/dashboard-cmv${queryString ? `?${queryString}` : ""}`
+    )
+  },
 
   downloadTemplate: async (format: "xlsx" | "csv") => {
     const response = await fetch(`${API_URL}/api/vendas/template?format=${format}`)
