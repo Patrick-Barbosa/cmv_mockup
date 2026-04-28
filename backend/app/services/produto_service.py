@@ -237,6 +237,9 @@ class ProdutoService:
         if unidade is not None:
             insumo.unidade = unidade
 
+        await self.session.flush()
+        await self.update_affected_recipes_costs(insumo_id)
+
         return insumo
 
     async def edit_insumo_gramatura(
@@ -274,6 +277,9 @@ class ProdutoService:
         preco_ref = preco_referencia if preco_referencia is not None else insumo.preco_referencia
         if qtd_ref and preco_ref is not None and qtd_ref > 0:
             insumo.custo = preco_ref / qtd_ref
+
+        await self.session.flush()
+        await self.update_affected_recipes_costs(insumo_id)
 
         return insumo
 
@@ -330,6 +336,9 @@ class ProdutoService:
         if not insumo:
             raise HTTPException(status_code=404, detail=f"Insumo com id={insumo_id} não encontrado.")
 
+        await self.session.flush()
+        await self.update_affected_recipes_costs(insumo_id)
+
         return insumo
 
     async def get_componentes_diretos(self, receita_id: int) -> list[dict]:
@@ -371,6 +380,46 @@ class ProdutoService:
         if receita:
             receita.custo = custo_total
 
+    async def update_affected_recipes_costs(self, insumo_id: int) -> None:
+        """Encontra todas as receitas que usam este insumo (direta ou indiretamente) e recalcula seus custos."""
+        
+        affected_ids = set()
+        to_process = [insumo_id]
+        
+        while to_process:
+            current_id = to_process.pop(0)
+            
+            # Busca receitas que usam o componente atual
+            stmt = select(ComponenteReceita.id_receita).where(ComponenteReceita.id_componente == current_id)
+            result = await self.session.execute(stmt)
+            parent_recipe_ids = result.scalars().all()
+            
+            for rid in parent_recipe_ids:
+                if rid not in affected_ids:
+                    affected_ids.add(rid)
+                    to_process.append(rid)
+        
+        # Se não houver receitas afetadas, encerra
+        if not affected_ids:
+            return
+            
+        # Para garantir que recalculemos de baixo para cima (bottom-up),
+        # vamos precisar da profundidade das receitas.
+        # Uma forma simples e segura é recalcular todas e repetir se houver dependências,
+        # mas como já temos os IDs, vamos apenas re-executar o recompute para cada uma.
+        # O recompute_recipe_cost busca os custos atuais dos componentes no banco.
+        
+        # Ordenamos os IDs para tentar uma consistência, embora a ordem exata dependa da árvore.
+        # Como o ProdutoService salva o custo no banco a cada chamada, as chamadas subsequentes
+        # pegarão os valores já atualizados.
+        sorted_affected = sorted(list(affected_ids))
+        
+        # Para garantir a integridade em árvores profundas sem CTE, 
+        # podemos rodar o recompute algumas vezes ou fazer uma ordenação topológica simples.
+        # Aqui, vamos rodar o recompute para cada receita afetada.
+        for rid in sorted_affected:
+            await self.recompute_recipe_cost(rid)
+
     async def delete_insumo(self, insumo_id: int) -> None:
         result = await self.session.execute(
             select(Produto).where(Produto.id == insumo_id, Produto.tipo == 'insumo')
@@ -391,6 +440,7 @@ class ProdutoService:
             )
 
         await self.session.delete(insumo)
+
     async def edit_receita(
         self,
         receita_id: int,
