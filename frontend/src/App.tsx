@@ -11,6 +11,7 @@ import ReceitaDetalhe from "./pages/ReceitaDetalhe"
 import Vendas from "./pages/Vendas"
 import SkusAusentes from "./pages/SkusAusentes"
 import Lojas from "./pages/Lojas"
+import Dashboard from "./pages/Dashboard"
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
 
           {/* Protected app pages */}
           <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/insumos" element={<Insumos />} />
             <Route path="/receitas" element={<Receitas />} />
             <Route path="/receitas/:id" element={<ReceitaDetalhe />} />

@@ -1,16 +1,19 @@
 from datetime import date, datetime
 from io import BytesIO
+import calendar
+import logging
 
 from fastapi import HTTPException
 from openpyxl import load_workbook
-from sqlalchemy import func, select, delete, insert, and_, case
+from sqlalchemy import func, select, delete, and_, case
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from backend.app.database.models import Produto, Venda, LojaImposto
 from backend.app.schemas.venda import VendaImportRowModel, BulkImportVendasModel, ImportStrategy
 
+logger = logging.getLogger(__name__)
+
 EXPECTED_UPLOAD_COLUMNS = [
-# ... (rest of imports and class start)
     "data",
     "id_loja",
     "id_produto",
@@ -324,15 +327,12 @@ class VendaService:
             return {"message": "Nenhuma linha para importar.", "linhas_importadas": 0}
 
         if payload.strategy == ImportStrategy.OVERWRITE:
-            # Delete combinations of (data, id_loja) present in the payload
-            # Replace exactly what's being sent for those days/stores
             days_lojas = {(row.data, row.id_loja) for row in payload.rows}
             for d, l in days_lojas:
                 await self.session.execute(
                     delete(Venda).where(and_(Venda.data == d, Venda.id_loja == l))
                 )
 
-        # Prepare for insertion
         insert_data = [
             {
                 "data": row.data,
@@ -349,8 +349,6 @@ class VendaService:
         if payload.strategy == ImportStrategy.APPEND:
             stmt = stmt.on_conflict_do_nothing(constraint='uq_venda_data_loja_produto')
         else:
-            # For overwrite strategy, we already deleted, but if the payload itself 
-            # has internal duplicates (though frontend aggregates), handle with update
             stmt = stmt.on_conflict_do_update(
                 constraint='uq_venda_data_loja_produto',
                 set_={
@@ -368,10 +366,6 @@ class VendaService:
         }
 
     async def get_missing_skus(self, page: int = 1, size: int = 50):
-        # Base query to identify SKUs in Venda that are NOT in Produto.id_produto_externo
-        # Using a subquery or outer join to find missing links
-        
-        # 1. First, get total count of unique missing SKUs
         count_stmt = (
             select(func.count(func.distinct(Venda.id_produto)))
             .select_from(Venda)
@@ -381,7 +375,6 @@ class VendaService:
         total_count_result = await self.session.execute(count_stmt)
         total_count = total_count_result.scalar() or 0
 
-        # 2. Get the paginated results
         stmt = (
             select(
                 Venda.id_produto.label("id_produto_externo"),
@@ -418,16 +411,25 @@ class VendaService:
             "items": items
         }
 
-    async def get_dashboard_cmv(self, month: str | None = None, store_id: str | None = None):
-        # 1. Fetch tax rates for all stores (keep the latest per store)
-        imposto_stmt = select(LojaImposto.id_loja, LojaImposto.imposto_percentual).order_by(LojaImposto.data_criacao.asc())
+    async def get_dashboard_cmv(self, month: str | None = None, store_id: str | None = None, alert_threshold: float = 35.0):
+        imposto_stmt = select(LojaImposto.id_loja, LojaImposto.imposto_percentual, LojaImposto.data_criacao).order_by(LojaImposto.data_criacao.desc())
         imposto_result = await self.session.execute(imposto_stmt)
-        impostos_loja = {row.id_loja: row.imposto_percentual for row in imposto_result.all()}
+        historico_impostos = imposto_result.all()
         
-        def get_imposto(loja_id):
-            return impostos_loja.get(loja_id, 14.0)
+        def get_imposto_para_mes(loja_id: str, mes_string: str) -> float:
+            ano, mes = map(int, mes_string.split('-'))
+            ultimo_dia = calendar.monthrange(ano, mes)[1]
+            data_fim_mes = datetime(ano, mes, ultimo_dia, 23, 59, 59)
+            
+            impostos_loja = [i for i in historico_impostos if i.id_loja == loja_id]
+            if not impostos_loja: return 14.0
+            
+            for imp in impostos_loja:
+                if imp.data_criacao <= data_fim_mes:
+                    return imp.imposto_percentual
+            
+            return impostos_loja[-1].imposto_percentual 
 
-        # 2. Aggregate sales and costs by month and store
         mes_expr = func.to_char(Venda.data, 'YYYY-MM').label("mes")
         
         custo_calc = func.coalesce(
@@ -446,7 +448,7 @@ class VendaService:
                 func.sum(Venda.quantidade_produto * custo_calc).label("custo_total")
             )
             .select_from(Venda)
-            .outerjoin(Produto, Venda.id_produto == Produto.id_produto_externo)
+            .join(Produto, Venda.id_produto == Produto.id_produto_externo)
             .group_by(mes_expr, Venda.id_loja)
         )
         
@@ -474,7 +476,11 @@ class VendaService:
         for row in raw_data:
             faturamento = self._to_float(row.faturamento)
             custo = self._to_float(row.custo_total)
-            imposto_perc = get_imposto(row.id_loja)
+            
+            if faturamento < 0 or custo < 0:
+                logger.warning(f"Dashboard CMV: Valores negativos detectados - Loja {row.id_loja}, Mes {row.mes}")
+
+            imposto_perc = get_imposto_para_mes(row.id_loja, row.mes)
             imposto = faturamento * (imposto_perc / 100.0)
             
             history_by_month[row.mes]["faturamento"] += faturamento
@@ -486,7 +492,7 @@ class VendaService:
                     "faturamento": faturamento,
                     "custo": custo,
                     "imposto": imposto,
-                    "cmv_percent": (custo / faturamento * 100) if faturamento > 0 else 0
+                    "cmv_percent": (custo / faturamento * 100) if faturamento > 0 else None
                 }
                 
         history = []
@@ -510,7 +516,7 @@ class VendaService:
         kpi_lucro = kpi_faturamento - kpi_custo - kpi_imposto
         kpi_cmv_perc = (kpi_custo / kpi_faturamento * 100) if kpi_faturamento > 0 else None
         
-        lojas_alerta = sum(1 for l in lojas_target_month.values() if l["cmv_percent"] and l["cmv_percent"] >= 35.0)
+        lojas_alerta = sum(1 for l in lojas_target_month.values() if l["cmv_percent"] is not None and l["cmv_percent"] >= alert_threshold)
         
         kpis = {
             "faturamento": kpi_faturamento,
@@ -532,7 +538,7 @@ class VendaService:
                 "loja_id": l_id,
                 "custo_total": l_data["custo"],
                 "imposto_total": l_data["imposto"],
-                "cmv_percent": l_data["cmv_percent"] if l_data["cmv_percent"] > 0 else None
+                "cmv_percent": l_data["cmv_percent"] if l_data["cmv_percent"] is not None else None
             })
         top_lojas_list.sort(key=lambda x: x["custo_total"], reverse=True)
         
@@ -542,4 +548,3 @@ class VendaService:
             "waterfall": waterfall,
             "top_custo_lojas": top_lojas_list
         }
-

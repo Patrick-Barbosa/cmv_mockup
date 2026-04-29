@@ -191,17 +191,20 @@ export default function ReceitaDetalhe() {
   useEffect(() => {
     if (IS_MOCK || !id) return
 
-    setLoading(true)
-    Promise.all([
-      receitasApi.getTree(id),
-      receitasApi.getSalesAnalysis(Number(id)),
-    ])
-      .then(([tree, analysis]) => {
-        setReceita(tree)
-        setSalesAnalysis(analysis)
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : "Erro ao carregar receita."))
-      .finally(() => setLoading(false))
+    const loadData = () => {
+      setLoading(true)
+      Promise.all([
+        receitasApi.getTree(id),
+        receitasApi.getSalesAnalysis(Number(id)),
+      ])
+        .then(([tree, analysis]) => {
+          setReceita(tree)
+          setSalesAnalysis(analysis)
+        })
+        .catch((e) => setError(e instanceof Error ? e.message : "Erro ao carregar receita."))
+        .finally(() => setLoading(false))
+    }
+    loadData()
   }, [id])
 
   const totalCost = useMemo(() => (receita ? calculateNodeCost(receita) : 0), [receita])

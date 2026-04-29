@@ -8,7 +8,7 @@ export default function Landing() {
       <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-6 pb-24 pt-20">
         <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none overflow-hidden">
           <svg viewBox="0 0 800 800" className="w-[min(128vw,128vh)]" fill="none" aria-hidden="true">
-            <g className="animate-arc-spin origin-[400px_460px]" style={{ animationDelay: `-${Date.now() % 40000}ms` }}>
+            <g className="animate-arc-spin origin-[400px_460px]" style={{ animationDelay: `0ms` }}>
               <circle cx="400" cy="460" r="375" stroke="hsl(var(--circle-stroke) / 0.35)" strokeWidth="2.5" />
               <line x1="9" y1="460" x2="41" y2="460" stroke="hsl(var(--circle-stroke) / 0.35)" strokeWidth="3.5" strokeLinecap="round" />
               <line x1="759" y1="460" x2="791" y2="460" stroke="hsl(var(--circle-stroke) / 0.35)" strokeWidth="3.5" strokeLinecap="round" />
