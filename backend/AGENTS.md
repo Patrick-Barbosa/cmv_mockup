@@ -21,9 +21,9 @@ Abaixo está o mapeamento dos principais diretórios e arquivos:
 ### `/app` - Núcleo da Aplicação
 - `main.py`: Inicialização do FastAPI, middlewares (CORS) e inclusão de rotas.
 - `database/`: Configuração de conexão (SQLAlchemy), modelos do banco de dados e migrações.
-- `routers/`: Definição de endpoints da API divididos por recurso (`api/insumos.py`, `api/receitas.py`, `api/vendas.py`).
-- `schemas/`: Modelos Pydantic para validação de entrada/saída de dados.
-- `services/`: Camada de lógica de negócio (Ex: `produto_service.py` e `venda_service.py`).
+- `routers/`: Definição de endpoints da API divididos por recurso (`api/insumos.py`, `api/receitas.py`, `api/vendas.py`, `api/simulator.py`).
+- `schemas/`: Modelos Pydantic para validação de entrada/saída de dados (`simulator.py`).
+- `services/`: Camada de lógica de negócio (Ex: `produto_service.py`, `venda_service.py` e `simulator_service.py`).
 
 ### `/tests` - Testes Automatizados
 - Testes de integração e unitários utilizando `pytest`.
@@ -51,6 +51,7 @@ Este diretório contém guias detalhados que devem ser lidos por agentes antes d
 | :--- | :--- |
 | **Modelos de Dados** | `app/database/models.py` |
 | **Lógica de CMV** | `app/services/produto_service.py` |
+| **Simulador de Impactos** | `app/services/simulator_service.py` |
 | **Rotas da API** | `agent_knowledge/API-ROUTES.md` |
 | **Migrações DB** | `migrations/versions/` |
 | **Configuração de Env** | `backend/.env-example` |
