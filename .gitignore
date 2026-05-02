@@ -57,3 +57,7 @@ frontend/screens/orientations.md
 
 # GitHub Copilot
 .github/copilot-instructions.md
+PR_GUIDELINES.md
+.gitignore
+opencode.json
+brain/backend_tasks.md
