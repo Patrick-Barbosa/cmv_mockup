@@ -190,6 +190,109 @@ Retorna dados consolidados globais de faturamento, custo (CMV), impostos médios
 
 ---
 
+## 🧮 Simulador de Impactos (`/api/simulator`)
+
+### `POST /api/simulator/simulate`
+Simula o impacto financeiro de mudança de preço de insumo ou mudança de fórmula de receita.
+
+**Argumentos (Body JSON):**
+- `type` (string): `"price_change"` ou `"recipe_change"`
+- `ingredient_id` (int, opcional): ID do insumo (obrigatório se type=price_change)
+- `recipe_id` (int, opcional): ID da receita (obrigatório se type=recipe_change)
+- `change_type` (string): `"percentual"` ou `"absoluto"`
+- `change_value` (float): Valor da mudança
+- `store_ids` (array[int], opcional): Lista de IDs de lojas para filtrar
+- `novos_componentes` (array[object], opcional): Lista de componentes (obrigatório se type=recipe_change)
+  - `id_componente` (int): ID do componente
+  - `quantidade` (float): Quantidade
+
+**Resposta Sucesso (200):**
+```json
+{
+  "simulation_type": "price_change",
+  "ingredient_name": "Nutella",
+  "recipe_name": null,
+  "change_applied": "+10.0% (0.05 -> 0.06)",
+  "total_network_impact": 0.0,
+  "total_network_impact_percent": 0.0,
+  "results": [
+    {
+      "recipe_id": 1,
+      "recipe_name": "Bolo de cenoura",
+      "current_cost": 1.42,
+      "new_cost": 1.42,
+      "cost_difference": 0.0,
+      "cost_percent_change": 0.02,
+      "monthly_sales_quantity": 0.0,
+      "monthly_revenue_current": 0.0,
+      "monthly_revenue_new": 0.0,
+      "revenue_impact": 0.0,
+      "revenue_impact_percent": 0.02
+    }
+  ],
+  "store_ranking": [],
+  "projection_month": "2026-04",
+  "projection_type": "last_complete"
+}
+```
+
+**Exemplo de Payload - Price Change:**
+```json
+{
+  "type": "price_change",
+  "ingredient_id": 19,
+  "change_type": "percentual",
+  "change_value": 10.0
+}
+```
+
+**Exemplo de Payload - Recipe Change:**
+```json
+{
+  "type": "recipe_change",
+  "recipe_id": 4,
+  "change_type": "percentual",
+  "change_value": 10.0,
+  "novos_componentes": [
+    {"id_componente": 19, "quantidade": 0.3},
+    {"id_componente": 20, "quantidade": 0.2}
+  ]
+}
+```
+
+---
+
+### `GET /api/simulator/ingredients/{ingredient_id}/affected-recipes`
+Lista todas as receitas afetadas por mudança neste insumo (útil para preview antes de simular).
+
+**Argumentos (Path):** `ingredient_id` (int)
+
+**Resposta Sucesso (200):**
+```json
+[
+  {
+    "recipe_id": 1,
+    "recipe_name": "Bolo de cenoura",
+    "current_cost": 1.42
+  }
+]
+```
+
+---
+
+### `GET /api/simulator/stores`
+Lista lojas disponíveis para filtragem.
+
+**Resposta Sucesso (200):**
+```json
+[
+  {"store_id": "RJ-BARRA"},
+  {"store_id": "RJ-COPA"}
+]
+```
+
+---
+
 ## 🏠 Endpoints de Base (Legacy/View)
 
 ### `GET /receitas/{id}`

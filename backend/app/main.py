@@ -11,6 +11,7 @@ from backend.app.routers import pages
 from backend.app.routers.api import receitas
 from backend.app.routers.api import insumos
 from backend.app.routers.api import vendas
+from backend.app.routers.api import simulator
 
 
 @asynccontextmanager
@@ -58,6 +59,7 @@ app.include_router(pages.router)
 app.include_router(insumos.router)
 app.include_router(receitas.router)
 app.include_router(vendas.router)
+app.include_router(simulator.router)
 
 
 # Global exception handler for debugging
