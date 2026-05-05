@@ -1,0 +1,624 @@
+{
+  "nodes": [
+    {
+      "id": "main.py",
+      "label": "main.py - FastAPI Application Entry Point",
+      "file_type": "code",
+      "source_file": "backend/main.py"
+    },
+    {
+      "id": "DatabaseSession",
+      "label": "DatabaseSession - Database Manager Class",
+      "file_type": "code",
+      "source_file": "backend/app/database/session.py"
+    },
+    {
+      "id": "db_session",
+      "label": "db_session - Global Database Session Instance",
+      "file_type": "code",
+      "source_file": "backend/app/database/session.py"
+    },
+    {
+      "id": "fetch_one",
+      "label": "fetch_one - Helper for Single Result DB Reads",
+      "file_type": "code",
+      "source_file": "backend/app/database/session.py"
+    },
+    {
+      "id": "fetch_all",
+      "label": "fetch_all - Helper for Multiple Result DB Reads",
+      "file_type": "code",
+      "source_file": "backend/app/database/session.py"
+    },
+    {
+      "id": "APP_ENV",
+      "label": "APP_ENV - Environment Configuration Variable",
+      "file_type": "code",
+      "source_file": "backend/app/database/session.py"
+    },
+    {
+      "id": "DB_SCHEMA",
+      "label": "DB_SCHEMA - Database Schema Variable",
+      "file_type": "code",
+      "source_file": "backend/app/database/session.py"
+    },
+    {
+      "id": "Produto",
+      "label": "Produto - Product Data Model",
+      "file_type": "code",
+      "source_file": "backend/app/database/models.py"
+    },
+    {
+      "id": "ComponenteReceita",
+      "label": "ComponenteReceita - Recipe Component Model",
+      "file_type": "code",
+      "source_file": "backend/app/database/models.py"
+    },
+    {
+      "id": "Venda",
+      "label": "Venda - Sales Data Model",
+      "file_type": "code",
+      "source_file": "backend/app/database/models.py"
+    },
+    {
+      "id": "LojaImposto",
+      "label": "LojaImposto - Store Tax Model",
+      "file_type": "code",
+      "source_file": "backend/app/database/models.py"
+    },
+    {
+      "id": "pages",
+      "label": "pages - Page Routes Module",
+      "file_type": "code",
+      "source_file": "backend/app/routers/pages.py"
+    },
+    {
+      "id": "receitas",
+      "label": "receitas - Recipe API Router",
+      "file_type": "code",
+      "source_file": "backend/app/routers/receitas.py"
+    },
+    {
+      "id": "insumos",
+      "label": "insumos - Ingredient API Router",
+      "file_type": "code",
+      "source_file": "backend/app/routers/insumos.py"
+    },
+    {
+      "id": "vendas",
+      "label": "vendas - Sales API Router",
+      "file_type": "code",
+      "source_file": "backend/app/routers/vendas.py"
+    },
+    {
+      "id": "simulator",
+      "label": "simulator - Simulator API Router",
+      "file_type": "code",
+      "source_file": "backend/app/routers/simulator.py"
+    },
+    {
+      "id": "init_db",
+      "label": "init_db - Database Initialization Function",
+      "file_type": "code",
+      "source_file": "backend/main.py"
+    },
+    {
+      "id": "conftest.py",
+      "label": "conftest.py - Pytest Configuration",
+      "file_type": "code",
+      "source_file": "backend/tests/conftest.py"
+    },
+    {
+      "id": "switch_agent_docs.py",
+      "label": "switch_agent_docs.py - Agent Docs Switcher Utility",
+      "file_type": "code",
+      "source_file": "switch_agent_docs.py"
+    },
+    {
+      "id": "buildMockSession",
+      "label": "buildMockSession - Mock Session Builder for Tests",
+      "file_type": "code",
+      "source_file": "backend/tests/conftest.py"
+    },
+    {
+      "id": "PR_GUIDELINES",
+      "label": "PR Guidelines",
+      "file_type": "document",
+      "source_file": "PR_GUIDELINES.md"
+    },
+    {
+      "id": "Conventional_Commits",
+      "label": "Conventional Commits",
+      "file_type": "rationale",
+      "source_file": "PR_GUIDELINES.md"
+    },
+    {
+      "id": "Assignee",
+      "label": "Assignee Role",
+      "file_type": "document",
+      "source_file": "PR_GUIDELINES.md"
+    },
+    {
+      "id": "Reviewer",
+      "label": "Reviewer Role",
+      "file_type": "document",
+      "source_file": "PR_GUIDELINES.md"
+    },
+    {
+      "id": "Patrick_Barbosa",
+      "label": "Patrick Barbosa (Assignee)",
+      "file_type": "document",
+      "source_file": "PR_GUIDELINES.md"
+    },
+    {
+      "id": "DedecoSantos",
+      "label": "Dedeco Santos (Reviewer)",
+      "file_type": "document",
+      "source_file": "PR_GUIDELINES.md"
+    },
+    {
+      "id": "Labels_System",
+      "label": "Labels System",
+      "file_type": "document",
+      "source_file": "PR_GUIDELINES.md"
+    },
+    {
+      "id": "docker_compose_test",
+      "label": "Docker Compose Test Configuration",
+      "file_type": "document",
+      "source_file": "docker-compose.test.yml"
+    },
+    {
+      "id": "db_test_service",
+      "label": "db-test Service",
+      "file_type": "document",
+      "source_file": "docker-compose.test.yml"
+    },
+    {
+      "id": "PostgreSQL",
+      "label": "PostgreSQL Database",
+      "file_type": "document",
+      "source_file": "docker-compose.test.yml"
+    },
+    {
+      "id": "API_ROUTES",
+      "label": "API Routes Documentation",
+      "file_type": "document",
+      "source_file": "backend/agent_knowledge/API-ROUTES.md"
+    },
+    {
+      "id": "Insumos_API",
+      "label": "Insumos API",
+      "file_type": "document",
+      "source_file": "backend/agent_knowledge/API-ROUTES.md"
+    },
+    {
+      "id": "Receitas_API",
+      "label": "Receitas API",
+      "file_type": "document",
+      "source_file": "backend/agent_knowledge/API-ROUTES.md"
+    },
+    {
+      "id": "Vendas_API",
+      "label": "Vendas API",
+      "file_type": "document",
+      "source_file": "backend/agent_knowledge/API-ROUTES.md"
+    },
+    {
+      "id": "Simulator_API",
+      "label": "Simulator API",
+      "file_type": "document",
+      "source_file": "backend/agent_knowledge/API-ROUTES.md"
+    },
+    {
+      "id": "Integration_Tests",
+      "label": "Integration Tests",
+      "file_type": "document",
+      "source_file": "backend/tests/integration/README.md"
+    },
+    {
+      "id": "Backend_Todo",
+      "label": "Backend Implementation Todo",
+      "file_type": "document",
+      "source_file": "brain/backend/todo.md"
+    },
+    {
+      "id": "Frontend_Agents",
+      "label": "Frontend Agents Guide",
+      "file_type": "document",
+      "source_file": "frontend/AGENTS.md"
+    },
+    {
+      "id": "React_18",
+      "label": "React 18",
+      "file_type": "document",
+      "source_file": "frontend/AGENTS.md"
+    },
+    {
+      "id": "TypeScript",
+      "label": "TypeScript",
+      "file_type": "document",
+      "source_file": "frontend/AGENTS.md"
+    },
+    {
+      "id": "Vite",
+      "label": "Vite",
+      "file_type": "document",
+      "source_file": "frontend/AGENTS.md"
+    },
+    {
+      "id": "Tailwind_CSS",
+      "label": "Tailwind CSS",
+      "file_type": "document",
+      "source_file": "frontend/AGENTS.md"
+    },
+    {
+      "id": "TanStack_Query",
+      "label": "TanStack Query",
+      "file_type": "document",
+      "source_file": "frontend/AGENTS.md"
+    },
+    {
+      "id": "React_Router",
+      "label": "React Router v6",
+      "file_type": "document",
+      "source_file": "frontend/AGENTS.md"
+    },
+    {
+      "id": "Frontend_Tech_Stack",
+      "label": "Frontend Tech Stack",
+      "file_type": "rationale",
+      "source_file": "frontend/AGENTS.md"
+    }
+  ],
+  "edges": [
+    {
+      "source": "main.py",
+      "target": "DatabaseSession",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "main.py",
+      "target": "db_session",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "main.py",
+      "target": "init_db",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "main.py",
+      "target": "pages",
+      "relation": "includes_router",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "main.py",
+      "target": "receitas",
+      "relation": "includes_router",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "main.py",
+      "target": "insumos",
+      "relation": "includes_router",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "main.py",
+      "target": "vendas",
+      "relation": "includes_router",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "main.py",
+      "target": "simulator",
+      "relation": "includes_router",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "DatabaseSession",
+      "target": "db_session",
+      "relation": "instantiates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "conftest.py",
+      "target": "db_session",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "conftest.py",
+      "target": "insumos",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "conftest.py",
+      "target": "receitas",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "conftest.py",
+      "target": "vendas",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "conftest.py",
+      "target": "buildMockSession",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "DatabaseSession",
+      "target": "fetch_one",
+      "relation": "defines_helper",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "DatabaseSession",
+      "target": "fetch_all",
+      "relation": "defines_helper",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "APP_ENV",
+      "target": "DB_SCHEMA",
+      "relation": "determines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Produto",
+      "target": "ComponenteReceita",
+      "relation": "has_relationship",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Venda",
+      "target": "Produto",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8
+    },
+    {
+      "source": "switch_agent_docs.py",
+      "target": "main.py",
+      "relation": "unrelated_utility",
+      "confidence": "INFERRED",
+      "confidence_score": 0.6
+    },
+    {
+      "source": "PR_GUIDELINES",
+      "target": "Conventional_Commits",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "API_ROUTES",
+      "target": "Insumos_API",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "API_ROUTES",
+      "target": "Receitas_API",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "API_ROUTES",
+      "target": "Vendas_API",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "API_ROUTES",
+      "target": "Simulator_API",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Frontend_Agents",
+      "target": "React_18",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Frontend_Agents",
+      "target": "TypeScript",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Frontend_Agents",
+      "target": "Vite",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Frontend_Agents",
+      "target": "Tailwind_CSS",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Frontend_Agents",
+      "target": "TanStack_Query",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Frontend_Agents",
+      "target": "React_Router",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Frontend_Agents",
+      "target": "API_ROUTES",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Frontend_Tech_Stack",
+      "target": "Frontend_Agents",
+      "relation": "organizes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "Insumos_API",
+      "target": "Receitas_API",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7
+    },
+    {
+      "source": "Vendas_API",
+      "target": "Simulator_API",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "fastapi_app_init",
+      "label": "FastAPI App Initialization",
+      "nodes": [
+        "main.py",
+        "db_session",
+        "init_db",
+        "APP_ENV"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/main.py"
+    },
+    {
+      "id": "db_session_mgmt",
+      "label": "Database Session Management",
+      "nodes": [
+        "DatabaseSession",
+        "fetch_one",
+        "fetch_all",
+        "db_session"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/database/session.py"
+    },
+    {
+      "id": "test_router_setup",
+      "label": "Test Router Setup",
+      "nodes": [
+        "conftest.py",
+        "insumos",
+        "receitas",
+        "vendas"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/conftest.py"
+    },
+    {
+      "id": "data_models",
+      "label": "Data Models",
+      "nodes": [
+        "Produto",
+        "ComponenteReceita",
+        "Venda",
+        "LojaImposto"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/database/models.py"
+    },
+    {
+      "id": "simulator_api_fullstack",
+      "label": "Simulator API Full Stack",
+      "nodes": [
+        "API_ROUTES",
+        "Simulator_API"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/agent_knowledge/API-ROUTES.md"
+    },
+    {
+      "id": "frontend_tech_stack",
+      "label": "Frontend Tech Stack",
+      "nodes": [
+        "Frontend_Agents",
+        "React_18",
+        "TypeScript",
+        "Vite",
+        "Tailwind_CSS",
+        "TanStack_Query",
+        "React_Router"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/AGENTS.md"
+    },
+    {
+      "id": "testing_infrastructure",
+      "label": "Testing Infrastructure",
+      "nodes": [
+        "docker_compose_test",
+        "db_test_service",
+        "PostgreSQL",
+        "Integration_Tests"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docker-compose.test.yml"
+    }
+  ],
+  "input_tokens": 6500,
+  "output_tokens": 4700
+}

@@ -1,0 +1,14 @@
+{
+  "mcp": {
+    "servers": {
+      "playwright": {
+        "type": "stdio",
+        "command": "/home/pk/.npm-global/bin/playwright-mcp",
+        "args": [
+          "--executable-path",
+          "/usr/bin/chromium-browser"
+        ]
+      }
+    }
+  }
+}

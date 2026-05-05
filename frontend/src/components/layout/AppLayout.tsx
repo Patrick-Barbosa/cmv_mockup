@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom"
-import { Box, FileSpreadsheet, Layers, Moon, PieChart, Store, Sun, TrendingUp, Unlink } from "lucide-react"
+import { Box, Calculator, FileSpreadsheet, Layers, Moon, PieChart, Store, Sun, TrendingUp, Unlink } from "lucide-react"
 import { useTheme } from "@/components/ThemeProvider"
 
 export function AppLayout() {
@@ -92,6 +92,17 @@ export function AppLayout() {
             <TrendingUp className="w-3.5 h-3.5" />
             CMV
           </Link>
+          <Link
+            to="/simulador"
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-[2px] text-[0.82rem] font-medium transition-colors ${
+              location.pathname === "/simulador"
+                ? "text-brand-highlight bg-brand-highlight/10"
+                : "text-brand-muted hover:text-brand-soft hover:bg-brand-line/10"
+            }`}
+          >
+            <Calculator className="w-3.5 h-3.5" />
+            Simulador
+          </Link>
           <div className="flex items-center gap-2.5 px-3 py-2 opacity-50 pointer-events-none text-brand-muted text-[0.82rem] font-medium">
             <PieChart className="w-3.5 h-3.5" />
             Margem
@@ -148,6 +159,10 @@ export function AppLayout() {
               CMV
             </Link>
             <span className="text-brand-line/50">|</span>
+            <Link to="/simulador" className={`text-xs ${location.pathname === "/simulador" ? "text-brand-highlight font-medium" : "text-brand-muted"}`}>
+              Simulador
+            </Link>
+            <span className="text-brand-line/50">|</span>
             <button
               onClick={toggleTheme}
               className="p-1 rounded-[2px] text-brand-muted hover:text-brand-highlight transition-colors"
@@ -158,7 +173,7 @@ export function AppLayout() {
           </div>
         </header>
         <main className={`flex-1 px-6 md:px-10 py-8 md:py-10 mx-auto w-full ${
-          location.pathname.startsWith("/lojas") || location.pathname.startsWith("/dashboard") ? "max-w-[1600px]" : "max-w-6xl"
+          location.pathname.startsWith("/lojas") || location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/simulador") ? "max-w-[1600px]" : "max-w-6xl"
         }`}>
           <Outlet />
         </main>

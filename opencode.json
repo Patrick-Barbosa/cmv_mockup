@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "Github": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ]
+    },
+    "Playwright": {
+      "type": "local",
+      "command": [
+        "/home/pk/.npm-global/bin/playwright-mcp",
+        "--executable-path",
+        "/usr/bin/chromium-browser"
+      ]
+    }
+  }
+}

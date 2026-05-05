@@ -1,0 +1,1 @@
+{"nodes": [{"id": "lojas_lojas", "label": "Lojas Page", "file_type": "code", "source_file": "frontend/src/pages/Lojas.tsx"}], "edges": [{"source": "lojas_lojas", "target": "api_vendasapi", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "frontend/src/pages/Lojas.tsx"}], "hyperedges": []}

@@ -1,0 +1,1 @@
+{"nodes": [{"id": "common_paginatedparamsmodel", "label": "PaginatedParamsModel", "file_type": "code", "source_file": "backend/app/schemas/common.py"}, {"id": "common_unidades_padrao", "label": "UNIDADES_PADRAO", "file_type": "code", "source_file": "backend/app/schemas/common.py"}], "edges": [], "hyperedges": []}

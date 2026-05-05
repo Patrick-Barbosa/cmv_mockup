@@ -1,0 +1,454 @@
+{
+  "/home/pk/Documentos/codebase/cmv_mockup/switch_agent_docs.py": {
+    "mtime": 1777238231.3162782,
+    "hash": "6731f03dd43a29a2d5cadd23f4d4538e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/migrations/versions/20260423_00_example.sql": {
+    "mtime": 1777238231.3162782,
+    "hash": "08091b60fece8cfd42385e644b01dd76"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/migrations/versions/20260424_01_create_loja_imposto.sql": {
+    "mtime": 1777238231.3162782,
+    "hash": "b74fdfb6a8a4dda751a5d606ed33ee2f"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/__init__.py": {
+    "mtime": 1777238231.3023152,
+    "hash": "b461b69cd5b4c7eda6457414f7f1e912"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/__init__.py": {
+    "mtime": 1777238231.3023152,
+    "hash": "cead6d5619c94ae8aef05938eb6df34d"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/main.py": {
+    "mtime": 1777757339.2371755,
+    "hash": "3550a8db8af113b4b2155ab0439b8968"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/services/venda_service.py": {
+    "mtime": 1777562771.8118138,
+    "hash": "876ce46151ef420e9962927626f6eae7"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/services/produto_service.py": {
+    "mtime": 1777817488.6228082,
+    "hash": "6000193672aa3564fd1506a7d68933e4"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/services/simulator_service.py": {
+    "mtime": 1777817303.384026,
+    "hash": "cf72a36bff7afb7dd35d09acde8b2de6"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/database/session.py": {
+    "mtime": 1777238231.3029454,
+    "hash": "6fc0ca77fbd3dba2caa674d70cb3305a"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/database/initiliaze_db.py": {
+    "mtime": 1777238231.3029454,
+    "hash": "ca006ca6e2f357b38de122b81137958d"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/database/models.py": {
+    "mtime": 1777817290.3668306,
+    "hash": "fcbacf9eabcffb0c1ebf88a3c9d79693"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/database/__init__.py": {
+    "mtime": 1777238231.3028693,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/routers/pages.py": {
+    "mtime": 1777238231.30378,
+    "hash": "ed893e1c67da10dafd97e609548bb310"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/routers/__init__.py": {
+    "mtime": 1777238231.3029454,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/routers/api/simulator.py": {
+    "mtime": 1777817310.088127,
+    "hash": "ae02968ac08de575adc880ce4aa7d78a"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/routers/api/receitas.py": {
+    "mtime": 1777817493.3648794,
+    "hash": "6a39fed4d26731c42686d7fba4a87624"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/routers/api/vendas.py": {
+    "mtime": 1777238231.30378,
+    "hash": "bb666ad88d19107150cda14b9eec0413"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/routers/api/__init__.py": {
+    "mtime": 1777238231.303676,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/routers/api/insumos.py": {
+    "mtime": 1777238231.30378,
+    "hash": "17b65cc4cf8f7e8282c36ffe5ee02adb"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/schemas/receita.py": {
+    "mtime": 1777817476.2236218,
+    "hash": "5259f5e44cf1c556c21630230489cdb1"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/schemas/common.py": {
+    "mtime": 1777238231.3043323,
+    "hash": "7c16864a01557ebdc6c7b80338601f9d"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/schemas/simulator.py": {
+    "mtime": 1777817293.7638817,
+    "hash": "c3677f21429c2c44e1471f78eb582735"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/schemas/insumo.py": {
+    "mtime": 1777238231.3043323,
+    "hash": "f92e0ad35c24701db07ff14e5fb1c10b"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/schemas/__init__.py": {
+    "mtime": 1777238231.30378,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/app/schemas/venda.py": {
+    "mtime": 1777238231.3043323,
+    "hash": "8b5a87df0ab45705f56157641ee52acd"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/test_simulator_service.py": {
+    "mtime": 1777810239.4738925,
+    "hash": "8db18da0530acbf48a50a975836bf18b"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/test_receitas.py": {
+    "mtime": 1777238231.3061066,
+    "hash": "dd6a8da4cc6999ac146c757a069a5ba2"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/conftest.py": {
+    "mtime": 1777238231.305829,
+    "hash": "ac16090ce8d05181b51d79f86ffaa58e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/__init__.py": {
+    "mtime": 1777238231.3052993,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/test_insumos.py": {
+    "mtime": 1777238231.3061066,
+    "hash": "62945da2b4520e5633e5cd03e9aa0103"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/test_vendas.py": {
+    "mtime": 1777238231.3061066,
+    "hash": "28c5e8b8d3b36c83d5538206102278e4"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/integration/test_venda_service_postgres.py": {
+    "mtime": 1777562771.8120072,
+    "hash": "35690cdaf98f53d53ea7340d6dfb1c5d"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/integration/test_produto_service_postgres.py": {
+    "mtime": 1777238231.3061066,
+    "hash": "9395175e2f218a92d8d2e6478edf92d5"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/eslint.config.js": {
+    "mtime": 1777238231.3078346,
+    "hash": "b8893da386a89dfd3672dad848f4ec7e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/postcss.config.js": {
+    "mtime": 1777238231.3091598,
+    "hash": "ef3ba2a81ba19f8ea5ddf625521e96f0"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/vite.config.ts": {
+    "mtime": 1777238231.3145347,
+    "hash": "a1e1111f2f3aca453841174e8f04dd92"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/tailwind.config.ts": {
+    "mtime": 1777562771.8158705,
+    "hash": "8092ae51fe73fd0cbad1a93ddf322f8d"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/main.tsx": {
+    "mtime": 1777238231.31316,
+    "hash": "e794702a600e859ad1080190637f17ba"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/App.tsx": {
+    "mtime": 1777757987.3540258,
+    "hash": "ff93252b6fe9ac186e05670cb00f22ea"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ThemeProvider.tsx": {
+    "mtime": 1777562771.8120072,
+    "hash": "b7c006a411f60bded806f657f0438ff0"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/layout/Footer.tsx": {
+    "mtime": 1777238231.312262,
+    "hash": "1dfda080e185382fa8b39de27e0b34ee"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/layout/MainLayout.tsx": {
+    "mtime": 1777238231.312262,
+    "hash": "e79b766e4932b6d4b7996af305689708"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/layout/Navbar.tsx": {
+    "mtime": 1777238231.312262,
+    "hash": "ad45742d831c5e3250d8c9fc49a8b039"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/layout/AppLayout.tsx": {
+    "mtime": 1777773511.9515772,
+    "hash": "c78d9087d5b650a55599521218f24434"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/select.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "54f324485721c4a42a799237ae2e02ef"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/badge.tsx": {
+    "mtime": 1777562771.8135626,
+    "hash": "569d2e5d8ad997a432f9960a1364beb9"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/button.tsx": {
+    "mtime": 1777562771.8139796,
+    "hash": "c687cee60eadf6bca4ca381d4573593f"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/accordion.tsx": {
+    "mtime": 1777238231.312262,
+    "hash": "9be5421e1fcbe158fa0b88a4d63ffe65"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/sheet.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "470debb3753ebf2c42c85bd91ef34ae9"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/skeleton.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "a5a4d6d5551d4c7feb8176a23e7eb07c"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/fade-up.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "a5a79799b9d54f7f8ba9c019838468f1"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/login-modal.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "7fc144de229d33b181f55267b8729f0a"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/chart.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "e4675040ea52fca298252d9f783a8f00"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/table.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "efdbaeb9710b2f60de7c0e18bd4e3528"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/dialog.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "1cee7ad259ba50554280a78f4a280f8c"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/radio-group.tsx": {
+    "mtime": 1777828079.2945418,
+    "hash": "3ace644678cd101153deee82d72048d9"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/card.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "4be937e00a434ffa44e7f0e82ae79d17"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/label.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "0e344aaddb0ed99e105c92206efbcb6e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/scroll-area.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "3205f3686c10fa46810af9db517d72dd"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/popover.tsx": {
+    "mtime": 1777828079.4665444,
+    "hash": "1d3ed4ca8f1c699ff1c1c6f3149dbbff"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/sonner.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "b54909b98d4ffa8ba6c6835bc04ac732"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/components/ui/input.tsx": {
+    "mtime": 1777238231.3126442,
+    "hash": "14437263ca4bfce83e4adf01eb56da97"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/Login.tsx": {
+    "mtime": 1777238231.3145347,
+    "hash": "bf122707fc4025520d521189e20c723b"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/Lojas.tsx": {
+    "mtime": 1777562771.8158705,
+    "hash": "f928866a0db89060a217fa1cad0dbf1f"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/Dashboard.tsx": {
+    "mtime": 1777562771.8146808,
+    "hash": "09773c2587ab5741bbaf1acbdb3bbd27"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/Receitas.tsx": {
+    "mtime": 1777817703.8400404,
+    "hash": "dbceae449d3c914dfa676f310bad03f3"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/SimulatorPage.tsx": {
+    "mtime": 1777819403.689671,
+    "hash": "d13c830002d3244ac239babed200a9ff"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/Insumos.tsx": {
+    "mtime": 1777238231.31316,
+    "hash": "1f2fd88ead962c25f32aecec730ab585"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/Vendas.tsx": {
+    "mtime": 1777818731.1225002,
+    "hash": "5952f98f898ab894b28d858c1f558559"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/Landing.tsx": {
+    "mtime": 1777562771.8146808,
+    "hash": "812fec08dec9f51993f9fe5248c9bcea"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/SkusAusentes.tsx": {
+    "mtime": 1777238231.3145347,
+    "hash": "14dc1e9c5a20fd3cca82d4a4b945be26"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/pages/ReceitaDetalhe.tsx": {
+    "mtime": 1777562771.8158705,
+    "hash": "b0c4f7030d4308631c108d53133ea6f5"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/lib/api.ts": {
+    "mtime": 1777818248.6132228,
+    "hash": "f8106b6ef011ff9dd3cb7ca6b883ff78"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/lib/utils.ts": {
+    "mtime": 1777238231.31316,
+    "hash": "ea1c194ee828369e6fcdde84b4d8b8ba"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/docker/postgres/init/01-extensions.sql": {
+    "mtime": 1777238231.3068917,
+    "hash": "181cc20c4eef2560f56cd6a9dcaebde7"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/GEMINI.md": {
+    "mtime": 1777826529.9840717,
+    "hash": "8ee39dcfe68a23b3797b02648930d699"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/AGENTS.md": {
+    "mtime": 1777827844.8139596,
+    "hash": "4dba6dd17aa90b887fcf1dd4e0b1736e"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/requirements.txt": {
+    "mtime": 1777238231.3162782,
+    "hash": "8ad7ed3bc5bba0cedb690863d08e9ce9"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/PR_GUIDELINES.md": {
+    "mtime": 1777757692.9866416,
+    "hash": "78abe644b6878d068a520bc6c947d527"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/RoadmapMVP.md": {
+    "mtime": 1777238231.3011596,
+    "hash": "96753882a60686cd0e50bfc1cb0f8d6b"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/README.md": {
+    "mtime": 1777238231.3004968,
+    "hash": "61469e1e694fbc1cdcd24e3bf68e052c"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/docker-compose.yml": {
+    "mtime": 1777238231.3061066,
+    "hash": "3e3d7f15a6ae7453538ce7331ed9e894"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/docker-compose.test.yml": {
+    "mtime": 1777238231.3061066,
+    "hash": "2f3402410356101a2666282b10f78243"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/migrations/README.md": {
+    "mtime": 1777238231.3151598,
+    "hash": "c4dd4c9c1a0d4bc12ac13d8ee877c9f8"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/AGENTS.md": {
+    "mtime": 1777757339.236771,
+    "hash": "db965c3237c659ef961a8579866cc174"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/agent_knowledge/API-ROUTES.md": {
+    "mtime": 1777817500.4449856,
+    "hash": "d2782d416a77e1ed1c432dc29ed51f13"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/backend/tests/integration/README.md": {
+    "mtime": 1777238231.305829,
+    "hash": "4106b224215070f43416ebb8b4d834fb"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/backend/data-contract.md": {
+    "mtime": 1777817240.1020758,
+    "hash": "74f63f23bf26c4e002d20d47c544d040"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/backend/report-bugs.md": {
+    "mtime": 1777828087.67467,
+    "hash": "8f6518055308e652e765b1eac16f31c2"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/backend/todo.md": {
+    "mtime": 1777815524.0192993,
+    "hash": "08c38f12d5e049985e3e9f0adacce31c"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/frontend/regras-negocio-simulador.md": {
+    "mtime": 1777817043.9533288,
+    "hash": "79571ca2004f0c4387ea8d90cd220beb"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/frontend/tarefas-preco-venda-receitas.md": {
+    "mtime": 1777817340.1467881,
+    "hash": "71f7acb4369e76e7522c2a364dcd28b7"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/frontend/remaining-tasks.md": {
+    "mtime": 1777826757.1683638,
+    "hash": "3d6dffbf4a11ab8e584999e4cc84fa51"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/frontend/mockup-receitas.txt": {
+    "mtime": 1777814300.241913,
+    "hash": "17a83bca1dd34515685f5fea716417ea"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/frontend/mockup-simulador.html": {
+    "mtime": 1777816878.0026362,
+    "hash": "9de5b50b9e886b6c8e1411b2616cfe64"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/frontend/plano-implementacao-simulador.md": {
+    "mtime": 1777817788.451311,
+    "hash": "0292fb3f87ffc968de568e62ad876e6f"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/frontend/to-do.md": {
+    "mtime": 1777810039.6879184,
+    "hash": "aacec956f3370c728a7407bc90533cb3"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/frontend/mockup-insumos.md": {
+    "mtime": 1777814087.4027143,
+    "hash": "2ba5d7661675a28659809479d93bc742"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/AGENTS.md": {
+    "mtime": 1777827368.5686889,
+    "hash": "4e1e4cd6f44fb5fb18f2d72234821b5f"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/README.md": {
+    "mtime": 1777238231.3071892,
+    "hash": "f6e3faf55d738cf2affe1b44195f27cf"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/index.html": {
+    "mtime": 1777238231.3078346,
+    "hash": "70a07d857f4d9deb1f36d9ad84d0dc7b"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/agent_knowledge/DASHBOARD_ANALYSIS.md": {
+    "mtime": 1777770006.3163514,
+    "hash": "bb0dea716199083c1b22a25ed01f8b5f"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/agent_knowledge/style.md": {
+    "mtime": 1777238231.3078346,
+    "hash": "720c8eac58dd84b564d0f575bd81a72a"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/agent_knowledge/orientations.md": {
+    "mtime": 1777238231.3078346,
+    "hash": "2528be49aa61582d7d0971b23a004d2d"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/agent_knowledge/DESIGN.md": {
+    "mtime": 1777238231.3078346,
+    "hash": "dad92824ad26f4da0c05b65d5e841743"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/agent_knowledge/API_DOCUMENTATION.md": {
+    "mtime": 1777238231.3071892,
+    "hash": "e9f11edfea0cd804290a6e29ad5c07aa"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/brain/mockup/simulacao-insumo.jpeg": {
+    "mtime": 1777775658.745195,
+    "hash": "4a4250eeec1c3eef42d0b7f316a55347"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/public/favicon.svg": {
+    "mtime": 1777238231.3091598,
+    "hash": "dc1fbeaca50aeecaa1fd9ef60d4e1d00"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/public/icons.svg": {
+    "mtime": 1777238231.3108063,
+    "hash": "3b4fcfcf393eca4d264dca4a4663bc37"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/assets/hero.png": {
+    "mtime": 1777238231.311208,
+    "hash": "5cf2b0762834cdddc0dd3ec1397b5011"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/assets/react.svg": {
+    "mtime": 1777238231.3116436,
+    "hash": "f0402b67b6ce880f65666bb49e841696"
+  },
+  "/home/pk/Documentos/codebase/cmv_mockup/frontend/src/assets/vite.svg": {
+    "mtime": 1777238231.3116436,
+    "hash": "9960a24288958394ac50e57ff638b036"
+  }
+}

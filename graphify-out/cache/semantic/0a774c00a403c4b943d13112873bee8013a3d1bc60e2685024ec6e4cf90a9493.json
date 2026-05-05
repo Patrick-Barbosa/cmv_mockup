@@ -1,0 +1,1 @@
+{"nodes": [{"id": "navbar_tsx", "label": "Navbar Component", "file_type": "code", "source_file": "frontend/src/components/layout/Navbar.tsx"}], "edges": [{"source": "navbar_tsx", "target": "themeprovider_tsx", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "frontend/src/components/layout/Navbar.tsx"}], "hyperedges": []}

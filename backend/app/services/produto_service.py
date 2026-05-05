@@ -193,6 +193,7 @@ class ProdutoService:
             quantidade_base=payload.quantidade_base,
             unidade=payload.unidade,
             id_produto_externo=getattr(payload, "id_produto_externo", None),
+            preco_venda=getattr(payload, "preco_venda", None),
         )
         # adiciona a receita à sessão
         self.session.add(receita)
@@ -450,6 +451,7 @@ class ProdutoService:
         id_produto_externo: Optional[str],
         update_id_produto_externo: bool,
         componentes,
+        preco_venda: Optional[float] = None,
     ) -> Produto:
         result = await self.session.execute(
             select(Produto).where(Produto.id == receita_id, Produto.tipo == 'receita')
@@ -469,6 +471,8 @@ class ProdutoService:
             receita.unidade = unidade
         if update_id_produto_externo:
             receita.id_produto_externo = id_produto_externo
+        if preco_venda is not None:
+            receita.preco_venda = preco_venda
 
         if componentes is not None:
             # Remove todos os componentes atuais da receita

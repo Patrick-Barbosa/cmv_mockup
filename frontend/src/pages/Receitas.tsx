@@ -33,6 +33,7 @@ export interface Receita {
   componentes: ReceitaComponente[]
   custoTotal?: number
   idProdutoExterno: string
+  precoVenda?: number | null
 }
 
 const mockReceitas: Receita[] = [
@@ -42,6 +43,7 @@ const mockReceitas: Receita[] = [
     rendimento: 2,
     unidade: "l",
     idProdutoExterno: "",
+    precoVenda: 15.0,
     componentes: [
       { id: "c1", tipo: "insumo", insumoId: 2, quantidade: 0.1 },
       { id: "c2", tipo: "insumo", insumoId: 3, quantidade: 2.5 },
@@ -53,6 +55,7 @@ const mockReceitas: Receita[] = [
     rendimento: 1,
     unidade: "un",
     idProdutoExterno: "POTE-CHOC-001",
+    precoVenda: 28.9,
     componentes: [
       { id: "c3", tipo: "insumo", insumoId: 3, quantidade: 1.5 },
     ],
@@ -93,6 +96,7 @@ export default function Receitas() {
   const [rendimento, setRendimento] = useState("")
   const [unidade, setUnidade] = useState("")
   const [idProdutoExterno, setIdProdutoExterno] = useState("")
+  const [precoVenda, setPrecoVenda] = useState("")
   const [componentes, setComponentes] = useState<ReceitaComponente[]>([])
 
   useEffect(() => {
@@ -123,6 +127,7 @@ export default function Receitas() {
           unidade: detalhe.unidade ?? "",
           custoTotal: detalhe.custo_total,
           idProdutoExterno: detalhe.id_produto_externo ?? "",
+          precoVenda: detalhe.preco_venda ?? null,
           componentes: mapApiComponentes(
             detalhe.componentes.map((component) => ({
               id_componente: component.id_componente,
@@ -211,6 +216,7 @@ export default function Receitas() {
           rendimento: parsedRendimento,
           componentes: validComps,
           idProdutoExterno: normalizedExternalId,
+          precoVenda: precoVenda ? parseFloat(precoVenda) : null,
         }
         setReceitas((prev) =>
           editingId
@@ -223,6 +229,7 @@ export default function Receitas() {
           quantidade_base: parsedRendimento,
           unidade: unidade || undefined,
           id_produto_externo: normalizedExternalId || null,
+          preco_venda: precoVenda ? parseFloat(precoVenda) : null,
           componentes: validComps.map((component) => ({
             id_componente: (component.tipo === "insumo" ? component.insumoId : component.receitaId)!,
             quantidade: component.quantidade,
@@ -244,6 +251,7 @@ export default function Receitas() {
                     unidade: updated.unidade ?? "",
                     custoTotal: updated.custo_total,
                     idProdutoExterno: updated.id_produto_externo ?? "",
+                    precoVenda: updated.preco_venda ?? null,
                     componentes: mapApiComponentes(
                       updated.componentes.map((component) => ({
                         id_componente: component.id_componente,
@@ -268,6 +276,7 @@ export default function Receitas() {
               unidade: created.unidade ?? "",
               custoTotal: created.custo_total,
               idProdutoExterno: created.id_produto_externo ?? "",
+              precoVenda: created.preco_venda ?? null,
               componentes: mapApiComponentes(
                 created.componentes.map((component) => ({
                   id_componente: component.id_componente,
@@ -307,6 +316,7 @@ export default function Receitas() {
     setRendimento(item.rendimento?.toString() ?? "")
     setUnidade(item.unidade ?? "")
     setIdProdutoExterno(item.idProdutoExterno)
+    setPrecoVenda(item.precoVenda?.toString() ?? "")
     setComponentes(item.componentes)
     setIsDialogOpen(true)
   }
@@ -316,6 +326,7 @@ export default function Receitas() {
     setRendimento("")
     setUnidade("")
     setIdProdutoExterno("")
+    setPrecoVenda("")
     setComponentes([])
     setEditingId(null)
   }
@@ -405,6 +416,23 @@ export default function Receitas() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">
+                Preço de Venda (R$)
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={precoVenda}
+                onChange={(e) => setPrecoVenda(e.target.value)}
+                placeholder="Ex.: 28,90"
+                className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+              />
+              <p className="text-brand-muted text-[0.7rem] leading-relaxed">
+                Opcional. Usado no Simulador para simular impacto no preço de venda.
+              </p>
             </div>
           </div>
 
@@ -562,6 +590,7 @@ export default function Receitas() {
                       <TableHead className="font-medium h-10">ID Externo</TableHead>
                       <TableHead className="font-medium h-10">Rendimento</TableHead>
                       <TableHead className="font-medium h-10">Custo Total</TableHead>
+                      <TableHead className="font-medium h-10">Preço Venda</TableHead>
                       <TableHead className="font-medium text-right h-10">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -582,6 +611,9 @@ export default function Receitas() {
                           </TableCell>
                           <TableCell className="text-brand-highlight font-medium tabular-nums">
                             {custo > 0 ? formatBRL(custo) : "—"}
+                          </TableCell>
+                          <TableCell className="text-brand-highlight font-medium tabular-nums">
+                            {item.precoVenda ? formatBRL(item.precoVenda) : "—"}
                           </TableCell>
                           <TableCell className="text-right py-2">
                             <div className="flex justify-end gap-1">

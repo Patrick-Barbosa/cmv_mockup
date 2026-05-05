@@ -12,6 +12,7 @@ import Vendas from "./pages/Vendas"
 import SkusAusentes from "./pages/SkusAusentes"
 import Lojas from "./pages/Lojas"
 import Dashboard from "./pages/Dashboard"
+import SimulatorPage from "./pages/SimulatorPage"
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route path="/vendas" element={<Vendas />} />
             <Route path="/vendas/ausentes" element={<SkusAusentes />} />
             <Route path="/lojas" element={<Lojas />} />
+            <Route path="/simulador" element={<SimulatorPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -53,16 +53,16 @@ export default function Vendas() {
 
     rows.forEach(row => {
       // Normalize column names to lowercase/trim
-      const normalizedRow: any = {}
+      const normalizedRow: Record<string, unknown> = {}
       Object.keys(row).forEach(key => {
         normalizedRow[key.toLowerCase().trim()] = row[key]
       })
 
-      const data = normalizedRow.data
+      const data = String(normalizedRow.data || "")
       const idLoja = String(normalizedRow.id_loja || "").trim()
       const idProduto = String(normalizedRow.id_produto || "").trim()
-      const qtd = parseFloat(normalizedRow.quantidade_produto) || 0
-      const valor = parseFloat(normalizedRow.valor_total) || 0
+      const qtd = parseFloat(String(normalizedRow.quantidade_produto)) || 0
+      const valor = parseFloat(String(normalizedRow.valor_total)) || 0
 
       if (!data || !idLoja || !idProduto) return
 

@@ -84,6 +84,7 @@ export interface ReceitaDetalhe {
   id_produto_externo?: string | null
   componentes: ComponenteAPI[]
   custo_total: number
+  preco_venda?: number | null
 }
 
 export interface ComponenteAPI {
@@ -131,6 +132,7 @@ export interface CreateReceitaPayload {
   quantidade_base: number
   unidade?: string
   id_produto_externo?: string | null
+  preco_venda?: number | null
   componentes: ComponentePayload[]
 }
 
@@ -139,6 +141,7 @@ export interface EditReceitaPayload {
   quantidade_base?: number
   unidade?: string
   id_produto_externo?: string | null
+  preco_venda?: number | null
   componentes?: ComponentePayload[]
 }
 
@@ -257,6 +260,121 @@ export interface DashboardCmvResponse {
   history: DashboardHistoryItem[]
   waterfall: DashboardWaterfallItem[]
   top_custo_lojas: DashboardTopCustoLoja[]
+}
+
+export type SimulationType = "price_change" | "recipe_change"
+export type ChangeType = "percentual" | "absoluto"
+
+export interface ComponenteSimulacao {
+  id_componente: number
+  quantidade: number
+  tipo?: "insumo" | "receita"
+  sub_componentes?: ComponenteSimulacao[]
+}
+
+export interface SimulationInput {
+  type: SimulationType
+  ingredient_id?: number
+  recipe_id?: number
+  change_type: ChangeType
+  change_value: number
+  store_ids?: string[]
+  novos_componentes?: ComponenteSimulacao[]
+}
+
+export interface SimulationResult {
+  recipe_id: number
+  recipe_name: string
+  current_cost: number
+  new_cost: number
+  cost_difference: number
+  cost_percent_change: number
+  ingredient_quantity: number
+  monthly_sales_quantity: number
+  monthly_revenue_current: number
+  monthly_revenue_new: number
+  revenue_impact: number
+  revenue_impact_percent: number
+}
+
+export interface StoreImpact {
+  store_id: string
+  total_current_cost: number
+  total_new_cost: number
+  total_impact: number
+  total_impact_percent: number
+  affected_recipes_count: number
+  gross_margin: number
+  gross_margin_new: number
+}
+
+export interface SimulationResponse {
+  simulation_type: string
+  ingredient_name: string | null
+  recipe_name: string | null
+  change_applied: string
+  total_network_impact: number
+  total_network_impact_percent: number
+  avg_impact_per_store: number
+  avg_impact_per_store_percent: number
+  avg_impact_per_recipe: number
+  avg_impact_per_recipe_percent: number
+  ingredient_impact: number
+  ingredient_impact_percent: number
+  results: SimulationResult[]
+  store_ranking: StoreImpact[]
+  projection_month: string
+  projection_type: string
+}
+
+export interface AffectedRecipe {
+  recipe_id: number
+  recipe_name: string
+  current_cost: number
+}
+
+export interface StoreInfo {
+  store_id: string
+}
+
+export interface DailyEvolutionData {
+  date: string
+  store_id: string | null
+  day_of_week: string
+  current_cost_total: number
+  new_cost_total: number
+  sales_quantity: number
+  sales_revenue: number
+}
+
+export interface EvolutionSummary {
+  total_days: number
+  total_current_cost: number
+  total_new_cost: number
+  total_impact: number
+  total_impact_percent: number
+  avg_daily_sales: number
+  avg_daily_revenue: number
+}
+
+export interface EvolutionResponse {
+  month: string
+  type: string
+  ingredient_name?: string
+  recipe_name?: string
+  daily_data: DailyEvolutionData[]
+  summary: EvolutionSummary
+}
+
+export interface ProductInfoResponse {
+  product_id: number
+  product_name: string
+  product_type: string
+  preco_venda: number | null
+  custo_atual: number | null
+  unidade_medida: string | null
+  source: string
+  is_vendido: boolean
 }
 
 export const insumosApi = {
@@ -400,14 +518,42 @@ export const commonApi = {
       )
     }
 
-    // O backend pode retornar 'items' ou 'results' dependendo da versão/padronização
-    type Select2Response = { 
+    type Select2Response = {
       results?: { id: number; text: string; tipo: string }[]
-      items?: { id: number; text: string; tipo: string }[] 
+      items?: { id: number; text: string; tipo: string }[]
     }
 
     return apiFetch<Select2Response>(
       `/api/get_produtos_select2?q=${encodeURIComponent(q)}&per_page=100`
     ).then((res) => res.items || res.results || [])
   },
+}
+
+export const simulatorApi = {
+  simulate: (input: SimulationInput) =>
+    apiFetch<SimulationResponse>("/api/simulator/simulate", {
+      method: "POST",
+      body: input,
+    }),
+
+  getAffectedRecipes: (ingredientId: number) =>
+    apiFetch<AffectedRecipe[]>(`/api/simulator/ingredients/${ingredientId}/affected-recipes`),
+
+  getStores: () => apiFetch<StoreInfo[]>("/api/simulator/stores"),
+
+  getEvolution: (params: SimulationInput & { month: string; impacted_only?: boolean }) => {
+    const searchParams = new URLSearchParams()
+    searchParams.append("month", params.month)
+    searchParams.append("type", params.type)
+    searchParams.append("change_type", params.change_type)
+    searchParams.append("change_value", params.change_value.toString())
+    if (params.ingredient_id) searchParams.append("ingredient_id", params.ingredient_id.toString())
+    if (params.recipe_id) searchParams.append("recipe_id", params.recipe_id.toString())
+    if (params.store_ids) searchParams.append("store_ids", params.store_ids.join(","))
+    if (params.impacted_only !== undefined) searchParams.append("impacted_only", params.impacted_only.toString())
+    return apiFetch<EvolutionResponse>(`/api/simulator/evolution?${searchParams.toString()}`)
+  },
+
+  getProductInfo: (productId: number) =>
+    apiFetch<ProductInfoResponse>(`/api/simulator/product-info/${productId}`),
 }
