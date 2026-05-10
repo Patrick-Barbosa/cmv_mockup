@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { Calculator, Loader2, AlertCircle, ChevronDown, ChevronRight, X, Plus, Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatBRL, formatPercent, formatNumber, formatQuantity } from "@/lib/format"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -15,63 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { XAxis, YAxis, CartesianGrid, LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from "recharts"
 import { simulatorApi, vendasApi, IS_MOCK, commonApi, receitasApi } from "@/lib/api"
+import { ChartLegend } from "@/components/common"
 import type { SimulationInput, SimulationResponse, StoreInfo, VendasFiltersResponse, EvolutionResponse, ReceitaTreeDetalhe, ComponenteSimulacao } from "@/lib/api"
-
-const formatCurrency = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return " — "
-  }
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
-}
-
-const formatPercent = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return " — "
-  }
-  return `${value.toFixed(1)}%`
-}
-
-const formatNumber = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return " — "
-  }
-  return value.toLocaleString("pt-BR")
-}
-
-const formatQuantity = (value: number, unit?: string | null): string => {
-  if (value === 0) {
-    return `0 ${unit || ''}`.trim();
-  }
-
-  let decimals: number;
-  const normalizedUnit = unit?.toLowerCase().trim();
-
-  if (normalizedUnit === 'un' || normalizedUnit === 'unidade' || normalizedUnit === 'unit') {
-    decimals = 2;
-  } else if (normalizedUnit === 'kg') {
-    if (value > 1) {
-      decimals = 2;
-    } else if (value < 0.01) {
-      decimals = 4;
-    } else {
-      decimals = 3;
-    }
-  } else if (normalizedUnit === 'g' || normalizedUnit === 'ml') {
-    decimals = 4;
-  } else if (normalizedUnit === 'l' || normalizedUnit === 'litro' || normalizedUnit === 'litros') {
-    decimals = 3;
-  } else {
-    decimals = 2;
-  }
-
-  const formatted = value.toFixed(decimals).replace('.', ',');
-  const [integerPart, decimalPart = ''] = formatted.split(',');
-  const trimmedDecimal = decimalPart.replace(/0+$/, '');
-  const finalNumber = trimmedDecimal ? `${integerPart},${trimmedDecimal}` : integerPart;
-
-  const unitStr = normalizedUnit ? ` ${normalizedUnit}` : '';
-  return `${finalNumber}${unitStr}`;
-}
 
 const getImpactColorClass = (value: number) => {
   if (value > 0.0001) return "text-destructive"
@@ -139,24 +85,6 @@ const mapTreeToComponentes = (node: ReceitaTreeDetalhe): Componente[] => {
     expanded: false,
   }))
 }
-
-// Componente de Legenda Customizada para os Gráficos de Barras
-const CustomLegend = () => (
-  <div className="flex justify-center gap-6 mt-4 text-xs font-medium text-brand-muted">
-    <div className="flex items-center gap-2">
-      <div className="w-3 h-3 rounded-full bg-brand-primary" />
-      <span>Custo Base / CMV Atual</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <div className="w-3 h-3 rounded-full bg-destructive" />
-      <span>Aumento (Variação Negativa)</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <div className="w-3 h-3 rounded-full bg-brand-highlight" />
-      <span>Redução (Economia / Variação Positiva)</span>
-    </div>
-  </div>
-)
 
 export default function SimulatorPage() {
   const [loading, setLoading] = useState(false)
@@ -500,14 +428,14 @@ export default function SimulatorPage() {
               </div>
             </TableCell>
             <TableCell className="text-right text-brand-highlight text-xs font-medium">
-              {formatCurrency(unitCost)}
+              {formatBRL(unitCost)}
               {item.unidadeMedida && (
                 <span className="text-brand-muted text-[10px] ml-1">/{item.unidadeMedida}</span>
               )}
             </TableCell>
             {/* Coluna Custo Total - Issue 004 */}
             <TableCell className="text-right text-brand-highlight text-xs font-bold">
-              {formatCurrency(totalCost)}
+              {formatBRL(totalCost)}
             </TableCell>
             <TableCell>
               <Button
@@ -1044,7 +972,7 @@ export default function SimulatorPage() {
                   <div className="flex justify-end items-center gap-4 mt-4 pt-3 border-t border-brand-line/15">
                     <span className="text-sm text-brand-muted">Custo total atual:</span>
                     <span className="text-lg font-semibold text-brand-highlight">
-                      {formatCurrency(calculateComposicaoCost(composicao))}
+                      {formatBRL(calculateComposicaoCost(composicao))}
                     </span>
                   </div>
                 </>
@@ -1096,7 +1024,7 @@ export default function SimulatorPage() {
                       "text-2xl font-semibold tracking-tight",
                       getImpactColorClass(simulationResult.total_network_impact)
                   )}>
-                    {formatCurrency(simulationResult.total_network_impact)}
+                    {formatBRL(simulationResult.total_network_impact)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1115,7 +1043,7 @@ export default function SimulatorPage() {
                       "text-2xl font-semibold tracking-tight",
                       getImpactColorClass(simulationResult.avg_impact_per_store)
                   )}>
-                    {formatCurrency(simulationResult.avg_impact_per_store)}
+                    {formatBRL(simulationResult.avg_impact_per_store)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1134,7 +1062,7 @@ export default function SimulatorPage() {
                       "text-2xl font-semibold tracking-tight",
                       getImpactColorClass(simulationResult.avg_impact_per_recipe)
                   )}>
-                    {formatCurrency(simulationResult.avg_impact_per_recipe)}
+                    {formatBRL(simulationResult.avg_impact_per_recipe)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1244,11 +1172,11 @@ export default function SimulatorPage() {
                                 <div className="flex flex-col gap-1">
                                   <div className="flex justify-between gap-4">
                                     <span className="text-brand-muted">Custo Atual:</span>
-                                    <span className="font-medium text-brand-primary">{formatCurrency(data.current)}</span>
+                                    <span className="font-medium text-brand-primary">{formatBRL(data.current)}</span>
                                   </div>
                                   <div className="flex justify-between gap-4">
                                     <span className="text-brand-muted">Custo Simulado:</span>
-                                    <span className="font-medium text-brand-muted">{formatCurrency(data.new)}</span>
+                                    <span className="font-medium text-brand-muted">{formatBRL(data.new)}</span>
                                   </div>
                                 </div>
                               </div>
@@ -1312,7 +1240,7 @@ export default function SimulatorPage() {
                                         return (
                                             <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-2 text-[10px]">
                                                 <div className="font-bold mb-1">{data.name}</div>
-                                                <div>Impacto R$: {formatCurrency(data["Impacto R$"])}</div>
+                                                <div>Impacto R$: {formatBRL(data["Impacto R$"])}</div>
                                                 <div>Impacto %: {formatPercent(data["Impacto %"])}</div>
                                             </div>
                                         )
@@ -1331,7 +1259,7 @@ export default function SimulatorPage() {
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-                <CustomLegend />
+                <ChartLegend />
               </Card>
 
               <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
@@ -1384,7 +1312,7 @@ export default function SimulatorPage() {
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-                <CustomLegend />
+                <ChartLegend />
               </Card>
             </div>
           )}
@@ -1434,9 +1362,9 @@ export default function SimulatorPage() {
                         {simulationType === "insumo" && (
                           <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatQuantity(store.ingredient_quantity, currentUnit)}</TableCell>
                         )}
-                        <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatCurrency(revenueCurrent)}</TableCell>
+                        <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatBRL(revenueCurrent)}</TableCell>
                         {simulationType === "receita" && (
-                          <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatCurrency(revenueSimulated)}</TableCell>
+                          <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatBRL(revenueSimulated)}</TableCell>
                         )}
                         <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(store.current_cmv)}</TableCell>
                         <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(store.new_cmv)}</TableCell>
@@ -1446,13 +1374,13 @@ export default function SimulatorPage() {
                         )}>
                           {(store.cmv_diff ?? 0) >= 0 ? "+" : ""}{(store.cmv_diff ?? 0).toFixed(1)}%
                         </TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(store.total_current_cost)}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(store.total_new_cost)}</TableCell>
+                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(store.total_current_cost)}</TableCell>
+                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(store.total_new_cost)}</TableCell>
                         <TableCell className={cn(
                           "text-right font-bold text-xs whitespace-nowrap",
                           getImpactColorClass(costDiff)
                         )}>
-                          {costDiff >= 0 ? "+" : ""}{formatCurrency(costDiff)}
+                          {costDiff >= 0 ? "+" : ""}{formatBRL(costDiff)}
                         </TableCell>
                       </TableRow>
                     );
@@ -1499,9 +1427,9 @@ export default function SimulatorPage() {
                           {simulationType === "insumo" ? (
                             <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatQuantity(item.ingredient_quantity, currentUnit)}</TableCell>
                           ) : null}
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(item.monthly_revenue_current)}</TableCell>
+                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(item.monthly_revenue_current)}</TableCell>
                           {simulationType === "receita" && (
-                            <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(item.monthly_revenue_new)}</TableCell>
+                            <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(item.monthly_revenue_new)}</TableCell>
                           )}
                           <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(item.current_cmv)}</TableCell>
                           <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(item.new_cmv)}</TableCell>
@@ -1511,13 +1439,13 @@ export default function SimulatorPage() {
                           )}>
                             {(item.cmv_diff ?? 0) >= 0 ? "+" : ""}{(item.cmv_diff ?? 0).toFixed(1)}%
                           </TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(cmvAtualRS)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(cmvSimuladoRS)}</TableCell>
+                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(cmvAtualRS)}</TableCell>
+                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(cmvSimuladoRS)}</TableCell>
                           <TableCell className={cn(
                               "text-right font-bold text-xs whitespace-nowrap",
                               getImpactColorClass(difCustoRS)
                           )}>
-                            {difCustoRS >= 0 ? "+" : ""}{formatCurrency(difCustoRS)}
+                            {difCustoRS >= 0 ? "+" : ""}{formatBRL(difCustoRS)}
                           </TableCell>
                         </TableRow>
                       );

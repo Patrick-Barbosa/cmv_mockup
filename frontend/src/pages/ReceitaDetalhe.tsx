@@ -1,195 +1,70 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useParams } from "react-router-dom"
-import { AlertCircle, ArrowLeft, Box, ChevronRight, Layers, Link2, Loader2, Store } from "lucide-react"
+import { AlertCircle, Link2, Loader2, Store } from "lucide-react"
 import { FadeUp } from "@/components/ui/fade-up"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { IS_MOCK, receitasApi } from "@/lib/api"
+import { PageHeaderWithButton } from "@/components/common"
+import { TreeViewer } from "@/components/common"
+import { formatBRL, formatPercent, formatNumber } from "@/lib/format"
+import { receitasApi } from "@/lib/api"
 import type { ProductSalesAnalysisResponse, ReceitaTreeDetalhe } from "@/lib/api"
 
 type MetaNode = ReceitaTreeDetalhe
-
-const mockTree: MetaNode = {
-  id: 2,
-  nome: "Brownie recheado",
-  tipo: "receita",
-  unidade: "un",
-  quantidade: 1,
-  id_produto_externo: "BROWNIE-001",
-  children: [
-    {
-      id: 3,
-      nome: "Brownie base",
-      tipo: "receita",
-      unidade: "kg",
-      quantidade: 0.12,
-      children: [
-        {
-          id: 10,
-          nome: "Chocolate em po",
-          tipo: "insumo",
-          unidade: "g",
-          quantidade: 30,
-          custo: 0.038,
-        },
-        {
-          id: 11,
-          nome: "Farinha de trigo",
-          tipo: "insumo",
-          unidade: "g",
-          quantidade: 60,
-          custo: 0.0059,
-        },
-      ],
-    },
-    {
-      id: 4,
-      nome: "Brigadeiro",
-      tipo: "receita",
-      unidade: "kg",
-      quantidade: 0.06,
-      children: [
-        {
-          id: 12,
-          nome: "Leite condensado",
-          tipo: "insumo",
-          unidade: "g",
-          quantidade: 80,
-          custo: 0.021,
-        },
-      ],
-    },
-  ],
-}
-
-const mockSalesAnalysis: ProductSalesAnalysisResponse = {
-  produto: {
-    id: 2,
-    nome: "Brownie recheado",
-    tipo: "receita",
-    id_produto_externo: "BROWNIE-001",
-    custo_unitario_ideal: 3.58,
-  },
-  possui_vinculo_externo: true,
-  linhas: [
-    {
-      mes: "2026-04",
-      loja_id: "RJ-COPA",
-      quantidade_total: 24,
-      valor_total: 300,
-      preco_medio: 12.5,
-      custo_unitario_ideal: 3.58,
-      custo_ideal_total: 85.92,
-      cmv_ideal_percentual: 28.64,
-    },
-    {
-      mes: "2026-03",
-      loja_id: "RJ-COPA",
-      quantidade_total: 18,
-      valor_total: 216,
-      preco_medio: 12,
-      custo_unitario_ideal: 3.58,
-      custo_ideal_total: 64.44,
-      cmv_ideal_percentual: 29.83,
-    },
-  ],
-}
 
 function calculateNodeCost(node: MetaNode): number {
   if (!node.children || node.children.length === 0) {
     return (node.custo || 0) * (node.quantidade || 0)
   }
-
   return node.children.reduce((sum, child) => sum + calculateNodeCost(child), 0)
 }
 
 function formatQtd(value: number) {
-  return Number(value.toFixed(4)).toLocaleString("pt-BR")
+  return formatNumber(value)
 }
 
-function formatBRL(value: number) {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-}
-
-function formatPercent(value: number | null) {
-  if (value === null || Number.isNaN(value)) {
-    return "—"
-  }
-  return `${value.toFixed(1)}%`
-}
-
-function TreeNode({ node }: { node: MetaNode }) {
-  const [isOpen, setIsOpen] = useState(true)
+function renderTreeNodeContent(node: MetaNode) {
   const isRecipe = node.tipo === "receita"
-  const hasChildren = !!node.children && node.children.length > 0
-
-  let costDisplay = ""
-  if (isRecipe && hasChildren) {
-    costDisplay = formatBRL(calculateNodeCost(node))
-  } else if (!isRecipe && node.custo != null) {
-    costDisplay = formatBRL(node.custo * (node.quantidade || 0))
-  }
+  const hasChildren = node.children && node.children.length > 0
+  const costDisplay = (isRecipe && hasChildren) || (!isRecipe && node.custo != null)
+    ? formatBRL(isRecipe && hasChildren ? calculateNodeCost(node) : (node.custo || 0) * (node.quantidade || 0))
+    : null
 
   return (
-    <div className="relative">
-      <div
-        className={`flex items-center gap-2 py-[0.55rem] px-3 border-b border-brand-line/5 transition-colors ${
-          isRecipe ? "cursor-pointer hover:bg-brand-highlight/5" : "hover:bg-brand-line/5"
-        }`}
-        onClick={() => isRecipe && hasChildren && setIsOpen(!isOpen)}
-      >
-        {isRecipe && hasChildren ? (
-          <Button variant="outline" size="icon" className={`w-[18px] h-[18px] rounded-sm transition-all shrink-0 ${isOpen ? "bg-brand-highlight/10 border-brand-highlight/30 text-brand-highlight tracking-widest hover:bg-brand-highlight/20 hover:text-brand-highlight" : "border-brand-line/30 text-brand-muted hover:border-brand-highlight hover:text-brand-highlight hover:bg-transparent"}`}>
-            <ChevronRight className={`w-3 h-3 transition-transform ${isOpen ? "rotate-90" : ""}`} />
-          </Button>
-        ) : <span className="w-[18px] shrink-0" />}
-
-        {isRecipe ? <Layers className="w-[13px] h-[13px] text-brand-highlight shrink-0" /> : <Box className="w-[13px] h-[13px] text-brand-muted shrink-0" />}
-
-        <span className={`text-sm ${isRecipe ? "text-brand-soft font-medium" : "text-brand-text"}`}>
-          {node.nome}
-        </span>
-        <span className={`px-1.5 py-0.5 text-[0.65rem] font-medium rounded-sm border ${
-          isRecipe ? "bg-brand-primary/15 text-brand-highlight border-brand-primary/20" : "bg-brand-surface text-brand-muted border-brand-line/20"
-        }`}>
-          {node.tipo}
-        </span>
-
-        <div className="ml-auto flex items-center gap-4 text-[0.78rem]">
-          {node.quantidade != null && (
-            <span className="text-brand-muted tabular-nums text-xs">
-              {formatQtd(node.quantidade)} {node.unidade || "un."}
-            </span>
-          )}
-          {costDisplay && (
-            <span className="text-brand-highlight tabular-nums font-medium text-xs w-16 text-right">
-              {costDisplay}
-            </span>
-          )}
-        </div>
+    <>
+      <span className={`text-sm ${isRecipe ? "text-brand-soft font-medium" : "text-brand-text"}`}>
+        {node.nome}
+      </span>
+      <span className={`px-1.5 py-0.5 text-[0.65rem] font-medium rounded-sm border ${
+        isRecipe ? "bg-brand-primary/15 text-brand-highlight border-brand-primary/20" : "bg-brand-surface text-brand-muted border-brand-line/20"
+      }`}>
+        {node.tipo}
+      </span>
+      <div className="ml-auto flex items-center gap-4 text-[0.78rem]">
+        {node.quantidade != null && (
+          <span className="text-brand-muted tabular-nums text-xs">
+            {formatQtd(node.quantidade)} {node.unidade || "un."}
+          </span>
+        )}
+        {costDisplay && (
+          <span className="text-brand-highlight tabular-nums font-medium text-xs w-16 text-right">
+            {costDisplay}
+          </span>
+        )}
       </div>
-
-      {hasChildren && isOpen && (
-        <div className="ml-5 border-l border-brand-line/15">
-          {node.children!.map((child, index) => (
-            <TreeNode key={`${child.id}-${index}`} node={child} />
-          ))}
-        </div>
-      )}
-    </div>
+    </>
   )
 }
 
 export default function ReceitaDetalhe() {
   const { id } = useParams()
 
-  const [receita, setReceita] = useState<MetaNode | null>(IS_MOCK ? mockTree : null)
-  const [salesAnalysis, setSalesAnalysis] = useState<ProductSalesAnalysisResponse | null>(IS_MOCK ? mockSalesAnalysis : null)
-  const [loading, setLoading] = useState(!IS_MOCK)
+  const [receita, setReceita] = useState<MetaNode | null>(null)
+  const [salesAnalysis, setSalesAnalysis] = useState<ProductSalesAnalysisResponse | null>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (IS_MOCK || !id) return
+    if (!id) return
 
     const loadData = () => {
       setLoading(true)
@@ -279,20 +154,12 @@ export default function ReceitaDetalhe() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="-mt-4 mb-4">
-        <Link to="/receitas" className="inline-flex items-center gap-2 text-brand-muted text-sm hover:text-brand-highlight transition-colors">
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Voltar para receitas
-        </Link>
-      </header>
-
-      <FadeUp className="mb-2">
-        <h1 className="text-brand-text text-xl font-semibold mb-1">{receita.nome}</h1>
-        <p className="text-brand-muted text-sm">
-          Rendimento: {receita.quantidade ? formatQtd(receita.quantidade) : "—"} {receita.unidade || "un."}
-          {receita.id_produto_externo ? ` · ID externo: ${receita.id_produto_externo}` : " · Sem vínculo externo"}
-        </p>
-      </FadeUp>
+      <PageHeaderWithButton
+        title={receita.nome}
+        description={`Rendimento: ${receita.quantidade ? formatQtd(receita.quantidade) : "—"} ${receita.unidade || "un."}${receita.id_produto_externo ? ` · ID externo: ${receita.id_produto_externo}` : " · Sem vínculo externo"}`}
+        backTo="/receitas"
+        button={null}
+      />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <FadeUp delay={0.1} className="lg:col-span-2">
@@ -301,7 +168,7 @@ export default function ReceitaDetalhe() {
               <h2 className="text-brand-soft text-sm font-medium">Composição da receita</h2>
             </div>
             <div className="p-2">
-              <TreeNode node={receita} />
+              <TreeViewer nodes={[receita]} renderNodeContent={(node) => renderTreeNodeContent(node as MetaNode)} />
             </div>
           </div>
         </FadeUp>

@@ -424,7 +424,6 @@ export const receitasApi = {
   get: (id: number) => apiFetch<ReceitaDetalhe>(`/api/receitas/${id}`),
 
   getTree: (id: number | string) => {
-    if (IS_MOCK) return receitasApiMock.getTree(id)
     return apiFetch<ReceitaTreeDetalhe>(`/receitas/${id}`)
   },
 
@@ -518,20 +517,6 @@ export const vendasApi = {
 
 export const commonApi = {
   searchProdutos: async (q: string) => {
-    if (IS_MOCK) {
-      await new Promise((resolve) => setTimeout(resolve, 400))
-      const mockResults = [
-        { id: 1, text: "Hambúrguer de Wagyu", tipo: "Receita" },
-        { id: 2, text: "Pão de Brioche", tipo: "Insumo" },
-        { id: 3, text: "Queijo Cheddar Inglês", tipo: "Insumo" },
-        { id: 4, text: "Molho Especial Prato", tipo: "Receita" },
-        { id: 5, text: "Batata Rústica", tipo: "Insumo" },
-      ]
-      return mockResults.filter((r) =>
-        r.text.toLowerCase().includes(q.toLowerCase())
-      )
-    }
-
     type Select2Response = {
       results?: { id: number; text: string; tipo: string }[]
       items?: { id: number; text: string; tipo: string }[]
@@ -543,11 +528,8 @@ export const commonApi = {
   },
 }
 
-import { simulatorApiMock, receitasApiMock } from "./api_mock"
-
 export const simulatorApi = {
   simulate: (input: SimulationInput) => {
-    if (IS_MOCK) return simulatorApiMock.simulate(input)
     return apiFetch<SimulationResponse>("/api/simulator/simulate", {
       method: "POST",
       body: input,
@@ -555,17 +537,14 @@ export const simulatorApi = {
   },
 
   getAffectedRecipes: (ingredientId: number) => {
-    if (IS_MOCK) return simulatorApiMock.getAffectedRecipes(ingredientId)
     return apiFetch<AffectedRecipe[]>(`/api/simulator/ingredients/${ingredientId}/affected-recipes`)
   },
 
   getStores: () => {
-    if (IS_MOCK) return simulatorApiMock.getStores()
     return apiFetch<StoreInfo[]>("/api/simulator/stores")
   },
 
   getEvolution: (params: SimulationInput & { month: string; impacted_only?: boolean; new_cost?: number }) => {
-    if (IS_MOCK) return simulatorApiMock.getEvolution(params)
     const searchParams = new URLSearchParams()
     searchParams.append("month", params.month)
     searchParams.append("type", params.type)
@@ -580,7 +559,6 @@ export const simulatorApi = {
   },
 
   getProductInfo: (productId: number) => {
-    if (IS_MOCK) return simulatorApiMock.getProductInfo(productId)
     return apiFetch<ProductInfoResponse>(`/api/simulator/product-info/${productId}`)
   },
 }
