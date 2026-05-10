@@ -48,27 +48,36 @@ class SimulatorService:
 
         for recipe in affected_recipes:
             current_cost = recipe.custo or 0
-            new_cost = await self._recalculate_recipe_cost_with_new_ingredient_price(
-                recipe.id, input_data.ingredient_id, new_price
+            
+            # Buscar quantidade TOTAL de insumo (recursivamente em sub-receitas)
+            ingredient_qty = await self._get_ingredient_total_quantity(
+                recipe.id, input_data.ingredient_id
             )
 
-            cost_difference = new_cost - current_cost
+            # Usar DELTA para evitar impactos fantasmas decorrentes de dessincronia no cache do banco
+            cost_difference = (new_price - current_price) * ingredient_qty
+            new_cost = current_cost + cost_difference
+            
             cost_percent = (cost_difference / current_cost * 100) if current_cost > 0 else 0
 
             monthly_sales = await self._get_monthly_sales_for_recipe(
                 recipe.id_produto_externo, input_data.store_ids, projection_month
             )
 
-            monthly_revenue_current = monthly_sales * current_cost
-            monthly_revenue_new = monthly_sales * new_cost
-            revenue_impact = monthly_revenue_new - monthly_revenue_current
-            revenue_impact_percent = cost_percent
+            # Calcular faturamento usando PREÇO DE VENDA (not custo de produção)
+            # Para simulação de insumo, o preço de venda NÃO muda, apenas o custo de produção muda
+            current_sale_price = await self._get_product_sale_price(recipe)
+            new_sale_price = current_sale_price  # Preço de venda permanece o mesmo
 
-            componentes = await self._get_componentes_diretos(recipe.id)
-            ingredient_qty = next(
-                (c['quantidade'] for c in componentes if c['id_componente'] == input_data.ingredient_id),
-                0.0
-            )
+            monthly_revenue_current = monthly_sales * current_sale_price
+            monthly_revenue_new = monthly_sales * new_sale_price
+            revenue_impact = monthly_revenue_new - monthly_revenue_current  # Será 0 para price_change
+            revenue_impact_percent = (revenue_impact / monthly_revenue_current * 100) if monthly_revenue_current > 0 else 0
+
+            # Cálculos de CMV (Custo / Faturamento * 100)
+            current_cmv = (current_cost / current_sale_price * 100) if current_sale_price > 0 else 0
+            new_cmv = (new_cost / new_sale_price * 100) if new_sale_price > 0 else 0
+            cmv_diff = new_cmv - current_cmv
 
             results.append(SimulationResult(
                 recipe_id=recipe.id,
@@ -82,15 +91,28 @@ class SimulatorService:
                 monthly_revenue_current=round_value(monthly_revenue_current),
                 monthly_revenue_new=round_value(monthly_revenue_new),
                 revenue_impact=round_value(revenue_impact),
-                revenue_impact_percent=round_value(revenue_impact_percent)
+                revenue_impact_percent=round_value(revenue_impact_percent),
+                current_cmv=round_value(current_cmv, 1),
+                new_cmv=round_value(new_cmv, 1),
+                cmv_diff=round_value(cmv_diff, 1)
             ))
 
-        total_impact = sum(r.revenue_impact for r in results)
-        total_current = sum(r.monthly_revenue_current for r in results)
-        total_new = sum(r.monthly_revenue_new for r in results)
-        total_impact_percent = (total_impact / total_current * 100) if total_current > 0 else 0
-
+        # Ranking de lojas para calcular impactos reais
         store_ranking = await self._calculate_store_ranking(results, input_data.store_ids)
+
+        # O impacto total da rede é a soma dos impactos das lojas (Net Impact: Rev - Cost)
+        total_impact = sum(s.total_impact for s in store_ranking)
+        total_current_revenue = sum(r.monthly_revenue_current for r in results)
+        total_current_cost = sum(r.monthly_sales_quantity * r.current_cost for r in results)
+        total_new_cost = sum(r.monthly_sales_quantity * r.new_cost for r in results)
+        total_new_revenue = sum(r.monthly_revenue_new for r in results)
+        
+        total_impact_percent = (total_impact / total_current_revenue * 100) if total_current_revenue > 0 else 0
+        
+        # CMV da rede (para as receitas afetadas)
+        network_current_cmv = (total_current_cost / total_current_revenue * 100) if total_current_revenue > 0 else 0
+        network_new_cmv = (total_new_cost / total_new_revenue * 100) if total_new_revenue > 0 else 0
+        network_cmv_diff = network_new_cmv - network_current_cmv
 
         change_applied = self._format_change_applied(current_price, new_price, input_data.change_type)
 
@@ -104,7 +126,6 @@ class SimulatorService:
         price_diff = new_price - current_price
         quantidade_ref = ingredient.quantidade_referencia or 1
         ingredient_impact = price_diff * quantidade_ref
-        # Correção: ingredient_impact_percent deve ser o percentual de mudança, não o change_value bruto
         ingredient_impact_percent = (price_diff / current_price * 100) if current_price > 0 else 0
 
         return SimulationResponse(
@@ -122,7 +143,10 @@ class SimulatorService:
             results=results,
             store_ranking=store_ranking,
             projection_month=projection_month,
-            projection_type=projection_type
+            projection_type=projection_type,
+            current_cmv=round_value(network_current_cmv, 1),
+            new_cmv=round_value(network_new_cmv, 1),
+            cmv_diff=round_value(network_cmv_diff, 1)
         )
 
     async def _simulate_recipe_change(self, input_data: SimulationInput) -> SimulationResponse:
@@ -131,7 +155,7 @@ class SimulatorService:
 
         # Se novos_componentes está vazio, é apenas mudança de preço de venda
         # Se tem componentes, é mudança de composição
-        has_components = input_data.novos_componentes and len(input_data.novos_componentes) > 0
+        has_components = input_data.novos_componentes is not None and len(input_data.novos_componentes) > 0
 
         recipe = await self._get_recipe(input_data.recipe_id)
         if not recipe:
@@ -139,13 +163,27 @@ class SimulatorService:
 
         current_cost = recipe.custo or 0
 
-        # Se há componentes, calcula novo custo. Se não, usa o custo atual
+        # Se há componentes, calcula novo custo. 
+        # Para evitar impacto fantasma, calculamos o delta entre composição nova e composição atual no DB
         if has_components:
-            new_cost = await self._calculate_recipe_cost_from_components(input_data.novos_componentes)
+            # Buscar componentes atuais no DB para comparação
+            current_components_db = await self._get_componentes_diretos(recipe.id)
+            
+            if self._check_if_composition_is_same(input_data.novos_componentes, current_components_db):
+                # Se a composição é a mesma, forçamos o delta de custo para zero para evitar flutuações de centavos
+                # ou discrepâncias entre a coluna 'custo' e o somatório dos componentes
+                cost_difference = 0.0
+                new_cost = current_cost
+            else:
+                new_calculated_cost = await self._calculate_recipe_cost_from_components(input_data.novos_componentes)
+                current_calculated_cost = await self._calculate_recipe_cost_from_db(recipe.id)
+                
+                cost_difference = new_calculated_cost - current_calculated_cost
+                new_cost = current_cost + cost_difference
         else:
             new_cost = current_cost
+            cost_difference = 0
 
-        cost_difference = new_cost - current_cost
         cost_percent = (cost_difference / current_cost * 100) if current_cost > 0 else 0
 
         projection_month, projection_type = self._get_projection_months()
@@ -154,33 +192,22 @@ class SimulatorService:
             recipe.id_produto_externo, input_data.store_ids, projection_month
         )
 
-        # Buscar custo de produção atual da receita
-        # O custo de produção é o campo 'custo' do produto (receita)
-        current_cost = recipe.custo or 0
-
-        # O change_value pode ser:
-        # 1. Novo preço de venda (se não houver novos componentes ou change_value > current_cost)
-        # 2. Novo custo de produção (se houver novos componentes)
-        
         # Buscar preço de venda atual da receita
         current_sale_price = await self._get_product_sale_price(recipe)
         
-        # Se há novos componentes, o change_value é o NOVO CUSTO de produção
-        # Se não há componentes, o change_value é o NOVO PREÇO DE VENDA
-        if has_components:
-            # Simulação de composição: change_value é o novo custo
-            new_cost_input = input_data.change_value
-            new_sale_price = current_sale_price  # Preço de venda não muda
-        else:
-            # Simulação de preço de venda: change_value é o novo preço
-            new_cost_input = current_cost  # Custo não muda
-            new_sale_price = input_data.change_value
+        # O change_value para recipe_change é aplicado ao preço de venda
+        new_sale_price = self._calculate_new_price(current_sale_price, input_data.change_type, input_data.change_value)
 
         # Calcular faturamento usando PREÇO DE VENDA (não custo de produção)
         monthly_revenue_current = monthly_sales * current_sale_price
         monthly_revenue_new = monthly_sales * new_sale_price
         revenue_impact = monthly_revenue_new - monthly_revenue_current
         revenue_impact_percent = (revenue_impact / monthly_revenue_current * 100) if monthly_revenue_current > 0 else 0
+
+        # Cálculos de CMV (Custo / Faturamento * 100)
+        current_cmv = (current_cost / current_sale_price * 100) if current_sale_price > 0 else 0
+        new_cmv = (new_cost / new_sale_price * 100) if new_sale_price > 0 else 0
+        cmv_diff = new_cmv - current_cmv
 
         result = SimulationResult(
             recipe_id=recipe.id,
@@ -193,24 +220,43 @@ class SimulatorService:
             monthly_revenue_current=round_value(monthly_revenue_current),
             monthly_revenue_new=round_value(monthly_revenue_new),
             revenue_impact=round_value(revenue_impact),
-            revenue_impact_percent=round_value(revenue_impact_percent)
+            revenue_impact_percent=round_value(revenue_impact_percent),
+            current_cmv=round_value(current_cmv, 1),
+            new_cmv=round_value(new_cmv, 1),
+            cmv_diff=round_value(cmv_diff, 1)
         )
 
-        total_impact = revenue_impact
-        total_current = monthly_revenue_current
-        total_new = monthly_revenue_new
-        total_impact_percent = revenue_impact_percent
-
+        # Ranking de lojas para calcular impactos reais (Net Impact: Rev - Cost)
         store_ranking = await self._calculate_store_ranking([result], input_data.store_ids)
+        
+        # Impacto Total da rede é a soma dos impactos das lojas
+        total_impact = sum(s.total_impact for s in store_ranking)
+        total_current_revenue = monthly_revenue_current
+        total_new_revenue = monthly_revenue_new
+        
+        total_impact_percent = (total_impact / total_current_revenue * 100) if total_current_revenue > 0 else 0
 
-        change_applied = f"Nova formulacao: {len(input_data.novos_componentes)} componentes"
+        # CMV da rede
+        network_current_cmv = current_cmv
+        network_new_cmv = new_cmv
+        network_cmv_diff = cmv_diff
+
+        if has_components:
+            num_componentes = len(input_data.novos_componentes) if input_data.novos_componentes else 0
+            change_applied = f"Nova formulacao ({num_componentes} itens)"
+            # Se o preço também mudou significativamente, adicionar à descrição
+            if abs(new_sale_price - current_sale_price) > 0.01:
+                price_desc = self._format_change_applied(current_sale_price, new_sale_price, input_data.change_type)
+                change_applied += f" + Preço: {price_desc}"
+        else:
+            change_applied = self._format_change_applied(current_sale_price, new_sale_price, input_data.change_type)
 
         num_stores = len(store_ranking) if store_ranking else 1
         num_recipes = 1
         avg_impact_per_store = total_impact / num_stores
         avg_impact_per_store_percent = total_impact_percent
         avg_impact_per_recipe = total_impact
-        avg_impact_per_recipe_percent = revenue_impact_percent
+        avg_impact_per_recipe_percent = total_impact_percent
         ingredient_impact = cost_difference
         ingredient_impact_percent = cost_percent
 
@@ -231,7 +277,10 @@ class SimulatorService:
             results=[result],
             store_ranking=store_ranking,
             projection_month=projection_month,
-            projection_type=projection_type
+            projection_type=projection_type,
+            current_cmv=round_value(network_current_cmv, 1),
+            new_cmv=round_value(network_new_cmv, 1),
+            cmv_diff=round_value(network_cmv_diff, 1)
         )
 
     async def _get_ingredient(self, ingredient_id: int) -> Optional[Produto]:
@@ -300,15 +349,7 @@ class SimulatorService:
     ) -> float:
         """
         Calcula o custo de uma receita considerando o novo preço de um insumo.
-        
-        Args:
-            recipe_id: ID da receita a recalcular
-            ingredient_id: ID do insumo com preço alterado
-            new_price: Novo preço do insumo
-            recalculated_costs: Dicionário opcional de custos já recalculados (para uso interno recursivo)
-        
-        Returns:
-            Novo custo total da receita
+        OBS: Prefira usar o cálculo via DELTA para evitar impactos fantasmas.
         """
         # Inicializar dicionário de custos recalculados na primeira chamada
         if recalculated_costs is None:
@@ -392,12 +433,55 @@ class SimulatorService:
             for row in rows
         ]
 
+    async def _get_ingredient_total_quantity(
+        self, recipe_id: int, ingredient_id: int, visited: Optional[set] = None
+    ) -> float:
+        """
+        Busca a quantidade TOTAL de um insumo na árvore completa da receita (recursivamente).
+        Inclui insumos que estão em sub-receitas.
+        """
+        if visited is None:
+            visited = set()
+
+        if recipe_id in visited:
+            return 0.0
+
+        visited.add(recipe_id)
+
+        # Buscar componentes diretos desta receita
+        componentes = await self._get_componentes_diretos(recipe_id)
+
+        total_quantity = 0.0
+
+        for comp in componentes:
+            comp_id = comp['id_componente']
+            comp_quantity = comp['quantidade']
+
+            # Se o componente for o insumo procurado, adicionar sua quantidade
+            if comp_id == ingredient_id:
+                total_quantity += comp_quantity
+            else:
+                # Verificar se é uma sub-receita e buscar recursivamente
+                result = await self.session.execute(
+                    select(Produto.tipo).where(Produto.id == comp_id)
+                )
+                comp_tipo = result.scalar_one_or_none()
+
+                if comp_tipo == 'receita':
+                    # É uma sub-receita - buscar recursivamente
+                    sub_quantity = await self._get_ingredient_total_quantity(
+                        comp_id, ingredient_id, visited.copy()
+                    )
+                    total_quantity += sub_quantity * comp_quantity
+
+        return total_quantity
+
     async def _calculate_recipe_cost_from_components(
         self, componentes: List[ComponenteSimulacao], level: int = 0
     ) -> float:
-        total_cost = 0
+        total_cost = 0.0
         for comp in componentes:
-            comp_cost = 0
+            comp_cost = 0.0
             
             if comp.sub_componentes:
                 comp_cost = await self._calculate_recipe_cost_from_components(
@@ -407,10 +491,38 @@ class SimulatorService:
                 result = await self.session.execute(
                     select(Produto.custo).where(Produto.id == comp.id_componente)
                 )
-                comp_cost = result.scalar_one_or_none() or 0
+                comp_cost = result.scalar_one_or_none() or 0.0
             
-            total_cost += comp_cost * comp.quantidade
-        return total_cost
+            total_cost += round(comp_cost * comp.quantidade, 4)
+        return round(total_cost, 4)
+
+    async def _calculate_recipe_cost_from_db(self, recipe_id: int) -> float:
+        """Calcula o custo total de uma receita baseando-se nos componentes diretos atuais no banco."""
+        componentes = await self._get_componentes_diretos(recipe_id)
+        total_cost = 0.0
+        for comp in componentes:
+            # Usar o custo que está na coluna 'custo' do produto (evita discrepâncias de sub-receitas não alteradas)
+            comp_cost = comp['custo'] or 0.0
+            total_cost += round(comp_cost * comp['quantidade'], 4)
+        return round(total_cost, 4)
+
+    def _check_if_composition_is_same(self, novos: List[ComponenteSimulacao], atuais: List[Dict[str, Any]]) -> bool:
+        """Verifica se os componentes e quantidades são idênticos (com tolerância para float)."""
+        if len(novos) != len(atuais):
+            return False
+            
+        map_novos = {c.id_componente: c.quantidade for c in novos}
+        map_atuais = {c['id_componente']: c['quantidade'] for c in atuais}
+        
+        if set(map_novos.keys()) != set(map_atuais.keys()):
+            return False
+            
+        for comp_id, qty_nova in map_novos.items():
+            qty_atual = map_atuais[comp_id]
+            if abs(qty_nova - qty_atual) > 1e-6:
+                return False
+                
+        return True
 
     def _get_projection_months(self) -> tuple:
         today = datetime.now()
@@ -467,7 +579,8 @@ class SimulatorService:
         store_sales_query = select(
             Venda.id_loja,
             Venda.id_produto,
-            func.sum(Venda.quantidade_produto).label('total_quantity')
+            func.sum(Venda.quantidade_produto).label('total_quantity'),
+            func.sum(Venda.valor_total).label('total_revenue')
         ).where(
             Venda.id_produto.in_(list(recipe_external_ids.values())),
             Venda.data >= start_date,
@@ -482,55 +595,77 @@ class SimulatorService:
         result = await self.session.execute(store_sales_query)
         rows = result.all()
 
-        revenue_query = select(
-            Venda.id_loja,
-            func.sum(Venda.valor_total).label('total_revenue')
-        ).where(
-            Venda.id_produto.in_(list(recipe_external_ids.values())),
-            Venda.data >= start_date,
-            Venda.data <= end_date
-        )
-        if filter_store_ids:
-            revenue_query = revenue_query.where(Venda.id_loja.in_(filter_store_ids))
-        revenue_query = revenue_query.group_by(Venda.id_loja)
-        revenue_result = await self.session.execute(revenue_query)
-        revenue_rows = revenue_result.all()
-
-        store_revenue = {str(row.id_loja): float(row.total_revenue or 0) for row in revenue_rows}
-
         store_data = {}
         for row in rows:
             store_id = str(row.id_loja)
             if store_id not in store_data:
-                store_data[store_id] = {'current': 0, 'new': 0, 'recipes': set()}
+                store_data[store_id] = {
+                    'current_cost': 0, 
+                    'new_cost': 0, 
+                    'current_revenue': 0,
+                    'new_revenue': 0,
+                    'recipes': set(),
+                    'total_sales_quantity': 0,
+                    'total_ingredient_quantity': 0
+                }
 
             ext_id_to_recipe = {v: k for k, v in recipe_external_ids.items()}
             if row.id_produto in ext_id_to_recipe:
                 recipe_id = ext_id_to_recipe[row.id_produto]
                 recipe_result = next((r for r in results if r.recipe_id == recipe_id), None)
                 if recipe_result:
-                    store_data[store_id]['current'] += row.total_quantity * recipe_result.current_cost
-                    store_data[store_id]['new'] += row.total_quantity * recipe_result.new_cost
+                    quantity = float(row.total_quantity or 0)
+                    current_rev = float(row.total_revenue or 0)
+                    
+                    store_data[store_id]['current_cost'] += quantity * recipe_result.current_cost
+                    store_data[store_id]['new_cost'] += quantity * recipe_result.new_cost
+                    store_data[store_id]['current_revenue'] += current_rev
+                    
+                    # Calcular novo faturamento baseado no novo preço de venda médio
+                    if recipe_result.monthly_sales_quantity > 0:
+                        new_sale_price = recipe_result.monthly_revenue_new / recipe_result.monthly_sales_quantity
+                        store_data[store_id]['new_revenue'] += quantity * new_sale_price
+                    else:
+                        store_data[store_id]['new_revenue'] += current_rev
+                        
                     store_data[store_id]['recipes'].add(recipe_id)
+                    store_data[store_id]['total_sales_quantity'] += quantity
+                    store_data[store_id]['total_ingredient_quantity'] += quantity * recipe_result.ingredient_quantity
 
         store_ranking = []
         for store_id, data in store_data.items():
-            total_impact = data['new'] - data['current']
-            total_impact_percent = (total_impact / data['current'] * 100) if data['current'] > 0 else 0
+            # Impacto Total = Delta(Faturamento) - Delta(Custo)
+            total_current_cost = data['current_cost']
+            total_new_cost = data['new_cost']
+            total_current_revenue = data['current_revenue']
+            total_new_revenue = data['new_revenue']
+            
+            # Impacto Total = Delta(Faturamento) - Delta(Custo)
+            total_impact = (total_new_revenue - total_current_revenue) - (total_new_cost - total_current_cost)
+            total_impact_percent = (total_impact / total_current_revenue * 100) if total_current_revenue > 0 else 0
 
-            revenue = store_revenue.get(store_id, 0)
-            gross_margin = ((revenue - data['current']) / revenue * 100) if revenue > 0 else 0
-            gross_margin_new = ((revenue - data['new']) / revenue * 100) if revenue > 0 else 0
+            # CMV e Margem
+            current_cmv = (total_current_cost / total_current_revenue * 100) if total_current_revenue > 0 else 0
+            new_cmv = (total_new_cost / total_new_revenue * 100) if total_new_revenue > 0 else 0
+            cmv_diff = new_cmv - current_cmv
+            
+            gross_margin = 100 - current_cmv
+            gross_margin_new = 100 - new_cmv
 
             store_ranking.append(StoreImpact(
                 store_id=store_id,
-                total_current_cost=round_value(data['current']),
-                total_new_cost=round_value(data['new']),
+                total_current_cost=round_value(total_current_cost),
+                total_new_cost=round_value(total_new_cost),
                 total_impact=round_value(total_impact),
                 total_impact_percent=round_value(total_impact_percent),
                 affected_recipes_count=len(data['recipes']),
                 gross_margin=round_value(gross_margin, 1),
-                gross_margin_new=round_value(gross_margin_new, 1)
+                gross_margin_new=round_value(gross_margin_new, 1),
+                current_cmv=round_value(current_cmv, 1),
+                new_cmv=round_value(new_cmv, 1),
+                cmv_diff=round_value(cmv_diff, 1),
+                monthly_sales_quantity=data['total_sales_quantity'],
+                ingredient_quantity=round_value(data['total_ingredient_quantity'], 3)
             ))
 
         store_ranking.sort(key=lambda x: x.total_impact, reverse=True)
@@ -541,10 +676,8 @@ class SimulatorService:
         diff_percent = (diff / old_price * 100) if old_price > 0 else 0
 
         if change_type == "percentual":
-            # Para percentual, diff_percent já inclui o sinal negativo se for o caso
             return f"{diff_percent:+.1f}% ({old_price:.2f} -> {new_price:.2f})"
         else:
-            # Para absoluto, usar +.2f para sempre mostrar o sinal (positivo ou negativo)
             return f"R$ {diff:+.2f} ({old_price:.2f} -> {new_price:.2f})"
 
     async def get_affected_recipes(self, ingredient_id: int) -> List[AffectedRecipePreview]:
@@ -578,7 +711,8 @@ class SimulatorService:
         change_type: str = "percentual",
         change_value: float = 0,
         store_ids: Optional[List[str]] = None,
-        impacted_only: bool = False
+        impacted_only: bool = False,
+        new_cost: Optional[float] = None  # Novo parâmetro para separar custo de preço de venda
     ) -> SimulationEvolutionResponse:
         year, month_num = map(int, month.split('-'))
         _, last_day = monthrange(year, month_num)
@@ -597,6 +731,8 @@ class SimulatorService:
         
         # Armazenar o novo custo da receita modificada (para recipe_change)
         new_recipe_cost: Optional[float] = None
+        # Armazenar o novo preço de venda (para recipe_change)
+        new_recipe_sale_price: Optional[float] = None
         
         if type == "price_change" and ingredient_id:
             ingredient = await self._get_ingredient(ingredient_id)
@@ -620,9 +756,16 @@ class SimulatorService:
                 recipes = [recipe]
                 if recipe.id_produto_externo:
                     recipe_external_ids = {recipe.id: recipe.id_produto_externo}
-                # Calcular o novo custo da receita modificada
-                # O novo custo virá do frontend via change_value (armazenado como novo custo)
-                new_recipe_cost = change_value if change_value > 0 else None
+                
+                # BUG FIX: Separar preço de venda de custo.
+                # O change_value em recipe_change no simulador refere-se ao PREÇO DE VENDA.
+                # O new_cost deve vir explicitamente ou ser mantido o atual se for apenas mudança de preço.
+                new_recipe_cost = new_cost if new_cost is not None else (recipe.custo or 0)
+                
+                # O faturamento futuro pode usar o novo preço de venda (change_value)
+                current_sale_price = await self._get_product_sale_price(recipe)
+                new_recipe_sale_price = self._calculate_new_price(current_sale_price, change_type, change_value)
+                
             price_change_ratio = 1.0
         else:
             raise HTTPException(status_code=400, detail="Parâmetros inválidos para simulação")
@@ -724,7 +867,7 @@ class SimulatorService:
                             # Simulação de insumo: aplicar price_change_ratio
                             new_cost = current_cost * price_change_ratio
                         elif type == "recipe_change" and new_recipe_cost is not None:
-                            # Simulação de receita: usar o novo custo fornecido
+                            # Simulação de receita: usar o novo custo fornecido (ou atual se não mudou)
                             new_cost = new_recipe_cost
                     
                     # Se impacted_only=true, incluir APENAS receitas afetadas (mesmo as que não mudaram de custo)
@@ -915,17 +1058,6 @@ class SimulatorService:
     async def _get_product_sale_price(self, produto: Produto) -> float:
         """
         Busca o preço de venda de um produto (receita ou insumo).
-        
-        PRIORITY:
-        1. preco_venda cadastrado no produto
-        2. preço médio das vendas históricas (para produtos com id_produto_externo)
-        3. 0 (caso não haja preço disponível)
-        
-        Args:
-            produto: Produto do banco de dados
-            
-        Returns:
-            Preço de venda unitário
         """
         # 1. Verificar se tem preco_venda cadastrado
         if produto.preco_venda is not None:

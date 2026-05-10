@@ -13,9 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
-import { XAxis, YAxis, CartesianGrid, LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from "recharts"
+import { XAxis, YAxis, CartesianGrid, LineChart, Line, BarChart, Bar, Legend, ResponsiveContainer, Cell } from "recharts"
 import { simulatorApi, vendasApi, IS_MOCK, commonApi, receitasApi } from "@/lib/api"
 import type { SimulationInput, SimulationResponse, StoreInfo, VendasFiltersResponse, EvolutionResponse, ReceitaTreeDetalhe, ComponenteSimulacao } from "@/lib/api"
+
+const chartConfig = {
+  impacto: {
+    label: "Impacto",
+    color: "hsl(var(--brand-highlight))",
+  },
+}
 
 const formatCurrency = (value: number | null | undefined): string => {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -40,7 +47,7 @@ const formatNumber = (value: number | null | undefined): string => {
 
 const formatQuantity = (value: number, unit?: string | null): string => {
   if (value === 0) {
-    return `0 ${unit || ''}`.trim();
+    return \`0 \${unit || ''}\`.trim();
   }
 
   let decimals: number;
@@ -67,16 +74,10 @@ const formatQuantity = (value: number, unit?: string | null): string => {
   const formatted = value.toFixed(decimals).replace('.', ',');
   const [integerPart, decimalPart = ''] = formatted.split(',');
   const trimmedDecimal = decimalPart.replace(/0+$/, '');
-  const finalNumber = trimmedDecimal ? `${integerPart},${trimmedDecimal}` : integerPart;
+  const finalNumber = trimmedDecimal ? \`\${integerPart},\${trimmedDecimal}\` : integerPart;
 
-  const unitStr = normalizedUnit ? ` ${normalizedUnit}` : '';
-  return `${finalNumber}${unitStr}`;
-}
-
-const getImpactColorClass = (value: number) => {
-  if (value > 0.0001) return "text-destructive"
-  if (value < -0.0001) return "text-brand-highlight"
-  return "text-brand-soft"
+  const unitStr = normalizedUnit ? \` \${normalizedUnit}\` : '';
+  return \`\${finalNumber}\${unitStr}\`;
 }
 
 const mockStores: StoreInfo[] = [
@@ -118,11 +119,14 @@ const mockInsumos: ProductOption[] = [
   { id: 1, text: "Alface", tipo: "insumo", precoAtual: 15.0 },
   { id: 2, text: "Tomate", tipo: "insumo", precoAtual: 12.5 },
   { id: 3, text: "Queijo mussarela", tipo: "insumo", precoAtual: 45.0 },
+  { id: 4, text: "Presunto", tipo: "insumo", precoAtual: 32.0 },
   { id: 5, text: "Pão de brioche", tipo: "insumo", precoAtual: 2.5 },
 ]
 
 const mockReceitas: ProductOption[] = [
   { id: 6, text: "Hambúrguer de Wagyu", tipo: "receita", precoAtual: 28.5 },
+  { id: 7, text: "Sanduíche Natural", tipo: "receita", precoAtual: 22.0 },
+  { id: 8, text: "Batata Frita", tipo: "receita", precoAtual: 18.9 },
 ]
 
 const mapTreeToComponentes = (node: ReceitaTreeDetalhe): Componente[] => {
@@ -237,7 +241,7 @@ export default function SimulatorPage() {
       const detalhes = await receitasApi.getTree(id)
       const mapped = mapTreeToComponentes(detalhes)
       setComposicao(mapped)
-      setComponentesOriginais(JSON.parse(JSON.stringify(mapped)))
+      setComponentesOriginais(mapped)
     } catch (err) {
       console.error("Erro ao carregar composição:", err)
     } finally {
@@ -287,7 +291,9 @@ export default function SimulatorPage() {
     setSimulatedPrice(null)
     setSimulatedPriceDisplay("")
     
-    const product = (simulationType === "insumo" ? insumos : receitas).find((p) => p.id === id)
+    const product = simulationType === "insumo" 
+      ? insumos.find((p) => p.id === id)
+      : receitas.find((p) => p.id === id)
     
     if (product) {
       setSelectedProductName(product.text)
@@ -327,6 +333,7 @@ export default function SimulatorPage() {
     if (!path) {
       newComposicao.push(newItem)
     } else {
+      let target = newComposicao
       const findAndAdd = (list: Componente[], p: number[]) => {
         if (p.length === 1) {
           if (!list[p[0]].subComponentes) list[p[0]].subComponentes = []
@@ -337,57 +344,56 @@ export default function SimulatorPage() {
       }
       findAndAdd(newComposicao, path)
     }
+    setComposicao(newComposicao)
+  }
+
+  const handleUpdateComponent = async (path: number[], field: keyof Componente, value: any) => {
+    const newComposicao = [...composicao]
+    
+    const updateDeep = async (list: Componente[], p: number[]) => {
+      if (p.length === 1) {
+        const item = list[p[0]]
+        if (field === "componenteId") {
+            const id = Number(value)
+            item.componenteId = id
+            try {
+                const info = await simulatorApi.getProductInfo(id)
+                item.unidadeMedida = info.unidade_medida || ""
+                item.custoUnitario = item.tipo === "insumo" ? info.custo_atual || 0 : info.preco_venda || 0
+                
+                if (item.tipo === "receita") {
+                    const detalhes = await receitasApi.getTree(id)
+                    item.subComponentes = mapTreeToComponentes(detalhes)
+                }
+            } catch (err) {
+                console.error(err)
+            }
+        } else {
+            (item as any)[field] = value
+        }
+        return
+      }
+      await updateDeep(list[p[0]].subComponentes!, p.slice(1))
+    }
+    
+    await updateDeep(newComposicao, path)
     setComposicao([...newComposicao])
   }
 
-  const handleUpdateComponent = useCallback((path: number[], updates: Partial<Componente>) => {
-    setComposicao(prev => {
-      const updateLevel = (list: Componente[], p: number[]): Componente[] => {
-        const [index, ...rest] = p
-        return list.map((item, i) => {
-          if (i !== index) return item
-          if (rest.length === 0) return { ...item, ...updates }
-          return { ...item, subComponentes: updateLevel(item.subComponentes || [], rest) }
-        })
-      }
-      return updateLevel(prev, path)
-    })
-  }, [])
-
-  const handleComponentIdChange = async (path: number[], id: number, tipo: "insumo" | "receita") => {
-    try {
-      const info = await simulatorApi.getProductInfo(id)
-      const updates: Partial<Componente> = {
-        componenteId: id,
-        unidadeMedida: info.unidade_medida || "",
-        custoUnitario: (tipo === "insumo" ? info.custo_atual : info.preco_venda) || 0
-      }
-      if (tipo === "receita") {
-        const detalhes = await receitasApi.getTree(id)
-        updates.subComponentes = mapTreeToComponentes(detalhes)
-      }
-      handleUpdateComponent(path, updates)
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
   const handleRemoveComponent = (path: number[]) => {
-    setComposicao(prev => {
-      const next = JSON.parse(JSON.stringify(prev))
-      const removeDeep = (list: Componente[], p: number[]) => {
-        if (p.length === 1) {
-          list.splice(p[0], 1)
-          return
-        }
-        removeDeep(list[p[0]].subComponentes!, p.slice(1))
+    const newComposicao = [...composicao]
+    const removeDeep = (list: Componente[], p: number[]) => {
+      if (p.length === 1) {
+        list.splice(p[0], 1)
+        return
       }
-      removeDeep(next, path)
-      return next
-    })
+      removeDeep(list[p[0]].subComponentes!, p.slice(1))
+    }
+    removeDeep(newComposicao, path)
+    setComposicao(newComposicao)
   }
 
-  const calculateComposicaoCost = useCallback((listToCalculate: Componente[]) => {
+  const calculateComposicaoCost = useCallback((listToCalculate: Componente[] = composicao) => {
     const calculateDeep = (list: Componente[]): number => {
       return list.reduce((sum, c) => {
         const itemCost = c.tipo === "receita" && c.subComponentes && c.subComponentes.length > 0 
@@ -397,7 +403,7 @@ export default function SimulatorPage() {
       }, 0)
     }
     return calculateDeep(listToCalculate)
-  }, [])
+  }, [composicao])
 
   const renderComponents = (items: Componente[], pathPrefix: number[] = [], level = 0): React.ReactNode => {
     return items.map((item, i) => {
@@ -410,10 +416,10 @@ export default function SimulatorPage() {
         <React.Fragment key={item.id}>
           <TableRow className={level === 0 ? "border-brand-line/10 bg-transparent" : "border-brand-line/5 bg-brand-surface/30"}>
             <TableCell>
-              <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 1.5}rem` }}>
+              <div className="flex items-center gap-2" style={{ paddingLeft: \`\${level * 1.5}rem\` }}>
                 {hasChildren ? (
                   <button 
-                    onClick={() => handleUpdateComponent(currentPath, { expanded: !item.expanded })}
+                    onClick={() => handleUpdateComponent(currentPath, "expanded", !item.expanded)}
                     className="p-0.5 hover:bg-brand-surface rounded text-brand-muted"
                   >
                     {item.expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -431,13 +437,13 @@ export default function SimulatorPage() {
                       >
                         {item.componenteId
                           ? (item.tipo === "insumo" ? insumos : receitas).find((p) => p.id === item.componenteId)?.text || "Selecione..."
-                          : `Selecione ${item.tipo}...`}
+                          : \`Selecione \${item.tipo}...\`}
                         <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0 border-brand-line/20 bg-brand-surface-2" align="start">
                       <Command className="bg-transparent">
-                        <CommandInput placeholder={`Buscar ${item.tipo}...`} className="text-xs" />
+                        <CommandInput placeholder={\`Buscar \${item.tipo}...\`} className="text-xs" />
                         <CommandList>
                           <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
                           <CommandGroup>
@@ -446,7 +452,7 @@ export default function SimulatorPage() {
                                 key={p.id}
                                 value={p.text}
                                 onSelect={() => {
-                                  handleComponentIdChange(currentPath, p.id, item.tipo)
+                                  handleUpdateComponent(currentPath, "componenteId", p.id.toString())
                                   document.body.click()
                                 }}
                                 className="text-xs"
@@ -485,11 +491,9 @@ export default function SimulatorPage() {
                   onChange={(e) => {
                     const val = e.target.value.replace('.', ',');
                     if (val === "" || /^[0-9]*[,]?[0-9]*$/.test(val)) {
+                      handleUpdateComponent(currentPath, "quantidadeDisplay", val);
                       const numericVal = parseFloat(val.replace(',', '.'));
-                      handleUpdateComponent(currentPath, {
-                          quantidadeDisplay: val,
-                          quantidade: isNaN(numericVal) ? 0 : numericVal
-                      });
+                      handleUpdateComponent(currentPath, "quantidade", isNaN(numericVal) ? 0 : numericVal);
                     }
                   }}
                   className="h-8 text-xs text-right w-20 bg-brand-surface border-brand-line/35"
@@ -554,7 +558,7 @@ export default function SimulatorPage() {
   const getStoreFilterText = () => {
     if (selectedStores.length === 0) return "Nenhuma loja selecionada"
     if (selectedStores.length === availableStores.length) return "Todas as lojas"
-    return `${selectedStores.length} loja${selectedStores.length > 1 ? "s" : ""} selecionada${selectedStores.length > 1 ? "s" : ""}`
+    return \`\${selectedStores.length} loja\${selectedStores.length > 1 ? "s" : ""} selecionada\${selectedStores.length > 1 ? "s" : ""}\`
   }
 
   const isFormValid = useMemo(() => {
@@ -564,8 +568,8 @@ export default function SimulatorPage() {
     if (hasPriceChange) return true
 
     if (simulationType === "receita") {
-      const originalMapped = JSON.stringify(componentesOriginais.map(c => ({ id: c.componenteId, q: c.quantidade })))
-      const currentMapped = JSON.stringify(composicao.map(c => ({ id: c.componenteId, q: c.quantidade })))
+      const originalMapped = componentesOriginais.map(c => \`\${c.componenteId}-\${c.quantidade}\`).sort().join('|')
+      const currentMapped = composicao.filter(c => c.componenteId && c.componenteId > 0).map(c => \`\${c.componenteId}-\${c.quantidade}\`).sort().join('|')
       if (originalMapped !== currentMapped) return true
     }
 
@@ -674,20 +678,14 @@ export default function SimulatorPage() {
 
   const storeRankingData = useMemo(() => {
     if (!simulationResult?.store_ranking) return []
-    return simulationResult.store_ranking.map(s => {
-      const varPercent = s.current_cmv && s.current_cmv > 0
-        ? ((s.new_cmv! / s.current_cmv) - 1) * 100
-        : 0;
-      return {
+    return simulationResult.store_ranking.map(s => ({
         name: s.store_id,
-        "CMV Atual": s.current_cmv || 0,
-        "CMV Simulado": s.new_cmv || 0,
+        "CMV Atual": s.current_cmv || 30,
+        "CMV Simulado": s.simulated_cmv || 31,
         "Impacto R$": s.total_impact,
         "Impacto %": s.total_impact_percent,
-        "Variação pp": s.cmv_diff || 0,
-        "Variação %": varPercent
-      };
-    })
+        "Variação pp": s.cmv_diff || 0
+    }))
   }, [simulationResult])
 
   return (
@@ -790,7 +788,7 @@ export default function SimulatorPage() {
                 <label className="text-sm font-medium text-brand-soft tracking-tight block">Custo Atual</label>
                 <Input
                   type="text"
-                  value={currentPrice > 0 ? `R$ ${currentPrice.toFixed(2)}${currentUnit ? ` / ${currentUnit}` : ""}` : ""}
+                  value={currentPrice > 0 ? \`R$ \${currentPrice.toFixed(2)}\${currentUnit ? \` / \${currentUnit}\` : ""}\` : ""}
                   disabled
                   className="bg-brand-surface-2 border-brand-line/35 h-11 text-base disabled:opacity-100"
                 />
@@ -880,7 +878,7 @@ export default function SimulatorPage() {
                 <label className="text-sm font-medium text-brand-soft tracking-tight block">Preço Atual</label>
                 <Input
                   type="text"
-                  value={currentPrice > 0 ? `R$ ${currentPrice.toFixed(2)}` : ""}
+                  value={currentPrice > 0 ? \`R$ \${currentPrice.toFixed(2)}\` : ""}
                   disabled
                   className="bg-brand-surface-2 border-brand-line/35 h-11 text-base disabled:opacity-100"
                 />
@@ -942,7 +940,7 @@ export default function SimulatorPage() {
                   className="w-full flex items-center justify-between bg-brand-surface border border-brand-line/35 h-11 px-3 rounded-sm text-sm"
                 >
                   <span>{getStoreFilterText()}</span>
-                  <ChevronDown className={`size-4 text-brand-muted transition-transform ${storeFilterOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown className={\`size-4 text-brand-muted transition-transform \${storeFilterOpen ? "rotate-180" : ""}\`} />
                 </button>
 
                 {storeFilterOpen && (
@@ -1023,7 +1021,7 @@ export default function SimulatorPage() {
                   Carregando composição...
                 </div>
               ) : composicao.length === 0 ? (
-                <p className="text-sm text-brand-muted">Nenhum componente. Adicione insumos or receitas.</p>
+                <p className="text-sm text-brand-muted">Nenhum componente. Adicione insumos ou receitas.</p>
               ) : (
                 <>
                   <Table>
@@ -1044,7 +1042,7 @@ export default function SimulatorPage() {
                   <div className="flex justify-end items-center gap-4 mt-4 pt-3 border-t border-brand-line/15">
                     <span className="text-sm text-brand-muted">Custo total atual:</span>
                     <span className="text-lg font-semibold text-brand-highlight">
-                      {formatCurrency(calculateComposicaoCost(composicao))}
+                      {formatCurrency(calculateComposicaoCost())}
                     </span>
                   </div>
                 </>
@@ -1083,451 +1081,384 @@ export default function SimulatorPage() {
           </div>
         </FadeUp>
       ) : simulationResult ? (
-        <div className="space-y-6">
-          <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6 space-y-6">
-            <h2 className="text-3xl font-semibold text-brand-soft tracking-tight">Simulação - {selectedMonth}</h2>
-            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-              <Card className="bg-brand-surface border-brand-line/10 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
-                    Impacto na Rede
-                  </CardDescription>
-                  <CardTitle className={cn(
-                      "text-2xl font-semibold tracking-tight",
-                      getImpactColorClass(simulationResult.total_network_impact)
-                  )}>
-                    {formatCurrency(simulationResult.total_network_impact)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-[0.8125rem] text-brand-muted">
-                    {formatPercent(simulationResult.total_network_impact_percent)} de impacto
-                  </p>
-                </CardContent>
-              </Card>
+        <>
+          <FadeUp delay={0.1}>
+            <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6 space-y-6">
+              <h2 className="text-3xl font-semibold text-brand-soft tracking-tight">Simulação - {selectedMonth}</h2>
+              <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <Card className="bg-brand-surface border-brand-line/10 shadow-none">
+                  <CardHeader className="pb-2">
+                    <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
+                      Impacto na Rede
+                    </CardDescription>
+                    <CardTitle className={cn(
+                        "text-2xl font-semibold tracking-tight",
+                        simulationResult.total_network_impact >= 0 ? "text-destructive" : "text-brand-highlight"
+                    )}>
+                      {formatCurrency(simulationResult.total_network_impact)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-[0.8125rem] text-brand-muted">
+                      {formatPercent(simulationResult.total_network_impact_percent)} de impacto
+                    </p>
+                  </CardContent>
+                </Card>
 
-              <Card className="bg-brand-surface border-brand-line/10 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
-                    Impacto Médio por Loja
-                  </CardDescription>
-                  <CardTitle className={cn(
-                      "text-2xl font-semibold tracking-tight",
-                      getImpactColorClass(simulationResult.avg_impact_per_store)
-                  )}>
-                    {formatCurrency(simulationResult.avg_impact_per_store)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-[0.8125rem] text-brand-muted">
-                    {formatPercent(simulationResult.avg_impact_per_store_percent)} por loja
-                  </p>
-                </CardContent>
-              </Card>
+                <Card className="bg-brand-surface border-brand-line/10 shadow-none">
+                  <CardHeader className="pb-2">
+                    <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
+                      Impacto Médio por Loja
+                    </CardDescription>
+                    <CardTitle className={cn(
+                        "text-2xl font-semibold tracking-tight",
+                        simulationResult.avg_impact_per_store >= 0 ? "text-destructive" : "text-brand-highlight"
+                    )}>
+                      {formatCurrency(simulationResult.avg_impact_per_store)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-[0.8125rem] text-brand-muted">
+                      {formatPercent(simulationResult.avg_impact_per_store_percent)} por loja
+                    </p>
+                  </CardContent>
+                </Card>
 
-              <Card className="bg-brand-surface border-brand-line/10 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
-                    Impacto Médio nas Receitas
-                  </CardDescription>
-                  <CardTitle className={cn(
-                      "text-2xl font-semibold tracking-tight",
-                      getImpactColorClass(simulationResult.avg_impact_per_recipe)
-                  )}>
-                    {formatCurrency(simulationResult.avg_impact_per_recipe)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-[0.8125rem] text-brand-muted">
-                    {formatPercent(simulationResult.avg_impact_per_recipe_percent)} por receita
-                  </p>
-                </CardContent>
-              </Card>
+                <Card className="bg-brand-surface border-brand-line/10 shadow-none">
+                  <CardHeader className="pb-2">
+                    <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
+                      Impacto Médio nas Receitas
+                    </CardDescription>
+                    <CardTitle className={cn(
+                        "text-2xl font-semibold tracking-tight",
+                        simulationResult.avg_impact_per_recipe >= 0 ? "text-destructive" : "text-brand-highlight"
+                    )}>
+                      {formatCurrency(simulationResult.avg_impact_per_recipe)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-[0.8125rem] text-brand-muted">
+                      {formatPercent(simulationResult.avg_impact_per_recipe_percent)} por receita
+                    </p>
+                  </CardContent>
+                </Card>
 
-              <Card className="bg-brand-surface border-brand-line/10 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
-                      CMV Médio da Rede
-                  </CardDescription>
-                  <CardTitle className={cn(
-                      "text-2xl font-semibold tracking-tight",
-                      getImpactColorClass(simulationResult.cmv_diff ?? 0)
-                  )}>
-                    {formatPercent(simulationResult.new_cmv)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const cmvVar = simulationResult.current_cmv && simulationResult.current_cmv > 0
-                      ? ((simulationResult.new_cmv! / simulationResult.current_cmv) - 1) * 100
-                      : 0;
-                    return (
-                      <p className="text-[0.8125rem] text-brand-muted">
-                        Variação de {cmvVar >= 0 ? "+" : ""}{cmvVar.toFixed(1)}%
-                      </p>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            </div>
-          </Card>
+                <Card className="bg-brand-surface border-brand-line/10 shadow-none">
+                  <CardHeader className="pb-2">
+                    <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
+                        CMV Médio da Rede
+                    </CardDescription>
+                    <CardTitle className={cn(
+                        "text-2xl font-semibold tracking-tight",
+                        (simulationResult.cmv_diff || 0) >= 0 ? "text-destructive" : "text-brand-highlight"
+                    )}>
+                      {formatPercent(simulationResult.new_cmv)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-[0.8125rem] text-brand-muted">
+                        Variação de {simulationResult.cmv_diff >= 0 ? "+" : ""}{simulationResult.cmv_diff?.toFixed(2)} pp
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </Card>
+          </FadeUp>
 
           {evolutionData && (
-            <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none">
-              <CardHeader className="flex flex-row items-start justify-between pb-2">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg font-semibold text-brand-soft">Evolução Custo</CardTitle>
-                  <div className="flex gap-4 mt-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-brand-primary" />
-                      <span className="text-sm text-brand-muted">Atual</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-brand-muted" />
-                      <span className="text-sm text-brand-muted">Simulado</span>
+            <FadeUp delay={0.15}>
+              <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none">
+                <CardHeader className="flex flex-row items-start justify-between pb-2">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-semibold text-brand-soft">Evolução Custo</CardTitle>
+                    <div className="flex gap-4 mt-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-brand-primary" />
+                        <span className="text-sm text-brand-muted">Atual</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-brand-muted" />
+                        <span className="text-sm text-brand-muted">Simulado</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2 pt-1">
-                  <Switch
-                    id="impacted-only"
-                    checked={impactedOnly}
-                    onCheckedChange={setImpactedOnly}
-                    className="data-[state=checked]:bg-brand-highlight"
-                  />
-                  <label
-                    htmlFor="impacted-only"
-                    className="text-xs font-medium text-brand-soft cursor-pointer"
-                  >
-                    Somente impactadas
-                  </label>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {loadingEvolution ? (
-                  <Skeleton className="h-[240px] w-full rounded-sm" />
-                ) : evolutionData && (
-                  <ChartContainer config={{}} className="h-[240px] w-full">
-                    <LineChart data={evolutionChartData} margin={{ top: 20, right: 30, left: 45, bottom: 20 }}>
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
-                      <XAxis
-                         dataKey="day"
-                         axisLine={false}
-                         tickLine={false}
-                         tick={{ fontSize: 12, fill: "hsl(var(--brand-muted))" }}
-                         label={{ value: "Dia do Mês", position: "insideBottom", offset: -10, style: { fontSize: 12, fill: "hsl(var(--brand-muted))" } }}
-                       />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: "hsl(var(--brand-muted))" }}
-                        tickFormatter={(v) => {
-                          if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(1)}M`
-                          if (v >= 1000) return `R$ ${(v / 1000).toFixed(1)}k`
-                          return `R$ ${v.toFixed(0)}`
-                        }}
-                        label={{ 
-                          value: "Custo (R$)", 
-                          angle: -90, 
-                          position: "insideLeft", 
-                          offset: 0, 
-                          style: { textAnchor: 'middle', fill: "hsl(var(--brand-muted))", fontSize: 12 } 
-                        }}
-                      />
-                      <ChartTooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload
-                            return (
-                              <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-3 text-sm">
-                                <div className="font-semibold text-brand-soft mb-1">{data.date}</div>
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex justify-between gap-4">
-                                    <span className="text-brand-muted">Custo Atual:</span>
-                                    <span className="font-medium text-brand-primary">{formatCurrency(data.current)}</span>
-                                  </div>
-                                  <div className="flex justify-between gap-4">
-                                    <span className="text-brand-muted">Custo Simulado:</span>
-                                    <span className="font-medium text-brand-muted">{formatCurrency(data.new)}</span>
+                  <div className="flex items-center space-x-2 pt-1">
+                    <Switch
+                      id="impacted-only"
+                      checked={impactedOnly}
+                      onCheckedChange={setImpactedOnly}
+                      className="data-[state=checked]:bg-brand-highlight"
+                    />
+                    <label
+                      htmlFor="impacted-only"
+                      className="text-xs font-medium text-brand-soft cursor-pointer"
+                    >
+                      Somente impactadas
+                    </label>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {loadingEvolution ? (
+                    <Skeleton className="h-[240px] w-full rounded-sm" />
+                  ) : evolutionData && (
+                    <ChartContainer config={chartConfig} className="h-[240px] w-full">
+                      <LineChart data={evolutionChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
+                        <XAxis
+                           dataKey="day"
+                           axisLine={false}
+                           tickLine={false}
+                           tick={{ fontSize: 12, fill: "hsl(var(--brand-muted))" }}
+                           label={{ value: "Dia do Mês", position: "insideBottom", offset: -10, style: { fontSize: 12, fill: "hsl(var(--brand-muted))" } }}
+                         />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 12, fill: "hsl(var(--brand-muted))" }}
+                          tickFormatter={(v) => {
+                            if (v >= 1000000) return \`R$ \${(v / 1000000).toFixed(1)}M\`
+                            if (v >= 1000) return \`R$ \${(v / 1000).toFixed(1)}k\`
+                            return \`R$ \${v.toFixed(0)}\`
+                          }}
+                        />
+                        <ChartTooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload
+                              return (
+                                <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-3 text-sm">
+                                  <div className="font-semibold text-brand-soft mb-1">{data.date}</div>
+                                  <div className="flex flex-col gap-1">
+                                    <div className="flex justify-between gap-4">
+                                      <span className="text-brand-muted">Custo Atual:</span>
+                                      <span className="font-medium text-brand-primary">{formatCurrency(data.current)}</span>
+                                    </div>
+                                    <div className="flex justify-between gap-4">
+                                      <span className="text-brand-muted">Custo Simulado:</span>
+                                      <span className="font-medium text-brand-muted">{formatCurrency(data.new)}</span>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="current"
-                        stroke="hsl(var(--brand-primary))"
-                        strokeWidth={3}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="new"
-                        stroke="hsl(var(--brand-muted))"
-                        strokeWidth={3}
-                        strokeDasharray="5 5"
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ChartContainer>
-                )}
-              </CardContent>
-            </Card>
+                              )
+                            }
+                            return null
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="current"
+                          stroke="hsl(var(--brand-primary))"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="new"
+                          stroke="hsl(var(--brand-muted))"
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ChartContainer>
+                  )}
+                </CardContent>
+              </Card>
+            </FadeUp>
           )}
 
           {simulationResult.store_ranking.length > 0 && (
-            <div className="grid xl:grid-cols-2 gap-6">
-              <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
-                <CardTitle className="mb-6">Lojas R$ (%) impacto</CardTitle>
-                <div className="h-[400px] w-full overflow-y-auto">
-                    <ResponsiveContainer width="100%" height={storeRankingData.length > 10 ? storeRankingData.length * 40 : "100%"}>
-                        <BarChart 
-                            layout="vertical"
-                            data={storeRankingData} 
-                            margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-                        >
-                            <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
-                            <XAxis 
-                                type="number" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
-                            />
-                            <YAxis 
-                                dataKey="name" 
-                                type="category" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
-                                width={80}
-                            />
-                            <ChartTooltip 
-                                content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                        const data = payload[0].payload;
-                                        return (
-                                            <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-2 text-[10px]">
-                                                <div className="font-bold mb-1">{data.name}</div>
-                                                <div>Impacto R$: {formatCurrency(data["Impacto R$"])}</div>
-                                                <div>Impacto %: {formatPercent(data["Impacto %"])}</div>
-                                            </div>
-                                        )
-                                    }
-                                    return null;
-                                }}
-                            />
-                            <Bar 
-                                dataKey="Impacto R$" 
-                                radius={[0, 4, 4, 0]}
-                            >
-                                {storeRankingData.map((entry, index) => (
-                                    <Cell key={index} fill={entry["Impacto R$"] > 0 ? "hsl(var(--destructive))" : entry["Impacto R$"] < 0 ? "hsl(var(--brand-highlight))" : "hsl(var(--brand-muted))"} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-                <CustomLegend />
-              </Card>
-
-              <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
-                <CardTitle className="mb-6">Impacto CMV (%)</CardTitle>
-                <div className="h-[400px] w-full overflow-y-auto">
-                    <ResponsiveContainer width="100%" height={storeRankingData.length > 10 ? storeRankingData.length * 40 : "100%"}>
-                        <BarChart 
-                            layout="vertical"
-                            data={storeRankingData} 
-                            margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-                        >
-                            <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
-                            <XAxis 
-                                type="number" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
-                            />
-                            <YAxis 
-                                dataKey="name" 
-                                type="category" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
-                                width={80}
-                            />
-                            <ChartTooltip 
-                                content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                        const data = payload[0].payload;
-                                        return (
-                                            <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-2 text-[10px]">
-                                                <div className="font-bold mb-1">{data.name}</div>
-                                                <div>CMV Atual: {formatPercent(data["CMV Atual"])}</div>
-                                                <div>CMV Simulado: {formatPercent(data["CMV Simulado"])}</div>
-                                                <div className={cn("font-bold mt-1", getImpactColorClass(data["Variação %"]))}>
-                                                  Variação: {data["Variação %"] >= 0 ? "+" : ""}{data["Variação %"].toFixed(1)}%
+            <FadeUp delay={0.15}>
+              <div className="grid xl:grid-cols-2 gap-6">
+                <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none">
+                  <CardHeader className="pb-6">
+                    <CardTitle className="text-lg font-bold">Lojas R$ (%) impacto</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width={storeRankingData.length > 10 ? storeRankingData.length * 60 : "100%"} height="100%">
+                            <BarChart data={storeRankingData} margin={{ top: 40, right: 30, left: 20, bottom: 60 }}>
+                                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    interval={0}
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
+                                    label={{ value: "Impacto R$", angle: -90, position: "insideLeft", style: { fontSize: 10, fill: "hsl(var(--brand-muted))" } }}
+                                />
+                                <ChartTooltip 
+                                    content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                                <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-2 text-[10px]">
+                                                    <div className="font-bold mb-1">{data.name}</div>
+                                                    <div>Impacto R$: {formatCurrency(data["Impacto R$"])}</div>
+                                                    <div>Impacto %: {formatPercent(data["Impacto %"])}</div>
                                                 </div>
-                                            </div>
-                                        )
-                                    }
-                                    return null;
-                                }}
-                            />
-                            <Bar dataKey="Variação %" radius={[0, 4, 4, 0]}>
-                                {storeRankingData.map((entry, index) => (
-                                    <Cell key={index} fill={entry["Variação %"] > 0 ? "hsl(var(--destructive))" : entry["Variação %"] < 0 ? "hsl(var(--brand-highlight))" : "hsl(var(--brand-muted))"} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-                <CustomLegend />
-              </Card>
-            </div>
+                                            )
+                                        }
+                                        return null;
+                                    }}
+                                />
+                                <Bar 
+                                    dataKey="Impacto R$" 
+                                    radius={[4, 4, 0, 0]}
+                                >
+                                    {storeRankingData.map((entry, index) => (
+                                        <Cell key={index} fill={entry["Impacto R$"] >= 0 ? "hsl(var(--destructive))" : "hsl(var(--brand-highlight))"} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <CustomLegend />
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none">
+                  <CardHeader className="pb-6">
+                    <CardTitle className="text-lg font-bold">Lojas impacto CMV (pp)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width={storeRankingData.length > 10 ? storeRankingData.length * 60 : "100%"} height="100%">
+                            <BarChart data={storeRankingData} margin={{ top: 40, right: 30, left: 20, bottom: 60 }}>
+                                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    interval={0}
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
+                                    label={{ value: "CMV %", angle: -90, position: "insideLeft", style: { fontSize: 10, fill: "hsl(var(--brand-muted))" } }}
+                                    domain={[0, 'dataMax + 10']}
+                                />
+                                <ChartTooltip />
+                                <Bar dataKey="CMV Atual" stackId="a" fill="hsl(var(--brand-primary))" />
+                                <Bar dataKey="Variação pp" stackId="a" radius={[4, 4, 0, 0]}>
+                                    {storeRankingData.map((entry, index) => (
+                                        <Cell key={index} fill={entry["Variação pp"] >= 0 ? "hsl(var(--destructive))" : "hsl(var(--brand-highlight))"} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <CustomLegend />
+                  </CardContent>
+                </Card>
+              </div>
+            </FadeUp>
           )}
 
-          <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
-            <CardTitle className="text-lg font-semibold mb-4">Tabela de Resultados por Loja</CardTitle>
-            <div className="[&>div]:max-h-[440px] [&>div]:overflow-y-auto pr-2 -mr-2">
-              <Table>
-                <TableHeader className="sticky top-0 bg-brand-surface-2 z-10 shadow-sm shadow-brand-line/10">
-                  <TableRow className="border-brand-line/20 hover:bg-transparent">
-                    <TableHead className="text-brand-muted font-medium bg-brand-surface-2">Loja</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Qtd. Vendido</TableHead>
-                    {simulationType === "insumo" && (
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Qtd. Insumo</TableHead>
-                    )}
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Fat. Atual</TableHead>
-                    {simulationType === "receita" && (
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Fat. Simulado</TableHead>
-                    )}
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV %</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV Simulado %</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Diferença %</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV R$</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV Simulado R$</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Diferença R$</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {simulationResult.store_ranking.map((store) => {
-                    // Cálculo do faturamento baseado no CMV e Custo Total (Requisito da tarefa)
-                    const revenueCurrent = store.current_cmv && store.current_cmv > 0 
-                      ? (store.total_current_cost / (store.current_cmv / 100)) 
-                      : 0;
-                    
-                    // Faturamento Simulado (Espaço preparado conforme tarefa 3)
-                    // Atualmente o faturamento simulado muda se o preço de venda mudar (recipe_change)
-                    const revenueSimulated = store.new_cmv && store.new_cmv > 0 
-                      ? (store.total_new_cost / (store.new_cmv / 100)) 
-                      : revenueCurrent;
-
-                    const costDiff = store.total_new_cost - store.total_current_cost;
-
-                    return (
-                      <TableRow key={store.store_id} className="border-brand-line/20">
-                        <TableCell className="font-medium text-brand-soft">{store.store_id}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatNumber(store.monthly_sales_quantity)}</TableCell>
-                        {simulationType === "insumo" && (
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatQuantity(store.ingredient_quantity, currentUnit)}</TableCell>
-                        )}
-                        <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatCurrency(revenueCurrent)}</TableCell>
-                        {simulationType === "receita" && (
-                          <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatCurrency(revenueSimulated)}</TableCell>
-                        )}
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(store.current_cmv)}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(store.new_cmv)}</TableCell>
-                        <TableCell className={cn(
-                          "text-right font-bold text-xs whitespace-nowrap",
-                          getImpactColorClass(store.cmv_diff ?? 0)
-                        )}>
-                          {(store.cmv_diff ?? 0) >= 0 ? "+" : ""}{(store.cmv_diff ?? 0).toFixed(1)}%
-                        </TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(store.total_current_cost)}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(store.total_new_cost)}</TableCell>
-                        <TableCell className={cn(
-                          "text-right font-bold text-xs whitespace-nowrap",
-                          getImpactColorClass(costDiff)
-                        )}>
-                          {costDiff >= 0 ? "+" : ""}{formatCurrency(costDiff)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
+          { (
+            <FadeUp delay={0.15}>
+              <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Tabela de Resultados por Loja</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="border-brand-line/20">
+                                <TableHead className="text-brand-muted font-medium">Loja</TableHead>
+                                <TableHead className="text-brand-muted font-medium text-right">CMV Atual</TableHead>
+                                <TableHead className="text-brand-muted font-medium text-right">CMV Simulado</TableHead>
+                                <TableHead className="text-brand-muted font-medium text-right">Variação (pp)</TableHead>
+                                <TableHead className="text-brand-muted font-medium text-right">Impacto (R$)</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {simulationResult.store_ranking.map((store) => (
+                                <TableRow key={store.store_id} className="border-brand-line/20">
+                                    <TableCell className="font-medium text-brand-soft">{store.store_id}</TableCell>
+                                    <TableCell className="text-brand-soft text-right">{formatPercent(store.current_cmv)}</TableCell>
+                                    <TableCell className="text-brand-soft text-right">{formatPercent(store.simulated_cmv)}</TableCell>
+                                    <TableCell className={cn(
+                                        "text-right font-bold",
+                                        (store.cmv_diff || 0) >= 0 ? "text-destructive" : "text-brand-highlight"
+                                    )}>
+                                        {store.cmv_diff >= 0 ? "+" : ""}{store.cmv_diff?.toFixed(2)} pp
+                                    </TableCell>
+                                    <TableCell className={cn(
+                                        "text-right font-bold",
+                                        store.total_impact >= 0 ? "text-destructive" : "text-brand-highlight"
+                                    )}>
+                                        {store.total_impact >= 0 ? "+" : ""}{formatCurrency(store.total_impact)}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+              </Card>
+            </FadeUp>
+          )}
 
           {sortedSimulationResults.length > 0 && (
-            <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
-              <CardTitle className="text-lg font-semibold mb-4">Receitas Impactadas</CardTitle>
-              <div className="[&>div]:max-h-[440px] [&>div]:overflow-y-auto pr-2 -mr-2">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-brand-surface-2 z-10 shadow-sm shadow-brand-line/10">
-                    <TableRow className="border-brand-line/20 hover:bg-transparent">
-                      <TableHead className="text-brand-muted font-medium bg-brand-surface-2">Receita</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Vendas/Mês</TableHead>
-                      {simulationType === "insumo" ? (
-                        <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Qtd. Insumo</TableHead>
-                      ) : null}
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Fat. Atual</TableHead>
-                      {simulationType === "receita" && (
-                        <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Fat. Simulado</TableHead>
-                      )}
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV %</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV Simulado %</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Diferença %</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV R$</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV Simulado R$</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Diferença R$</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedSimulationResults.map((item) => {
-                      const cmvAtualRS = item.current_cost * item.monthly_sales_quantity;
-                      const cmvSimuladoRS = item.new_cost * item.monthly_sales_quantity;
-                      const difCustoRS = cmvSimuladoRS - cmvAtualRS;
-
-                      return (
-                        <TableRow key={item.recipe_id} className="border-brand-line/20">
-                          <TableCell className="font-medium text-brand-soft">{item.recipe_name}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatNumber(item.monthly_sales_quantity)}</TableCell>
-                          {simulationType === "insumo" ? (
-                            <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatQuantity(item.ingredient_quantity, currentUnit)}</TableCell>
-                          ) : null}
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(item.monthly_revenue_current)}</TableCell>
-                          {simulationType === "receita" && (
-                            <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(item.monthly_revenue_new)}</TableCell>
-                          )}
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(item.current_cmv)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(item.new_cmv)}</TableCell>
-                          <TableCell className={cn(
-                            "text-right font-bold text-xs whitespace-nowrap",
-                            getImpactColorClass(item.cmv_diff ?? 0)
-                          )}>
-                            {(item.cmv_diff ?? 0) >= 0 ? "+" : ""}{(item.cmv_diff ?? 0).toFixed(1)}%
-                          </TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(cmvAtualRS)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatCurrency(cmvSimuladoRS)}</TableCell>
-                          <TableCell className={cn(
-                              "text-right font-bold text-xs whitespace-nowrap",
-                              getImpactColorClass(difCustoRS)
-                          )}>
-                            {difCustoRS >= 0 ? "+" : ""}{formatCurrency(difCustoRS)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
+            <FadeUp delay={0.15}>
+              <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Receitas Impactadas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-brand-line/20">
+                        <TableHead className="text-brand-muted font-medium">Receita</TableHead>
+                        <TableHead className="text-brand-muted font-medium text-right">CMV Atual</TableHead>
+                        <TableHead className="text-brand-muted font-medium text-right">CMV Simulado</TableHead>
+                        <TableHead className="text-brand-muted font-medium text-right">Diferença</TableHead>
+                        <TableHead className="text-brand-muted font-medium text-right">Vendas/Mês</TableHead>
+                        {simulationType === "insumo" ? (
+                          <TableHead className="text-brand-muted font-medium text-right">Qtd. Insumo</TableHead>
+                        ) : null}
+                        <TableHead className="text-brand-muted font-medium text-right">Faturamento</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedSimulationResults.map((item) => {
+                        return (
+                          <TableRow key={item.recipe_id} className="border-brand-line/20">
+                            <TableCell className="font-medium text-brand-soft">{item.recipe_name}</TableCell>
+                            <TableCell className="text-brand-soft text-right">{formatPercent(item.current_cmv)}</TableCell>
+                            <TableCell className="text-brand-soft text-right">{formatPercent(item.new_cmv)}</TableCell>
+                            <TableCell className={cn(
+                                "text-right font-bold",
+                                item.cost_difference >= 0 ? "text-destructive" : "text-brand-highlight"
+                            )}>
+                              {item.cost_difference >= 0 ? "+" : ""}{formatCurrency(item.cost_difference)} ({formatPercent(item.cost_percent_change)})
+                            </TableCell>
+                            <TableCell className="text-brand-soft text-right">{formatNumber(item.monthly_sales_quantity)}</TableCell>
+                            {simulationType === "insumo" ? (
+                              <TableCell className="text-brand-soft text-right">{formatQuantity(item.ingredient_quantity, currentUnit)}</TableCell>
+                            ) : null}
+                            <TableCell className="text-brand-soft text-right">{formatCurrency(item.monthly_revenue_current)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </FadeUp>
           )}
-        </div>
+        </>
       ) : (
         <FadeUp delay={0.1} className="bg-brand-surface border border-brand-line/15 rounded-sm p-10 text-center">
           <Calculator className="size-12 text-brand-muted mx-auto mb-4 opacity-30" />

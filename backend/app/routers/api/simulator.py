@@ -86,6 +86,7 @@ async def get_evolution(
     change_value: float = Query(..., description="Valor da mudança"),
     store_ids: Optional[str] = Query(None, description="Lista de lojas separadas por vírgula (ex: RJ-COPA,RJ-BARRA)"),
     impacted_only: bool = Query(False, description="Se true, mostra apenas vendas das receitas impactadas"),
+    new_cost: Optional[float] = Query(None, description="Novo custo da receita (para separar de preço de venda)"),
     session: DbSession = None
 ):
     """
@@ -106,7 +107,8 @@ async def get_evolution(
                 change_type=change_type,
                 change_value=change_value,
                 store_ids=store_id_list,
-                impacted_only=impacted_only
+                impacted_only=impacted_only,
+                new_cost=new_cost
             )
             return result
     except HTTPException:

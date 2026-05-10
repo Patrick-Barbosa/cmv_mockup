@@ -295,6 +295,9 @@ export interface SimulationResult {
   monthly_revenue_new: number
   revenue_impact: number
   revenue_impact_percent: number
+  current_cmv?: number
+  new_cmv?: number
+  cmv_diff?: number
 }
 
 export interface StoreImpact {
@@ -306,6 +309,11 @@ export interface StoreImpact {
   affected_recipes_count: number
   gross_margin: number
   gross_margin_new: number
+  current_cmv?: number
+  new_cmv?: number
+  cmv_diff?: number
+  monthly_sales_quantity: number
+  ingredient_quantity: number
 }
 
 export interface SimulationResponse {
@@ -325,6 +333,9 @@ export interface SimulationResponse {
   store_ranking: StoreImpact[]
   projection_month: string
   projection_type: string
+  current_cmv?: number
+  new_cmv?: number
+  cmv_diff?: number
 }
 
 export interface AffectedRecipe {
@@ -412,7 +423,10 @@ export const receitasApi = {
 
   get: (id: number) => apiFetch<ReceitaDetalhe>(`/api/receitas/${id}`),
 
-  getTree: (id: number | string) => apiFetch<ReceitaTreeDetalhe>(`/receitas/${id}`),
+  getTree: (id: number | string) => {
+    if (IS_MOCK) return receitasApiMock.getTree(id)
+    return apiFetch<ReceitaTreeDetalhe>(`/receitas/${id}`)
+  },
 
   getSalesAnalysis: (id: number) =>
     apiFetch<ProductSalesAnalysisResponse>(`/api/receitas/${id}/analise-vendas`),
@@ -529,19 +543,29 @@ export const commonApi = {
   },
 }
 
+import { simulatorApiMock, receitasApiMock } from "./api_mock"
+
 export const simulatorApi = {
-  simulate: (input: SimulationInput) =>
-    apiFetch<SimulationResponse>("/api/simulator/simulate", {
+  simulate: (input: SimulationInput) => {
+    if (IS_MOCK) return simulatorApiMock.simulate(input)
+    return apiFetch<SimulationResponse>("/api/simulator/simulate", {
       method: "POST",
       body: input,
-    }),
+    })
+  },
 
-  getAffectedRecipes: (ingredientId: number) =>
-    apiFetch<AffectedRecipe[]>(`/api/simulator/ingredients/${ingredientId}/affected-recipes`),
+  getAffectedRecipes: (ingredientId: number) => {
+    if (IS_MOCK) return simulatorApiMock.getAffectedRecipes(ingredientId)
+    return apiFetch<AffectedRecipe[]>(`/api/simulator/ingredients/${ingredientId}/affected-recipes`)
+  },
 
-  getStores: () => apiFetch<StoreInfo[]>("/api/simulator/stores"),
+  getStores: () => {
+    if (IS_MOCK) return simulatorApiMock.getStores()
+    return apiFetch<StoreInfo[]>("/api/simulator/stores")
+  },
 
-  getEvolution: (params: SimulationInput & { month: string; impacted_only?: boolean }) => {
+  getEvolution: (params: SimulationInput & { month: string; impacted_only?: boolean; new_cost?: number }) => {
+    if (IS_MOCK) return simulatorApiMock.getEvolution(params)
     const searchParams = new URLSearchParams()
     searchParams.append("month", params.month)
     searchParams.append("type", params.type)
@@ -551,9 +575,12 @@ export const simulatorApi = {
     if (params.recipe_id) searchParams.append("recipe_id", params.recipe_id.toString())
     if (params.store_ids) searchParams.append("store_ids", params.store_ids.join(","))
     if (params.impacted_only !== undefined) searchParams.append("impacted_only", params.impacted_only.toString())
+    if (params.new_cost !== undefined) searchParams.append("new_cost", params.new_cost.toString())
     return apiFetch<EvolutionResponse>(`/api/simulator/evolution?${searchParams.toString()}`)
   },
 
-  getProductInfo: (productId: number) =>
-    apiFetch<ProductInfoResponse>(`/api/simulator/product-info/${productId}`),
+  getProductInfo: (productId: number) => {
+    if (IS_MOCK) return simulatorApiMock.getProductInfo(productId)
+    return apiFetch<ProductInfoResponse>(`/api/simulator/product-info/${productId}`)
+  },
 }

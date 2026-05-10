@@ -246,6 +246,9 @@ Simula o impacto financeiro de mudança de preço de insumo ou mudança de fórm
   "avg_impact_per_recipe_percent": 0.0,
   "ingredient_impact": 0.01,
   "ingredient_impact_percent": 10.0,
+  "current_cmv": 30.5,
+  "new_cmv": 31.5,
+  "cmv_diff": 1.0,
   "results": [
     {
       "recipe_id": 1,
@@ -259,7 +262,10 @@ Simula o impacto financeiro de mudança de preço de insumo ou mudança de fórm
       "monthly_revenue_current": 0.0,
       "monthly_revenue_new": 0.0,
       "revenue_impact": 0.0,
-      "revenue_impact_percent": 0.02
+      "revenue_impact_percent": 0.02,
+      "current_cmv": 25.5,
+      "new_cmv": 25.5,
+      "cmv_diff": 0.0
     }
   ],
   "store_ranking": [
@@ -271,7 +277,10 @@ Simula o impacto financeiro de mudança de preço de insumo ou mudança de fórm
       "total_impact_percent": 8.26,
       "affected_recipes_count": 1,
       "gross_margin": 76.1,
-      "gross_margin_new": 74.1
+      "gross_margin_new": 74.1,
+      "current_cmv": 23.9,
+      "new_cmv": 25.9,
+      "cmv_diff": 2.0
     }
   ],
   "projection_month": "2026-04",
@@ -282,6 +291,9 @@ Simula o impacto financeiro de mudança de preço de insumo ou mudança de fórm
 **Campos novos (Maio/2026):**
 | Campo | Tipo | Descrição |
 |---|---|---|
+| `current_cmv` | float | CMV% atual (em pontos percentuais) |
+| `new_cmv` | float | CMV% após simulação |
+| `cmv_diff` | float | Diferença de CMV em pontos percentuais (`new - current`) |
 | `avg_impact_per_store` | float | Impacto médio por loja em R$ |
 | `avg_impact_per_store_percent` | float | Impacto médio por loja em percentual |
 | `avg_impact_per_recipe` | float | Impacto médio por receita em R$ |
@@ -335,6 +347,7 @@ Simula o impacto financeiro de mudança de preço de insumo ou mudança de fórm
 - `sub_componentes` recursivos para árvores de recipeas hierárquicas
 - Cálculo de custo bottom-up (sub-componentes são calculados primeiro)
 - O campo `tipo` é opcional; se não fornecido, o componente é tratado como insumo
+- Retorno explícito de **CMV%** e sua diferença em pontos percentuais para evitar confusão com a variação percentual do custo.
 
 ---
 
@@ -388,10 +401,13 @@ Retorna dados de evolução diária para gráfico de linha comparando cenário a
 | `change_value` | float | ✅ | Valor da mudança |
 | `store_ids` | string[] | opcional | Lista de lojas para filtrar |
 | `impacted_only` | boolean | opcional | Se true, mostra apenas vendas das receitas impactadas (default: false) |
+| `new_cost` | float | opcional | Novo custo da receita (para separar faturamento de custo em `recipe_change`) |
 
 **Nota (Maio/2026):** O parâmetro `impacted_only`:
 - `false` (default): Mostra custos e vendas da rede completa de receitas afetadas (cascata)
 - `true`: Mostra apenas custos e vendas das receitas que usam diretamente o insumo/receita alterado(a)
+
+**Nota sobre BUG FIX (Maio/2026):** Para o tipo `recipe_change`, o campo `change_value` é tratado como novo **preço de venda**. Para que o gráfico de custos reflita uma mudança de composição, deve-se passar o novo custo calculado no parâmetro `new_cost`. Se `new_cost` não for enviado, o custo permanecerá estável (custo atual).
 
 **Resposta Sucesso (200):**
 ```json

@@ -456,3 +456,59 @@ class TestSimulatorPriceChangeLogic:
         assert result.ingredient_impact < 0
         assert result.ingredient_impact_percent < 0
         assert "-" in result.change_applied
+
+    def test_simulate_recipe_change_price_increase_with_components(self):
+        """
+        Testa se o aumento de preço em uma receita reflete no faturamento simulado,
+        mesmo quando a composição (novos_componentes) é enviada.
+        """
+        from backend.app.services.simulator_service import SimulatorService
+        from backend.app.schemas.simulator import SimulationInput, ComponenteSimulacao
+        from unittest.mock import MagicMock, AsyncMock
+
+        session = MagicMock()
+
+        class FakeRecipe:
+            id = 10
+            nome = "Pizza Marguerita"
+            custo = 25.00
+            preco_venda = 50.00
+            id_produto_externo = "SKU-MARGUERITA"
+            tipo = "receita"
+
+        recipe = FakeRecipe()
+
+        service = SimulatorService(session)
+        service._get_recipe = AsyncMock(return_value=recipe)
+        service._get_product_sale_price = AsyncMock(return_value=50.00)
+        # 100 vendas/mês
+        service._get_monthly_sales_for_recipe = AsyncMock(return_value=100)
+        service._calculate_store_ranking = AsyncMock(return_value=[])
+        # Manter o mesmo custo para simplificar o teste
+        service._calculate_recipe_cost_from_components = AsyncMock(return_value=25.00)
+
+        import asyncio
+
+        async def run_test():
+            # Aumentar preço de R$ 50 para R$ 1000
+            input_data = SimulationInput(
+                type="recipe_change",
+                recipe_id=10,
+                change_type="absoluto",
+                change_value=1000.00,
+                novos_componentes=[
+                    ComponenteSimulacao(id_componente=1, quantidade=0.5, tipo="insumo")
+                ]
+            )
+            return await service._simulate_recipe_change(input_data)
+
+        result = asyncio.run(run_test())
+
+        # Validações
+        # Faturamento atual: 100 * 50 = 5000
+        # Faturamento novo: 100 * 1000 = 100000
+        assert result.results[0].monthly_revenue_current == 5000.00
+        assert result.results[0].monthly_revenue_new == 100000.00
+        assert result.results[0].revenue_impact == 95000.00
+        assert result.total_network_impact == 95000.00
+        assert "R$ 1000.00" in result.change_applied

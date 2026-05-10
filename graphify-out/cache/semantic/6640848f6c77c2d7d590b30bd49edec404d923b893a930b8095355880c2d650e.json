@@ -1,1 +1,0 @@
-{"nodes": [{"id": "01_extensions", "label": "Postgres Extensions", "file_type": "code", "source_file": "docker/postgres/init/01-extensions.sql"}], "edges": [], "hyperedges": []}

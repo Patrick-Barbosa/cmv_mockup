@@ -3,19 +3,22 @@
   "mcp": {
     "Github": {
       "type": "local",
+      "enabled": true,
       "command": [
         "npx",
         "-y",
         "@modelcontextprotocol/server-github"
       ]
     },
-    "Playwright": {
+    "playwright": {
       "type": "local",
+      "enabled": true,
       "command": [
-        "/home/pk/.npm-global/bin/playwright-mcp",
-        "--executable-path",
-        "/usr/bin/chromium-browser"
+        "npx",
+        "-y",
+        "@playwright/mcp@latest",
+        "--browser=firefox"
       ]
-    }
+    }  
   }
 }

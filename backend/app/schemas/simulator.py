@@ -51,6 +51,9 @@ class SimulationResult(BaseModel):
     monthly_revenue_new: float
     revenue_impact: float
     revenue_impact_percent: float
+    current_cmv: float = Field(default=0.0, description="CMV% atual (custo / faturamento * 100)")
+    new_cmv: float = Field(default=0.0, description="CMV% após simulação")
+    cmv_diff: float = Field(default=0.0, description="Diferença em pontos percentuais de CMV (new - current)")
 
 
 class StoreImpact(BaseModel):
@@ -62,6 +65,11 @@ class StoreImpact(BaseModel):
     affected_recipes_count: int
     gross_margin: float = Field(default=0.0, description="Margem bruta atual da loja em percentual ((receita - custo) / receita * 100)")
     gross_margin_new: float = Field(default=0.0, description="Margem bruta da loja após simulação em percentual")
+    current_cmv: float = Field(default=0.0, description="CMV% atual da loja")
+    new_cmv: float = Field(default=0.0, description="CMV% da loja após simulação")
+    cmv_diff: float = Field(default=0.0, description="Diferença em pontos percentuais de CMV")
+    monthly_sales_quantity: float = Field(default=0.0, description="Soma das vendas mensais de todas as receitas impactadas naquela loja")
+    ingredient_quantity: float = Field(default=0.0, description="Soma da quantidade do insumo simulado consumida naquela loja (apenas modo insumo)")
 
 
 class SimulationResponse(BaseModel):
@@ -81,6 +89,9 @@ class SimulationResponse(BaseModel):
     store_ranking: List[StoreImpact]
     projection_month: str
     projection_type: str
+    current_cmv: float = Field(default=0.0, description="CMV% atual médio da rede (para as receitas afetadas)")
+    new_cmv: float = Field(default=0.0, description="CMV% novo médio da rede")
+    cmv_diff: float = Field(default=0.0, description="Diferença média em pontos percentuais de CMV")
 
 
 class AffectedRecipePreview(BaseModel):
