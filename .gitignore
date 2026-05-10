@@ -57,9 +57,6 @@ frontend/screens/orientations.md
 
 # GitHub Copilot
 .github/copilot-instructions.md
-AGENTS.md
-GEMINI.md
-README.md
 skills-lock.json
 .gemini/settings.json
 package.json
