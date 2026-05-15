@@ -331,6 +331,10 @@ export interface SimulationResponse {
   ingredient_impact_percent: number
   results: SimulationResult[]
   store_ranking: StoreImpact[]
+  chart_data?: ChartData
+  store_chart_data?: StoreChartItem[]
+  store_table_data?: StoreTableItem[]
+  recipe_table_data?: RecipeTableItem[]
   projection_month: string
   projection_type: string
   current_cmv?: number
@@ -375,6 +379,82 @@ export interface EvolutionResponse {
   recipe_name?: string
   daily_data: DailyEvolutionData[]
   summary: EvolutionSummary
+}
+
+export interface CalculateCostInput {
+  componentes: ComponenteSimulacao[]
+}
+
+export interface ComponentCostDetail {
+  id_componente: number
+  nome: string
+  quantidade: number
+  unit_cost: number
+  total_cost: number
+  unidade: string | null
+  componentes?: ComponentCostDetail[]
+}
+
+export interface CalculateCostResponse {
+  total_cost: number
+  componentes: ComponentCostDetail[]
+}
+
+export interface DayData {
+  day: string
+  current: number
+  new: number
+}
+
+export interface ChartData {
+  daily: DayData[]
+}
+
+export interface StoreChartItem {
+  store_id: string
+  cmv_atual: number
+  cmv_simulado: number
+  impacto_r$: number
+  impacto_%: number
+  variacao_pp: number
+}
+
+export interface StoreTableItem {
+  store_id: string
+  total_current_cost: number
+  total_new_cost: number
+  total_impact: number
+  total_impact_percent: number
+  affected_recipes_count: number
+  monthly_sales_quantity: number
+  ingredient_quantity: number
+  gross_margin: number
+  gross_margin_new: number
+  current_cmv: number
+  new_cmv: number
+  cmv_diff: number
+  revenue_current: number
+  revenue_simulated: number
+}
+
+export interface RecipeTableItem {
+  recipe_id: number
+  recipe_name: string
+  current_cost: number
+  new_cost: number
+  cost_difference: number
+  cost_percent_change: number
+  monthly_sales_quantity: number
+  monthly_revenue_current: number
+  monthly_revenue_new: number
+  revenue_impact: number
+  revenue_impact_percent: number
+  current_cmv: number
+  new_cmv: number
+  cmv_diff: number
+  cmv_atual_rs: number
+  cmv_simulado_rs: number
+  dif_custo_rs: number
 }
 
 export interface ProductInfoResponse {
@@ -529,6 +609,13 @@ export const commonApi = {
 }
 
 export const simulatorApi = {
+  calculateCost: (input: CalculateCostInput) => {
+    return apiFetch<CalculateCostResponse>("/api/simulator/calculate-cost", {
+      method: "POST",
+      body: input,
+    })
+  },
+
   simulate: (input: SimulationInput) => {
     return apiFetch<SimulationResponse>("/api/simulator/simulate", {
       method: "POST",

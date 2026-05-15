@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
-import { Calculator, Loader2, AlertCircle, ChevronDown, ChevronRight, X, Plus, Check, ChevronsUpDown } from "lucide-react"
+import { Calculator, Loader2, AlertCircle, ChevronDown, Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatBRL, formatPercent, formatNumber, formatQuantity } from "@/lib/format"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -17,7 +17,8 @@ import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { XAxis, YAxis, CartesianGrid, LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from "recharts"
 import { simulatorApi, vendasApi, IS_MOCK, commonApi, receitasApi } from "@/lib/api"
 import { ChartLegend } from "@/components/common"
-import type { SimulationInput, SimulationResponse, StoreInfo, VendasFiltersResponse, EvolutionResponse, ReceitaTreeDetalhe, ComponenteSimulacao } from "@/lib/api"
+import { EditableTreeViewer, type Componente } from "@/components/simulator/EditableTreeViewer"
+import type { SimulationInput, SimulationResponse, StoreInfo, VendasFiltersResponse, EvolutionResponse, ComponenteSimulacao } from "@/lib/api"
 
 const getImpactColorClass = (value: number) => {
   if (value > 0.0001) return "text-destructive"
@@ -25,16 +26,12 @@ const getImpactColorClass = (value: number) => {
   return "text-brand-soft"
 }
 
-const mockStores: StoreInfo[] = [
-  { store_id: "RJ-COPA" },
-  { store_id: "RJ-BARRA" },
-  { store_id: "SP-PAULISTA" },
-  { store_id: "SP-IRAJA" },
-  { store_id: "BH-SAVASSI" },
-  { store_id: "RS-POA" },
-  { store_id: "MG-SAVASSI" },
-  { store_id: "DF-ASA_SUL" },
-]
+interface ProductOption {
+  id: number
+  text: string
+  tipo: "insumo" | "receita"
+  precoAtual?: number
+}
 
 const mockFilters: VendasFiltersResponse = {
   lojas: [],
@@ -71,21 +68,6 @@ const mockReceitas: ProductOption[] = [
   { id: 6, text: "Hambúrguer de Wagyu", tipo: "receita", precoAtual: 28.5 },
 ]
 
-const mapTreeToComponentes = (node: ReceitaTreeDetalhe): Componente[] => {
-  if (!node.children) return []
-  return node.children.map(c => ({
-    id: Math.random().toString(36).slice(2, 9),
-    tipo: c.tipo,
-    componenteId: Number(c.id),
-    quantidade: c.quantidade || 0,
-    quantidadeDisplay: (c.quantidade || 0).toString().replace('.', ','),
-    custoUnitario: c.custo || 0,
-    unidadeMedida: c.unidade || '',
-    subComponentes: c.children && c.children.length > 0 ? mapTreeToComponentes(c) : undefined,
-    expanded: false,
-  }))
-}
-
 export default function SimulatorPage() {
   const [loading, setLoading] = useState(false)
   const [simulationResult, setSimulationResult] = useState<SimulationResponse | null>(null)
@@ -113,7 +95,6 @@ export default function SimulatorPage() {
   const [loadingProducts, setLoadingProducts] = useState(false)
 
   const [composicao, setComposicao] = useState<Componente[]>([])
-  const [componentesOriginais, setComponentesOriginais] = useState<Componente[]>([])
   const [loadingComposicao, setLoadingComposicao] = useState(false)
   const [selectedProductName, setSelectedProductName] = useState<string>("")
   const [insumoOpen, setInsumoOpen] = useState(false)
@@ -163,9 +144,18 @@ export default function SimulatorPage() {
     setLoadingComposicao(true)
     try {
       const detalhes = await receitasApi.getTree(id)
-      const mapped = mapTreeToComponentes(detalhes)
+      const mapped: Componente[] = (detalhes.children || []).map((c: any) => ({
+        id: Math.random().toString(36).slice(2, 9),
+        tipo: c.tipo as "insumo" | "receita",
+        componenteId: Number(c.id),
+        quantidade: c.quantidade || 0,
+        quantidadeDisplay: (c.quantidade || 0).toString().replace(".", ","),
+        custoUnitario: c.custo || 0,
+        unidadeMedida: c.unidade || "",
+        subComponentes: c.children && c.children.length > 0 ? [] : undefined,
+        expanded: false,
+      }))
       setComposicao(mapped)
-      setComponentesOriginais(JSON.parse(JSON.stringify(mapped)))
     } catch (err) {
       console.error("Erro ao carregar composição:", err)
     } finally {
@@ -205,7 +195,6 @@ export default function SimulatorPage() {
     setSimulatedPrice(null)
     setSimulatedPriceDisplay("")
     setComposicao([])
-    setComponentesOriginais([])
     setSelectedProductName("")
   }
 
@@ -236,225 +225,7 @@ export default function SimulatorPage() {
       loadComposicao(id)
     } else {
       setComposicao([])
-      setComponentesOriginais([])
     }
-  }
-
-  const handleAddComponent = (path: number[] | null, tipo: "insumo" | "receita") => {
-    const newComposicao = [...composicao]
-    const newItem: Componente = {
-      id: Math.random().toString(36).slice(2, 9),
-      tipo,
-      componenteId: 0,
-      quantidade: 0,
-      quantidadeDisplay: "0",
-      expanded: true,
-      subComponentes: tipo === "receita" ? [] : undefined
-    }
-
-    if (!path) {
-      newComposicao.push(newItem)
-    } else {
-      const findAndAdd = (list: Componente[], p: number[]) => {
-        if (p.length === 1) {
-          if (!list[p[0]].subComponentes) list[p[0]].subComponentes = []
-          list[p[0]].subComponentes!.push(newItem)
-          return
-        }
-        findAndAdd(list[p[0]].subComponentes!, p.slice(1))
-      }
-      findAndAdd(newComposicao, path)
-    }
-    setComposicao([...newComposicao])
-  }
-
-  const handleUpdateComponent = useCallback((path: number[], updates: Partial<Componente>) => {
-    setComposicao(prev => {
-      const updateLevel = (list: Componente[], p: number[]): Componente[] => {
-        const [index, ...rest] = p
-        return list.map((item, i) => {
-          if (i !== index) return item
-          if (rest.length === 0) return { ...item, ...updates }
-          return { ...item, subComponentes: updateLevel(item.subComponentes || [], rest) }
-        })
-      }
-      return updateLevel(prev, path)
-    })
-  }, [])
-
-  const handleComponentIdChange = async (path: number[], id: number, tipo: "insumo" | "receita") => {
-    try {
-      const info = await simulatorApi.getProductInfo(id)
-      const updates: Partial<Componente> = {
-        componenteId: id,
-        unidadeMedida: info.unidade_medida || "",
-        custoUnitario: (tipo === "insumo" ? info.custo_atual : info.preco_venda) || 0
-      }
-      if (tipo === "receita") {
-        const detalhes = await receitasApi.getTree(id)
-        updates.subComponentes = mapTreeToComponentes(detalhes)
-      }
-      handleUpdateComponent(path, updates)
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const handleRemoveComponent = (path: number[]) => {
-    setComposicao(prev => {
-      const next = JSON.parse(JSON.stringify(prev))
-      const removeDeep = (list: Componente[], p: number[]) => {
-        if (p.length === 1) {
-          list.splice(p[0], 1)
-          return
-        }
-        removeDeep(list[p[0]].subComponentes!, p.slice(1))
-      }
-      removeDeep(next, path)
-      return next
-    })
-  }
-
-  const calculateComposicaoCost = useCallback((listToCalculate: Componente[]) => {
-    const calculateDeep = (list: Componente[]): number => {
-      return list.reduce((sum, c) => {
-        const itemCost = c.tipo === "receita" && c.subComponentes && c.subComponentes.length > 0 
-          ? calculateDeep(c.subComponentes) 
-          : (c.custoUnitario || 0)
-        return sum + c.quantidade * itemCost
-      }, 0)
-    }
-    return calculateDeep(listToCalculate)
-  }, [])
-
-  const renderComponents = (items: Componente[], pathPrefix: number[] = [], level = 0): React.ReactNode => {
-    return items.map((item, i) => {
-      const currentPath = [...pathPrefix, i]
-      const hasChildren = item.tipo === "receita"
-      const unitCost = hasChildren && item.subComponentes?.length ? calculateComposicaoCost(item.subComponentes) : (item.custoUnitario || 0)
-      const totalCost = unitCost * item.quantidade
-      
-      return (
-        <React.Fragment key={item.id}>
-          <TableRow className={level === 0 ? "border-brand-line/10 bg-transparent" : "border-brand-line/5 bg-brand-surface/30"}>
-            <TableCell>
-              <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 1.5}rem` }}>
-                {hasChildren ? (
-                  <button 
-                    onClick={() => handleUpdateComponent(currentPath, { expanded: !item.expanded })}
-                    className="p-0.5 hover:bg-brand-surface rounded text-brand-muted"
-                  >
-                    {item.expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                  </button>
-                ) : (
-                  <div className="w-4 h-4" />
-                )}
-                <div className="flex-1">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className="w-full justify-between bg-brand-surface border-brand-line/35 h-8 text-xs font-normal text-left px-2"
-                      >
-                        {item.componenteId
-                          ? (item.tipo === "insumo" ? insumos : receitas).find((p) => p.id === item.componenteId)?.text || "Selecione..."
-                          : `Selecione ${item.tipo}...`}
-                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0 border-brand-line/20 bg-brand-surface-2" align="start">
-                      <Command className="bg-transparent">
-                        <CommandInput placeholder={`Buscar ${item.tipo}...`} className="text-xs" />
-                        <CommandList>
-                          <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
-                          <CommandGroup>
-                            {(item.tipo === "insumo" ? insumos : receitas).map((p) => (
-                              <CommandItem
-                                key={p.id}
-                                value={p.text}
-                                onSelect={() => {
-                                  handleComponentIdChange(currentPath, p.id, item.tipo)
-                                  document.body.click()
-                                }}
-                                className="text-xs"
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-3 w-3",
-                                    item.componenteId === p.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {p.text}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                {/* Badge de tipo - Corrigido contraste Issue 006 */}
-                <span className={cn(
-                  "inline-flex items-center px-2 py-0.5 rounded-[2px] text-[10px] font-bold uppercase tracking-wider",
-                  item.tipo === "insumo" 
-                    ? "bg-brand-primary text-brand-text" 
-                    : "bg-brand-highlight text-brand-bg"
-                )}>
-                  {item.tipo === "insumo" ? "Insumo" : "Receita"}
-                </span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="text"
-                  value={item.quantidadeDisplay ?? item.quantidade.toString().replace('.', ',')}
-                  onChange={(e) => {
-                    const val = e.target.value.replace('.', ',');
-                    if (val === "" || /^[0-9]*[,]?[0-9]*$/.test(val)) {
-                      const numericVal = parseFloat(val.replace(',', '.'));
-                      handleUpdateComponent(currentPath, {
-                          quantidadeDisplay: val,
-                          quantidade: isNaN(numericVal) ? 0 : numericVal
-                      });
-                    }
-                  }}
-                  className="h-8 text-xs text-right w-20 bg-brand-surface border-brand-line/35"
-                />
-                {item.unidadeMedida && (
-                  <span className="text-xs text-brand-muted whitespace-nowrap">{item.unidadeMedida}</span>
-                )}
-              </div>
-            </TableCell>
-            <TableCell className="text-right text-brand-highlight text-xs font-medium">
-              {formatBRL(unitCost)}
-              {item.unidadeMedida && (
-                <span className="text-brand-muted text-[10px] ml-1">/{item.unidadeMedida}</span>
-              )}
-            </TableCell>
-            {/* Coluna Custo Total - Issue 004 */}
-            <TableCell className="text-right text-brand-highlight text-xs font-bold">
-              {formatBRL(totalCost)}
-            </TableCell>
-            <TableCell>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleRemoveComponent(currentPath)}
-                className="h-7 w-7 text-brand-muted hover:text-destructive"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </TableCell>
-          </TableRow>
-          
-          {hasChildren && item.expanded && item.subComponentes && (
-             renderComponents(item.subComponentes, currentPath, level + 1)
-          )}
-        </React.Fragment>
-      )
-    })
   }
 
   const filteredStores = useMemo(() => {
@@ -492,13 +263,12 @@ export default function SimulatorPage() {
     if (hasPriceChange) return true
 
     if (simulationType === "receita") {
-      const originalMapped = JSON.stringify(componentesOriginais.map(c => ({ id: c.componenteId, q: c.quantidade })))
-      const currentMapped = JSON.stringify(composicao.map(c => ({ id: c.componenteId, q: c.quantidade })))
-      if (originalMapped !== currentMapped) return true
+      const hasComponents = composicao.some(c => c.componenteId && c.componenteId > 0)
+      if (hasComponents) return true
     }
 
     return false
-  }, [selectedProductId, simulatedPrice, currentPrice, simulationType, componentesOriginais, composicao])
+  }, [selectedProductId, simulatedPrice, currentPrice, simulationType, composicao])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -577,46 +347,6 @@ export default function SimulatorPage() {
         .finally(() => setLoadingEvolution(false))
     }
   }, [impactedOnly, lastInput, selectedMonth])
-
-  const sortedSimulationResults = useMemo(() => {
-    if (!simulationResult?.results) return []
-    return [...simulationResult.results].sort((a, b) => b.monthly_revenue_current - a.monthly_revenue_current)
-  }, [simulationResult])
-
-  const evolutionChartData = useMemo(() => {
-    if (!evolutionData?.daily_data) return []
-    const hasAggregated = evolutionData.daily_data.some((d) => d.store_id === null)
-    const dataToMap = hasAggregated
-      ? evolutionData.daily_data.filter((d) => d.store_id === null)
-      : evolutionData.daily_data
-
-    return dataToMap.map((d) => {
-      return {
-        date: d.date.split("-").reverse().join("/"),
-        day: d.date.split("-")[2],
-        current: d.current_cost_total,
-        new: d.new_cost_total,
-      }
-    })
-  }, [evolutionData])
-
-  const storeRankingData = useMemo(() => {
-    if (!simulationResult?.store_ranking) return []
-    return simulationResult.store_ranking.map(s => {
-      const varPercent = s.current_cmv && s.current_cmv > 0
-        ? ((s.new_cmv! / s.current_cmv) - 1) * 100
-        : 0;
-      return {
-        name: s.store_id,
-        "CMV Atual": s.current_cmv || 0,
-        "CMV Simulado": s.new_cmv || 0,
-        "Impacto R$": s.total_impact,
-        "Impacto %": s.total_impact_percent,
-        "Variação pp": s.cmv_diff || 0,
-        "Variação %": varPercent
-      };
-    })
-  }, [simulationResult])
 
   return (
     <div className="flex flex-col gap-6">
@@ -918,71 +648,14 @@ export default function SimulatorPage() {
           </div>
 
           {simulationType === "receita" && selectedProductId && (
-            <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm p-4">
-              <div className="flex flex-row items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-brand-soft">
-                  Editar Composição - {selectedProductName}
-                </h3>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddComponent(null, "insumo")}
-                    className="h-8 text-xs border-brand-highlight text-brand-highlight hover:bg-brand-highlight/10"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Adicionar insumo
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddComponent(null, "receita")}
-                    className="h-8 text-xs border-brand-highlight text-brand-highlight hover:bg-brand-highlight/10"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Adicionar receita
-                  </Button>
-                </div>
-              </div>
-
-              {loadingComposicao ? (
-                <div className="flex items-center gap-2 text-sm text-brand-muted">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Carregando composição...
-                </div>
-              ) : composicao.length === 0 ? (
-                <p className="text-sm text-brand-muted">Nenhum componente. Adicione insumos or receitas.</p>
-              ) : (
-                <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-brand-line/20">
-                        <TableHead className="text-brand-muted font-medium w-[45%]">Insumo</TableHead>
-                        <TableHead className="text-brand-muted font-medium w-[20%]">Quantidade</TableHead>
-                        <TableHead className="text-brand-muted font-medium w-[15%] text-right">Custo Unit.</TableHead>
-                        <TableHead className="text-brand-muted font-medium w-[15%] text-right">Custo Total</TableHead>
-                        <TableHead className="w-[5%]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {renderComponents(composicao)}
-                    </TableBody>
-                  </Table>
-
-                  <div className="flex justify-end items-center gap-4 mt-4 pt-3 border-t border-brand-line/15">
-                    <span className="text-sm text-brand-muted">Custo total atual:</span>
-                    <span className="text-lg font-semibold text-brand-highlight">
-                      {formatBRL(calculateComposicaoCost(composicao))}
-                    </span>
-                  </div>
-                </>
-              )}
-
-              <div className="mt-4 flex items-center gap-2 text-sm text-brand-muted bg-brand-surface-2 rounded-sm p-3">
-                <Calculator className="h-4 w-4 shrink-0" />
-                <span>Altere as quantidades dos componentes para simular o impacto no custo final da receita.</span>
-              </div>
-            </div>
+            <EditableTreeViewer
+              componentes={composicao}
+              onChange={setComposicao}
+              insumos={insumos}
+              receitas={receitas}
+              loading={loadingComposicao}
+              selectedProductName={selectedProductName}
+            />
           )}
 
           <div className="flex justify-start gap-4 items-center">
@@ -1136,7 +809,17 @@ export default function SimulatorPage() {
                   <Skeleton className="h-[240px] w-full rounded-sm" />
                 ) : evolutionData && (
                   <ChartContainer config={{}} className="h-[240px] w-full">
-                    <LineChart data={evolutionChartData} margin={{ top: 20, right: 30, left: 45, bottom: 20 }}>
+                    <LineChart
+                      data={evolutionData.daily_data
+                        .filter((d) => d.store_id === null)
+                        .map((d) => ({
+                          date: d.date.split("-").reverse().join("/"),
+                          day: d.date.split("-")[2],
+                          current: d.current_cost_total,
+                          new: d.new_cost_total,
+                        }))}
+                      margin={{ top: 20, right: 30, left: 45, bottom: 20 }}
+                    >
                       <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
                       <XAxis
                          dataKey="day"
@@ -1212,10 +895,14 @@ export default function SimulatorPage() {
               <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
                 <CardTitle className="mb-6">Lojas R$ (%) impacto</CardTitle>
                 <div className="h-[400px] w-full overflow-y-auto">
-                    <ResponsiveContainer width="100%" height={storeRankingData.length > 10 ? storeRankingData.length * 40 : "100%"}>
+                    <ResponsiveContainer width="100%" height={(simulationResult.store_chart_data?.length || 0) > 10 ? (simulationResult.store_chart_data?.length || 0) * 40 : "100%"}>
                         <BarChart 
                             layout="vertical"
-                            data={storeRankingData} 
+                            data={(simulationResult.store_chart_data || []).map(s => ({
+                              name: s.store_id,
+                              "Impacto R$": s.impacto_r$,
+                              "Impacto %": s.impacto_%,
+                            }))}
                             margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
                         >
                             <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
@@ -1252,8 +939,8 @@ export default function SimulatorPage() {
                                 dataKey="Impacto R$" 
                                 radius={[0, 4, 4, 0]}
                             >
-                                {storeRankingData.map((entry, index) => (
-                                    <Cell key={index} fill={entry["Impacto R$"] > 0 ? "hsl(var(--destructive))" : entry["Impacto R$"] < 0 ? "hsl(var(--brand-highlight))" : "hsl(var(--brand-muted))"} />
+                                {(simulationResult.store_chart_data || []).map((entry, index) => (
+                                    <Cell key={index} fill={entry.impacto_r$ > 0 ? "hsl(var(--destructive))" : entry.impacto_r$ < 0 ? "hsl(var(--brand-highlight))" : "hsl(var(--brand-muted))"} />
                                 ))}
                             </Bar>
                         </BarChart>
@@ -1265,10 +952,15 @@ export default function SimulatorPage() {
               <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
                 <CardTitle className="mb-6">Impacto CMV (%)</CardTitle>
                 <div className="h-[400px] w-full overflow-y-auto">
-                    <ResponsiveContainer width="100%" height={storeRankingData.length > 10 ? storeRankingData.length * 40 : "100%"}>
+                    <ResponsiveContainer width="100%" height={(simulationResult.store_chart_data?.length || 0) > 10 ? (simulationResult.store_chart_data?.length || 0) * 40 : "100%"}>
                         <BarChart 
                             layout="vertical"
-                            data={storeRankingData} 
+                            data={(simulationResult.store_chart_data || []).map(s => ({
+                              name: s.store_id,
+                              "CMV Atual": s.cmv_atual,
+                              "CMV Simulado": s.cmv_simulado,
+                              "Variação %": s.variacao_pp,
+                            }))}
                             margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
                         >
                             <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
@@ -1296,7 +988,7 @@ export default function SimulatorPage() {
                                                 <div>CMV Atual: {formatPercent(data["CMV Atual"])}</div>
                                                 <div>CMV Simulado: {formatPercent(data["CMV Simulado"])}</div>
                                                 <div className={cn("font-bold mt-1", getImpactColorClass(data["Variação %"]))}>
-                                                  Variação: {data["Variação %"] >= 0 ? "+" : ""}{data["Variação %"].toFixed(1)}%
+                                                  Variação: {data["Variação %"] >= 0 ? "+" : ""}{data["Variação %"].toFixed(1)}pp
                                                 </div>
                                             </div>
                                         )
@@ -1305,8 +997,8 @@ export default function SimulatorPage() {
                                 }}
                             />
                             <Bar dataKey="Variação %" radius={[0, 4, 4, 0]}>
-                                {storeRankingData.map((entry, index) => (
-                                    <Cell key={index} fill={entry["Variação %"] > 0 ? "hsl(var(--destructive))" : entry["Variação %"] < 0 ? "hsl(var(--brand-highlight))" : "hsl(var(--brand-muted))"} />
+                                {(simulationResult.store_chart_data || []).map((entry, index) => (
+                                    <Cell key={index} fill={entry.variacao_pp > 0 ? "hsl(var(--destructive))" : entry.variacao_pp < 0 ? "hsl(var(--brand-highlight))" : "hsl(var(--brand-muted))"} />
                                 ))}
                             </Bar>
                         </BarChart>
@@ -1341,20 +1033,8 @@ export default function SimulatorPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {simulationResult.store_ranking.map((store) => {
-                    // Cálculo do faturamento baseado no CMV e Custo Total (Requisito da tarefa)
-                    const revenueCurrent = store.current_cmv && store.current_cmv > 0 
-                      ? (store.total_current_cost / (store.current_cmv / 100)) 
-                      : 0;
-                    
-                    // Faturamento Simulado (Espaço preparado conforme tarefa 3)
-                    // Atualmente o faturamento simulado muda se o preço de venda mudar (recipe_change)
-                    const revenueSimulated = store.new_cmv && store.new_cmv > 0 
-                      ? (store.total_new_cost / (store.new_cmv / 100)) 
-                      : revenueCurrent;
-
+                  {(simulationResult.store_table_data || simulationResult.store_ranking.map(s => ({ ...s, revenue_current: 0, revenue_simulated: 0 }))).map((store: any) => {
                     const costDiff = store.total_new_cost - store.total_current_cost;
-
                     return (
                       <TableRow key={store.store_id} className="border-brand-line/20">
                         <TableCell className="font-medium text-brand-soft">{store.store_id}</TableCell>
@@ -1362,9 +1042,9 @@ export default function SimulatorPage() {
                         {simulationType === "insumo" && (
                           <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatQuantity(store.ingredient_quantity, currentUnit)}</TableCell>
                         )}
-                        <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatBRL(revenueCurrent)}</TableCell>
+                        <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatBRL(store.revenue_current)}</TableCell>
                         {simulationType === "receita" && (
-                          <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatBRL(revenueSimulated)}</TableCell>
+                          <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatBRL(store.revenue_simulated)}</TableCell>
                         )}
                         <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(store.current_cmv)}</TableCell>
                         <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(store.new_cmv)}</TableCell>
@@ -1390,7 +1070,7 @@ export default function SimulatorPage() {
             </div>
           </Card>
 
-          {sortedSimulationResults.length > 0 && (
+          {(simulationResult.recipe_table_data && simulationResult.recipe_table_data.length > 0) && (
             <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
               <CardTitle className="text-lg font-semibold mb-4">Receitas Impactadas</CardTitle>
               <div className="[&>div]:max-h-[440px] [&>div]:overflow-y-auto pr-2 -mr-2">
@@ -1415,11 +1095,8 @@ export default function SimulatorPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedSimulationResults.map((item) => {
-                      const cmvAtualRS = item.current_cost * item.monthly_sales_quantity;
-                      const cmvSimuladoRS = item.new_cost * item.monthly_sales_quantity;
-                      const difCustoRS = cmvSimuladoRS - cmvAtualRS;
-
+                    {simulationResult.results.map((item) => {
+                      const rt = simulationResult.recipe_table_data?.find(r => r.recipe_id === item.recipe_id);
                       return (
                         <TableRow key={item.recipe_id} className="border-brand-line/20">
                           <TableCell className="font-medium text-brand-soft">{item.recipe_name}</TableCell>
@@ -1439,13 +1116,13 @@ export default function SimulatorPage() {
                           )}>
                             {(item.cmv_diff ?? 0) >= 0 ? "+" : ""}{(item.cmv_diff ?? 0).toFixed(1)}%
                           </TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(cmvAtualRS)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(cmvSimuladoRS)}</TableCell>
+                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(rt?.cmv_atual_rs || 0)}</TableCell>
+                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(rt?.cmv_simulado_rs || 0)}</TableCell>
                           <TableCell className={cn(
                               "text-right font-bold text-xs whitespace-nowrap",
-                              getImpactColorClass(difCustoRS)
+                              getImpactColorClass(rt?.dif_custo_rs || 0)
                           )}>
-                            {difCustoRS >= 0 ? "+" : ""}{formatBRL(difCustoRS)}
+                            {(rt?.dif_custo_rs || 0) >= 0 ? "+" : ""}{formatBRL(rt?.dif_custo_rs || 0)}
                           </TableCell>
                         </TableRow>
                       );
