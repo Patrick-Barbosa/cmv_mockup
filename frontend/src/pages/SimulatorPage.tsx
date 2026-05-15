@@ -900,8 +900,8 @@ export default function SimulatorPage() {
                             layout="vertical"
                             data={(simulationResult.store_chart_data || []).map(s => ({
                               name: s.store_id,
-                              "Impacto R$": s.impacto_r$,
-                              "Impacto %": s.impacto_%,
+                              "Impacto R$": s.impacto_r,
+                              "Impacto %": s.impacto_percent,
                             }))}
                             margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
                         >

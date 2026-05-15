@@ -11,6 +11,11 @@ from backend.app.schemas.simulator import (
     DailyEvolutionData, EvolutionSummary, SimulationEvolutionResponse,
     ProductInfoResponse, CalculateCostOutput, ComponentCostDetail
 )
+from backend.app.services.simulator_calculator import round_value, calculate_new_price, format_change_applied
+from backend.app.services.simulator_evolution import (
+    get_projection_months, build_chart_data, build_store_chart_data,
+    build_store_table_data, build_recipe_table_data
+)
 from fastapi import HTTPException
 
 

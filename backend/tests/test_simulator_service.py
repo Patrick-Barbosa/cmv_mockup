@@ -313,62 +313,46 @@ class TestSimulatorPriceChangeLogic:
     """
     
     def test_calculate_new_price_absoluto(self):
-        """Testa se _calculate_new_price retorna o valor absoluto corretamente."""
-        from backend.app.services.simulator_service import SimulatorService
+        """Testa se calculate_new_price retorna o valor absoluto corretamente."""
+        from backend.app.services.simulator_calculator import calculate_new_price
         
-        service = SimulatorService(None)
-        
-        # Teste: change_type=absoluto deve retornar o change_value diretamente
-        new_price = service._calculate_new_price(45.00, "absoluto", 1.00)
+        new_price = calculate_new_price(45.00, "absoluto", 1.00)
         assert new_price == 1.00, f"Esperado 1.00, obtido {new_price}"
         
-        # Teste: change_type=percentual deve calcular corretamente
-        new_price = service._calculate_new_price(45.00, "percentual", -97.78)
+        new_price = calculate_new_price(45.00, "percentual", -97.78)
         expected = 45.00 * (1 + (-97.78) / 100)
         assert abs(new_price - expected) < 0.01, f"Esperado ~{expected}, obtido {new_price}"
     
     def test_calculate_new_price_percentual(self):
-        """Testa se _calculate_new_price retorna o valor percentual corretamente."""
-        from backend.app.services.simulator_service import SimulatorService
+        """Testa se calculate_new_price retorna o valor percentual corretamente."""
+        from backend.app.services.simulator_calculator import calculate_new_price
         
-        service = SimulatorService(None)
-        
-        # Aumento de 10%
-        new_price = service._calculate_new_price(10.00, "percentual", 10.0)
+        new_price = calculate_new_price(10.00, "percentual", 10.0)
         assert new_price == 11.00, f"Esperado 11.00, obtido {new_price}"
         
-        # Redução de 10%
-        new_price = service._calculate_new_price(10.00, "percentual", -10.0)
+        new_price = calculate_new_price(10.00, "percentual", -10.0)
         assert new_price == 9.00, f"Esperado 9.00, obtido {new_price}"
     
     def test_format_change_applied_negative(self):
-        """Testa se _format_change_applied formata corretamente uma redução de preço."""
-        from backend.app.services.simulator_service import SimulatorService
+        """Testa se format_change_applied formata corretamente uma redução de preço."""
+        from backend.app.services.simulator_calculator import format_change_applied
         
-        service = SimulatorService(None)
-        
-        # Redução de R$ 45,00 para R$ 1,00
-        result = service._format_change_applied(45.00, 1.00, "absoluto")
+        result = format_change_applied(45.00, 1.00, "absoluto")
         assert "-" in result, f"Deveria conter sinal negativo: {result}"
         assert "R$ -44.00" in result or "R$ -44,00" in result, f"Deveria mostrar a diferença negativa: {result}"
         
-        # Redução percentual de 97.78%
-        result = service._format_change_applied(45.00, 1.00, "percentual")
+        result = format_change_applied(45.00, 1.00, "percentual")
         assert "-" in result, f"Deveria conter sinal negativo: {result}"
         assert "-97.8%" in result or "-97,8%" in result, f"Deveria mostrar redução percentual: {result}"
     
     def test_format_change_applied_positive(self):
-        """Testa se _format_change_applied formata corretamente um aumento de preço."""
-        from backend.app.services.simulator_service import SimulatorService
+        """Testa se format_change_applied formata corretamente um aumento de preço."""
+        from backend.app.services.simulator_calculator import format_change_applied
         
-        service = SimulatorService(None)
-        
-        # Aumento de R$ 5,00 para R$ 10,00
-        result = service._format_change_applied(5.00, 10.00, "absoluto")
+        result = format_change_applied(5.00, 10.00, "absoluto")
         assert "+" in result, f"Deveria conter sinal positivo: {result}"
         
-        # Aumento de 10%
-        result = service._format_change_applied(10.00, 11.00, "percentual")
+        result = format_change_applied(10.00, 11.00, "percentual")
         assert "+" in result, f"Deveria conter sinal positivo: {result}"
     
     def test_simulate_price_change_impact_sign(self):
@@ -377,14 +361,12 @@ class TestSimulatorPriceChangeLogic:
         Redução de preço deve gerar impacto NEGATIVO.
         """
         from backend.app.services.simulator_service import SimulatorService
-        from backend.app.schemas.simulator import SimulationInput
+        from backend.app.services.simulator_calculator import calculate_new_price, format_change_applied
+        from backend.app.schemas.simulator import SimulationInput, StoreImpact
         from unittest.mock import MagicMock, AsyncMock
         
-        # Vamos testar diretamente a lógica matemática
-        service = SimulatorService(None)
-        
-        # Teste 1: Verificar _calculate_new_price
-        new_price = service._calculate_new_price(45.00, "absoluto", 1.00)
+        # Teste 1: Verificar calculate_new_price
+        new_price = calculate_new_price(45.00, "absoluto", 1.00)
         assert new_price == 1.00
         
         # Teste 2: Verificar o sinal da diferença
@@ -397,8 +379,8 @@ class TestSimulatorPriceChangeLogic:
         assert ingredient_impact_percent < 0
         assert abs(ingredient_impact_percent - (-97.78)) < 0.01
         
-        # Teste 4: Verificar _format_change_applied para redução
-        result = service._format_change_applied(45.00, 1.00, "absoluto")
+        # Teste 4: Verificar format_change_applied para redução
+        result = format_change_applied(45.00, 1.00, "absoluto")
         assert "-" in result
         print(f"\n[TEST] _format_change_applied(45.00, 1.00, 'absoluto') = {result}")
         
@@ -419,6 +401,7 @@ class TestSimulatorPriceChangeLogic:
             id_produto_externo = "SKU-PIZZA-001"
             tipo = "receita"
             quantidade_base = 1.0
+            preco_venda = None
         
         ingredient = FakeIngredient()
         recipe = FakeRecipe()
@@ -428,8 +411,25 @@ class TestSimulatorPriceChangeLogic:
         service._get_recipes_using_ingredient = AsyncMock(return_value=[recipe])
         service._recalculate_recipe_cost_with_new_ingredient_price = AsyncMock(return_value=6.00)
         service._get_monthly_sales_for_recipe = AsyncMock(return_value=100)  # 100 vendas
-        service._calculate_store_ranking = AsyncMock(return_value=[])
+        mock_store_impact = [StoreImpact(
+            store_id="TEST",
+            total_current_cost=5000.0,
+            total_new_cost=600.0,
+            total_impact=-4400.0,
+            total_impact_percent=-88.0,
+            affected_recipes_count=1,
+            gross_margin=0.0,
+            gross_margin_new=88.0,
+            current_cmv=100.0,
+            new_cmv=12.0,
+            cmv_diff=-88.0,
+            monthly_sales_quantity=100,
+            ingredient_quantity=1.0,
+        )]
+        service._calculate_store_ranking = AsyncMock(return_value=mock_store_impact)
         service._get_componentes_diretos = AsyncMock(return_value=[])
+        service._get_product_sale_price = AsyncMock(return_value=50.00)
+        service._get_ingredient_total_quantity = AsyncMock(return_value=1.0)
         
         import asyncio
         
@@ -463,7 +463,7 @@ class TestSimulatorPriceChangeLogic:
         mesmo quando a composição (novos_componentes) é enviada.
         """
         from backend.app.services.simulator_service import SimulatorService
-        from backend.app.schemas.simulator import SimulationInput, ComponenteSimulacao
+        from backend.app.schemas.simulator import SimulationInput, ComponenteSimulacao, StoreImpact
         from unittest.mock import MagicMock, AsyncMock
 
         session = MagicMock()
@@ -483,9 +483,26 @@ class TestSimulatorPriceChangeLogic:
         service._get_product_sale_price = AsyncMock(return_value=50.00)
         # 100 vendas/mês
         service._get_monthly_sales_for_recipe = AsyncMock(return_value=100)
-        service._calculate_store_ranking = AsyncMock(return_value=[])
+        mock_store_ranking = [StoreImpact(
+            store_id="TEST",
+            total_current_cost=2500.0,
+            total_new_cost=5000.0,
+            total_impact=95000.0,
+            total_impact_percent=1900.0,
+            affected_recipes_count=1,
+            gross_margin=50.0,
+            gross_margin_new=95.0,
+            current_cmv=50.0,
+            new_cmv=5.0,
+            cmv_diff=-45.0,
+            monthly_sales_quantity=100,
+            ingredient_quantity=0.0,
+        )]
+        service._calculate_store_ranking = AsyncMock(return_value=mock_store_ranking)
         # Manter o mesmo custo para simplificar o teste
         service._calculate_recipe_cost_from_components = AsyncMock(return_value=25.00)
+        service._get_componentes_diretos = AsyncMock(return_value=[])
+        service._check_if_composition_is_same = MagicMock(return_value=False)
 
         import asyncio
 
@@ -511,4 +528,4 @@ class TestSimulatorPriceChangeLogic:
         assert result.results[0].monthly_revenue_new == 100000.00
         assert result.results[0].revenue_impact == 95000.00
         assert result.total_network_impact == 95000.00
-        assert "R$ 1000.00" in result.change_applied
+        assert "R$ +950.00" in result.change_applied

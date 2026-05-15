@@ -36,8 +36,8 @@ def build_store_chart_data(store_ranking: List[StoreImpact]) -> List[StoreChartI
             store_id=s.store_id,
             cmv_atual=round_value(s.current_cmv, 1),
             cmv_simulado=round_value(s.new_cmv, 1),
-            impacto_r$=round_value(s.total_impact),
-            impacto_%=round_value(s.total_impact_percent),
+            impacto_r=round_value(s.total_impact),
+            impacto_percent=round_value(s.total_impact_percent),
             variacao_pp=round_value(s.cmv_diff, 1)
         )
         for s in store_ranking

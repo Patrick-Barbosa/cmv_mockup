@@ -414,8 +414,8 @@ export interface StoreChartItem {
   store_id: string
   cmv_atual: number
   cmv_simulado: number
-  impacto_r$: number
-  impacto_%: number
+  impacto_r: number
+  impacto_percent: number
   variacao_pp: number
 }
 
