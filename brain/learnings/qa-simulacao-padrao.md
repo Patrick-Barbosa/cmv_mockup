@@ -24,15 +24,26 @@ Justificativa: Pizza margherita usa farinha como insumo principal. O impacto dev
 
 ## Procedimento de Verificação
 
-1. **Selecionar insumo/receita** no combobox — snapshot para confirmar
-2. **Preencher preço simulado** — snapshot
-3. **Clicar "Simular Impacto"** — aguardar 10s
-4. **Rolar a página** para ver:
-   - KPI cards (Impacto na Rede, CMV Médio, etc.) — valores devem ser visivelmente diferentes de zero
-   - Gráfico Evolução Custo — deve mostrar barras azul vs laranja com diferença
-   - Tabela Resultados por Loja — deve ter valores diferentes de zero
-   - Receitas Impactadas (modo insumo) / Tabela de Composição (modo receita)
-5. **Capturar screenshot** da seção de resultados como evidência
+1. **Selecionar insumo/receita** no combobox — pausa 2s
+2. **Preencher preço simulado** — pausa 1s
+3. **Clicar "Simular Impacto"** — aguardar 12s
+4. **Rolar a página seção por seção** (lento, com pausas de 3-4s entre cada):
+   - Seção 1: KPI cards (Impacto na Rede, CMV Médio, etc.)
+   - Seção 2: Gráfico Evolução Custo
+   - Seção 3: Tabela Resultados por Loja
+   - Seção 4: Tabela Receitas Impactadas
+5. **Sempre gravar VÍDEO** (`playwright-cli video-start / video-stop`) — não apenas screenshot
+6. **Verificar** que itens com impacto (vendas > 0) aparecem PRIMEIROS na tabela
+7. **Verificar** que itens com zero vendas (receitas intermediárias) aparecem por último
+
+## Critérios de Aceite do Vídeo
+
+- Vídeo mostra toda a página (do topo ao fim) com scroll lento seção por seção
+- KPI cards mostram valores não-zero (impacto real)
+- Receitas com vendas aparecem primeiro na tabela
+- Tabelas mostram linhas com dados
+- Gráfico renderiza sem erro
+- Nenhum console.error no navegador
 
 ## Critérios de Aceite
 
