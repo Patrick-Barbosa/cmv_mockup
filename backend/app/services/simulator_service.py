@@ -98,6 +98,12 @@ class SimulatorService:
                 cmv_diff=round_value(cmv_diff, 1)
             ))
 
+        # Ordenar: quem tem venda (impacto real) primeiro, depois por cmv_diff decrescente
+        results.sort(key=lambda r: (
+            0 if r.monthly_sales_quantity > 0 else 1,
+            -abs(r.cmv_diff)
+        ))
+
         # Ranking de lojas para calcular impactos reais
         store_ranking = await self._calculate_store_ranking(results, input_data.store_ids)
 
