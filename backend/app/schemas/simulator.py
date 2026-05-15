@@ -87,6 +87,10 @@ class SimulationResponse(BaseModel):
     ingredient_impact_percent: float = Field(default=0.0, description="Percentual de mudança aplicada ao insumo (para price_change) ou mudança no custo da receita (para recipe_change)")
     results: List[SimulationResult]
     store_ranking: List[StoreImpact]
+    chart_data: Optional[ChartData] = None
+    store_chart_data: Optional[List[StoreChartItem]] = None
+    store_table_data: Optional[List[StoreTableItem]] = None
+    recipe_table_data: Optional[List[RecipeTableItem]] = None
     projection_month: str
     projection_type: str
     current_cmv: float = Field(default=0.0, description="CMV% atual médio da rede (para as receitas afetadas)")
@@ -134,6 +138,89 @@ class SimulationEvolutionResponse(BaseModel):
     recipe_name: Optional[str] = None
     daily_data: List[DailyEvolutionData]
     summary: EvolutionSummary
+
+
+# Calculate Cost - Novo endpoint para cálculo de custo de composição
+class ComponentCostDetail(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    id_componente: int
+    nome: str
+    quantidade: float
+    unit_cost: float
+    total_cost: float
+    unidade: Optional[str] = None
+    componentes: Optional[List['ComponentCostDetail']] = None
+
+
+ComponentCostDetail.model_rebuild()
+
+
+class CalculateCostInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    componentes: List[ComponenteSimulacao]
+
+
+class CalculateCostOutput(BaseModel):
+    total_cost: float
+    componentes: List[ComponentCostDetail]
+
+
+# Chart / Store / Recipe data ready for frontend
+class DayData(BaseModel):
+    day: str
+    current: float
+    new: float
+
+
+class ChartData(BaseModel):
+    daily: List[DayData]
+
+
+class StoreChartItem(BaseModel):
+    store_id: str
+    cmv_atual: float
+    cmv_simulado: float
+    impacto_r$: float
+    impacto_%: float
+    variacao_pp: float
+
+
+class StoreTableItem(BaseModel):
+    store_id: str
+    total_current_cost: float
+    total_new_cost: float
+    total_impact: float
+    total_impact_percent: float
+    affected_recipes_count: int
+    monthly_sales_quantity: float
+    ingredient_quantity: float
+    gross_margin: float
+    gross_margin_new: float
+    current_cmv: float
+    new_cmv: float
+    cmv_diff: float
+    revenue_current: float
+    revenue_simulated: float
+
+
+class RecipeTableItem(BaseModel):
+    recipe_id: int
+    recipe_name: str
+    current_cost: float
+    new_cost: float
+    cost_difference: float
+    cost_percent_change: float
+    monthly_sales_quantity: float
+    monthly_revenue_current: float
+    monthly_revenue_new: float
+    revenue_impact: float
+    revenue_impact_percent: float
+    current_cmv: float
+    new_cmv: float
+    cmv_diff: float
+    cmv_atual_rs: float
+    cmv_simulado_rs: float
+    dif_custo_rs: float
 
 
 # Product Info - Preço de Venda

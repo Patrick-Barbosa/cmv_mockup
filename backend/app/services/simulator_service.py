@@ -9,7 +9,8 @@ from backend.app.schemas.simulator import (
     SimulationInput, SimulationResponse, SimulationResult,
     StoreImpact, AffectedRecipePreview, ComponenteSimulacao,
     DailyEvolutionData, EvolutionSummary, SimulationEvolutionResponse,
-    ProductInfoResponse
+    ProductInfoResponse, CalculateCostOutput, ComponentCostDetail,
+    ChartData, DayData, StoreChartItem, StoreTableItem, RecipeTableItem
 )
 from fastapi import HTTPException
 
@@ -142,6 +143,10 @@ class SimulatorService:
             ingredient_impact_percent=round_value(ingredient_impact_percent, 1),
             results=results,
             store_ranking=store_ranking,
+            chart_data=self._build_chart_data([]),
+            store_chart_data=self._build_store_chart_data(store_ranking),
+            store_table_data=self._build_store_table_data(store_ranking),
+            recipe_table_data=self._build_recipe_table_data(results),
             projection_month=projection_month,
             projection_type=projection_type,
             current_cmv=round_value(network_current_cmv, 1),
@@ -276,6 +281,10 @@ class SimulatorService:
             ingredient_impact_percent=round_value(ingredient_impact_percent, 1),
             results=[result],
             store_ranking=store_ranking,
+            chart_data=self._build_chart_data([]),
+            store_chart_data=self._build_store_chart_data(store_ranking),
+            store_table_data=self._build_store_table_data(store_ranking),
+            recipe_table_data=self._build_recipe_table_data([result]),
             projection_month=projection_month,
             projection_type=projection_type,
             current_cmv=round_value(network_current_cmv, 1),
@@ -671,6 +680,76 @@ class SimulatorService:
         store_ranking.sort(key=lambda x: x.total_impact, reverse=True)
         return store_ranking
 
+    def _build_chart_data(self, daily_data: List[DailyEvolutionData]) -> ChartData:
+        days = []
+        for dd in daily_data:
+            if dd.store_id is None:
+                days.append(DayData(
+                    day=dd.date,
+                    current=round_value(dd.current_cost_total),
+                    new=round_value(dd.new_cost_total)
+                ))
+        return ChartData(daily=days)
+
+    def _build_store_chart_data(self, store_ranking: List[StoreImpact]) -> List[StoreChartItem]:
+        return [
+            StoreChartItem(
+                store_id=s.store_id,
+                cmv_atual=round_value(s.current_cmv, 1),
+                cmv_simulado=round_value(s.new_cmv, 1),
+                impacto_r$=round_value(s.total_impact),
+                impacto_%=round_value(s.total_impact_percent),
+                variacao_pp=round_value(s.cmv_diff, 1)
+            )
+            for s in store_ranking
+        ]
+
+    def _build_store_table_data(self, store_ranking: List[StoreImpact]) -> List[StoreTableItem]:
+        return [
+            StoreTableItem(
+                store_id=s.store_id,
+                total_current_cost=s.total_current_cost,
+                total_new_cost=s.total_new_cost,
+                total_impact=s.total_impact,
+                total_impact_percent=s.total_impact_percent,
+                affected_recipes_count=s.affected_recipes_count,
+                monthly_sales_quantity=s.monthly_sales_quantity,
+                ingredient_quantity=s.ingredient_quantity,
+                gross_margin=s.gross_margin,
+                gross_margin_new=s.gross_margin_new,
+                current_cmv=s.current_cmv,
+                new_cmv=s.new_cmv,
+                cmv_diff=s.cmv_diff,
+                revenue_current=round_value(s.total_current_cost / (s.current_cmv / 100)) if s.current_cmv > 0 else 0,
+                revenue_simulated=round_value(s.total_new_cost / (s.new_cmv / 100)) if s.new_cmv > 0 else 0
+            )
+            for s in store_ranking
+        ]
+
+    def _build_recipe_table_data(self, results: List[SimulationResult]) -> List[RecipeTableItem]:
+        return [
+            RecipeTableItem(
+                recipe_id=r.recipe_id,
+                recipe_name=r.recipe_name,
+                current_cost=r.current_cost,
+                new_cost=r.new_cost,
+                cost_difference=r.cost_difference,
+                cost_percent_change=r.cost_percent_change,
+                monthly_sales_quantity=r.monthly_sales_quantity,
+                monthly_revenue_current=r.monthly_revenue_current,
+                monthly_revenue_new=r.monthly_revenue_new,
+                revenue_impact=r.revenue_impact,
+                revenue_impact_percent=r.revenue_impact_percent,
+                current_cmv=r.current_cmv,
+                new_cmv=r.new_cmv,
+                cmv_diff=r.cmv_diff,
+                cmv_atual_rs=round_value(r.monthly_sales_quantity * r.current_cost),
+                cmv_simulado_rs=round_value(r.monthly_sales_quantity * r.new_cost),
+                dif_custo_rs=round_value(r.monthly_sales_quantity * r.cost_difference)
+            )
+            for r in results
+        ]
+
     def _format_change_applied(self, old_price: float, new_price: float, change_type: str) -> str:
         diff = new_price - old_price
         diff_percent = (diff / old_price * 100) if old_price > 0 else 0
@@ -679,6 +758,50 @@ class SimulatorService:
             return f"{diff_percent:+.1f}% ({old_price:.2f} -> {new_price:.2f})"
         else:
             return f"R$ {diff:+.2f} ({old_price:.2f} -> {new_price:.2f})"
+
+    async def calculate_composicao_cost(self, componentes: List[ComponenteSimulacao]) -> CalculateCostOutput:
+        details = await self._build_cost_details(componentes)
+        total = sum(d.total_cost for d in details)
+        return CalculateCostOutput(
+            total_cost=round_value(total),
+            componentes=details
+        )
+
+    async def _build_cost_details(self, componentes: List[ComponenteSimulacao]) -> List[ComponentCostDetail]:
+        details = []
+        for comp in componentes:
+            produto = await self._get_product(comp.id_componente)
+            if not produto:
+                continue
+
+            nome = produto.nome
+            unidade = produto.unidade
+
+            if comp.sub_componentes:
+                sub_details = await self._build_cost_details(comp.sub_componentes)
+                unit_cost = sum(sd.total_cost for sd in sub_details)
+                total_cost = round_value(unit_cost * comp.quantidade, 4)
+                details.append(ComponentCostDetail(
+                    id_componente=comp.id_componente,
+                    nome=nome,
+                    quantidade=comp.quantidade,
+                    unit_cost=round_value(unit_cost),
+                    total_cost=round_value(total_cost),
+                    unidade=unidade,
+                    componentes=sub_details
+                ))
+            else:
+                unit_cost = produto.custo or 0
+                total_cost = round_value(unit_cost * comp.quantidade, 4)
+                details.append(ComponentCostDetail(
+                    id_componente=comp.id_componente,
+                    nome=nome,
+                    quantidade=comp.quantidade,
+                    unit_cost=round_value(unit_cost),
+                    total_cost=round_value(total_cost),
+                    unidade=unidade
+                ))
+        return details
 
     async def get_affected_recipes(self, ingredient_id: int) -> List[AffectedRecipePreview]:
         ingredient = await self._get_ingredient(ingredient_id)

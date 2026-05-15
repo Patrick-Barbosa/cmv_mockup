@@ -4,7 +4,8 @@ from backend.app.database.session import DbSession
 from backend.app.services.simulator_service import SimulatorService
 from backend.app.schemas.simulator import (
     SimulationInput, SimulationResponse, AffectedRecipePreview, StoreInfo,
-    SimulationEvolutionResponse, ProductInfoResponse
+    SimulationEvolutionResponse, ProductInfoResponse,
+    CalculateCostInput, CalculateCostOutput
 )
 
 router = APIRouter(prefix="/api/simulator", tags=["Simulador"])
@@ -118,6 +119,29 @@ async def get_evolution(
         full_trace = ''.join(tb.format_exception(type(e), e, e.__traceback__))
         print(f"[DEBUG] Exception in get_evolution: {e}")
         print(f"[DEBUG] Traceback: {full_trace}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/calculate-cost", response_model=CalculateCostOutput)
+async def calculate_cost(
+    input_data: CalculateCostInput,
+    session: DbSession
+):
+    """
+    Calcula o custo de uma árvore de componentes (recursivamente).
+
+    - **componentes**: Lista de componentes (insumo ou receita com sub_componentes)
+
+    Retorna custo total + detalhamento por componente com unit_cost e total_cost.
+    """
+    try:
+        async with session.begin():
+            service = SimulatorService(session)
+            result = await service.calculate_composicao_cost(input_data.componentes)
+            return result
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
