@@ -9,16 +9,18 @@ Sempre usar valores com **impacto agressivo** para validar visualmente que o cá
 | Insumo | Farinha de trigo |
 | Preço simulado | R$ 600,00 |
 
-Justificativa: Farinha de trigo tem custo atual baixo (~R$ 3/kg). Elevar para R$ 600 gera impacto enorme no CMV de receitas como Pizza Marguerita, visível nos KPI cards e tabelas.
+Justificativa: Farinha de trigo tem custo atual baixo (~R$ 3/kg). Elevar para R$ 600 gera impacto enorme no CMV de receitas como Pizza margherita, visível nos KPI cards e tabelas.
 
 ## Receita
 
 | Campo | Valor |
 |-------|-------|
-| Receita | Pizza Marguerita |
+| Receita | Pizza margherita |
 | Preço simulado | R$ 300,00 |
 
-Justificativa: Pizza Marguerita usa farinha como insumo principal. O impacto deve aparecer em vários componentes da árvore e no CMV final.
+> ⚠️ **Nome exato no banco**: "Pizza margherita" (com 'm' minúsculo, 'gh'). Verifique com `curl /api/get_produtos_select2?q=Pizza` antes de usar.
+
+Justificativa: Pizza margherita usa farinha como insumo principal. O impacto deve aparecer em vários componentes da árvore e no CMV final.
 
 ## Procedimento de Verificação
 
