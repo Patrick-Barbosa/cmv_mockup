@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { XAxis, YAxis, CartesianGrid, LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from "recharts"
 import { simulatorApi, vendasApi, IS_MOCK, commonApi, receitasApi } from "@/lib/api"
-import { ChartLegend } from "@/components/common"
+import { ChartLegend, PageHeader } from "@/components/common"
 import { RecipeCompositionTable, type ComponenteItem } from "@/components/simulator/RecipeCompositionTable"
 import type { SimulationInput, SimulationResponse, StoreInfo, VendasFiltersResponse, EvolutionResponse, ComponenteSimulacao } from "@/lib/api"
 
@@ -308,15 +308,11 @@ export default function SimulatorReceitasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <FadeUp className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <p className="text-brand-muted text-[0.75rem] tracking-[0.28em] uppercase font-medium mb-2">Análise / Simulação / Receitas</p>
-          <h1 className="text-3xl md:text-4xl font-semibold leading-tight tracking-tight">Simulador de Custos — Receitas</h1>
-          <p className="text-brand-soft text-base mt-2 leading-relaxed max-w-2xl">
-            Análise de impacto de variação de receita e composição
-          </p>
-        </div>
-      </FadeUp>
+      <PageHeader
+        breadcrumb="Análise / Simulação / Receitas"
+        title="Simulador de Custos — Receitas"
+        description="Análise de impacto de variação de receita e composição"
+      />
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-sm px-4 py-3 flex items-center gap-2">
