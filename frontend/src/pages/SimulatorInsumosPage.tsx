@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
+import { Link } from "react-router-dom"
 import { Calculator, Loader2, AlertCircle, ChevronDown, Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatBRL, formatPercent, formatNumber, formatQuantity } from "@/lib/format"
@@ -243,6 +244,23 @@ export default function SimulatorInsumosPage() {
         breadcrumb="Análise / Simulação / Insumos"
         title="Simulador de Custos — Insumos"
         description="Análise de impacto de variação de preço de insumos"
+        actions={
+          <div className="inline-flex rounded-sm border border-brand-line/30 overflow-hidden">
+            <Link
+              to="/simulator/insumos"
+              className="px-4 py-2 text-sm font-medium bg-brand-highlight/10 text-brand-highlight"
+            >
+              Insumos
+            </Link>
+            <div className="w-px bg-brand-line/30" />
+            <Link
+              to="/simulator/receitas"
+              className="px-4 py-2 text-sm font-medium text-brand-muted hover:text-brand-soft hover:bg-brand-line/10 transition-colors"
+            >
+              Receitas
+            </Link>
+          </div>
+        }
       />
 
       {error && (
