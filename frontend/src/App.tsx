@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { ThemeProvider } from "./components/ThemeProvider"
 import { MainLayout } from "./components/layout/MainLayout"
 import { AppLayout } from "./components/layout/AppLayout"
@@ -12,6 +12,8 @@ import Vendas from "./pages/Vendas"
 import SkusAusentes from "./pages/SkusAusentes"
 import Lojas from "./pages/Lojas"
 import Dashboard from "./pages/Dashboard"
+import SimulatorInsumosPage from "./pages/SimulatorInsumosPage"
+import SimulatorReceitasPage from "./pages/SimulatorReceitasPage"
 
 function App() {
   return (
@@ -35,6 +37,9 @@ function App() {
             <Route path="/vendas" element={<Vendas />} />
             <Route path="/vendas/ausentes" element={<SkusAusentes />} />
             <Route path="/lojas" element={<Lojas />} />
+            <Route path="/simulator/insumos" element={<SimulatorInsumosPage />} />
+            <Route path="/simulator/receitas" element={<SimulatorReceitasPage />} />
+            <Route path="/simulador" element={<Navigate to="/simulator/insumos" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>
