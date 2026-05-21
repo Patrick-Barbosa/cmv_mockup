@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { simulatorApi } from "@/lib/api"
+import { simulatorApi, receitasApi } from "@/lib/api"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -150,9 +150,10 @@ export function RecipeCompositionTable({
         if (tipo === "receita") {
           // Fetch tree for sub-recipes
           try {
-            const tree = await fetch(`/receitas/${id}`).then((r) => r.json())
-            if (tree.children) {
-              updates.subComponentes = tree.children.map((c: any) => ({
+            const tree = await receitasApi.getTree(id)
+            
+            const mapChildren = (children: any[]): ComponenteItem[] => {
+              return (children || []).map((c: any) => ({
                 id: genId(),
                 tipo: c.tipo as "insumo" | "receita",
                 componenteId: Number(c.id),
@@ -160,9 +161,13 @@ export function RecipeCompositionTable({
                 quantidadeDisplay: (c.quantidade || 0).toString().replace(".", ","),
                 custoUnitario: c.custo || 0,
                 unidadeMedida: c.unidade || "",
-                subComponentes: c.children && c.children.length > 0 ? [] : undefined,
+                subComponentes: c.children && c.children.length > 0 ? mapChildren(c.children) : undefined,
                 expanded: false,
               }))
+            }
+
+            if (tree.children) {
+              updates.subComponentes = mapChildren(tree.children)
             }
           } catch {
             // fallback: empty sub-components

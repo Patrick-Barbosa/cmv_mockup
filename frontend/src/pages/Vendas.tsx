@@ -6,37 +6,30 @@ import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { vendasApi, IS_MOCK } from "@/lib/api"
+import {
+  PageHeader,
+  ErrorAlert,
+  StatsSidebar,
+} from "@/components/common"
+import { vendasApi } from "@/lib/api"
 import type { VendasFiltersResponse, VendasUploadResponse, ImportStrategy, VendaImportRow } from "@/lib/api"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
 
-const EXPECTED_COLUMNS = [
-  "data",
-  "id_loja",
-  "id_produto",
-  "quantidade_produto",
-  "valor_total",
-]
-
-const mockFilters: VendasFiltersResponse = {
-  lojas: ["RJ-COPA", "RJ-BARRA"],
-  meses: ["2026-04", "2026-03"],
-}
+const EXPECTED_COLUMNS = ["data", "id_loja", "id_produto", "quantidade_produto", "valor_total"]
 
 export default function Vendas() {
-  const [filters, setFilters] = useState<VendasFiltersResponse>(IS_MOCK ? mockFilters : { lojas: [], meses: [] })
+  const [filters, setFilters] = useState<VendasFiltersResponse>({ lojas: [], meses: [] })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [strategy, setStrategy] = useState<ImportStrategy>("append")
   const [uploadResult, setUploadResult] = useState<VendasUploadResponse | null>(null)
-  const [loadingFilters, setLoadingFilters] = useState(!IS_MOCK)
+  const [loadingFilters, setLoadingFilters] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (IS_MOCK) return
-
-    vendasApi.getFilters()
+    vendasApi
+      .getFilters()
       .then((response) => setFilters(response))
       .catch((e) => setError(e instanceof Error ? e.message : "Erro ao carregar filtros de vendas."))
       .finally(() => setLoadingFilters(false))
@@ -51,18 +44,17 @@ export default function Vendas() {
   const aggregateData = (rows: any[]): VendaImportRow[] => {
     const map = new Map<string, VendaImportRow>()
 
-    rows.forEach(row => {
-      // Normalize column names to lowercase/trim
-      const normalizedRow: any = {}
-      Object.keys(row).forEach(key => {
+    rows.forEach((row) => {
+      const normalizedRow: Record<string, unknown> = {}
+      Object.keys(row).forEach((key) => {
         normalizedRow[key.toLowerCase().trim()] = row[key]
       })
 
-      const data = normalizedRow.data
+      const data = String(normalizedRow.data || "")
       const idLoja = String(normalizedRow.id_loja || "").trim()
       const idProduto = String(normalizedRow.id_produto || "").trim()
-      const qtd = parseFloat(normalizedRow.quantidade_produto) || 0
-      const valor = parseFloat(normalizedRow.valor_total) || 0
+      const qtd = parseFloat(String(normalizedRow.quantidade_produto)) || 0
+      const valor = parseFloat(String(normalizedRow.valor_total)) || 0
 
       if (!data || !idLoja || !idProduto) return
 
@@ -77,7 +69,7 @@ export default function Vendas() {
           id_loja: idLoja,
           id_produto: idProduto,
           quantidade_produto: qtd,
-          valor_total: valor
+          valor_total: valor,
         })
       }
     })
@@ -87,24 +79,24 @@ export default function Vendas() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const parseFile = async (file: File): Promise<any[]> => {
-    const extension = file.name.split('.').pop()?.toLowerCase()
+    const extension = file.name.split(".").pop()?.toLowerCase()
 
-    if (extension === 'csv') {
+    if (extension === "csv") {
       return new Promise((resolve, reject) => {
         Papa.parse(file, {
           header: true,
           skipEmptyLines: true,
           complete: (results) => resolve(results.data),
-          error: (err) => reject(err)
+          error: (err) => reject(err),
         })
       })
-    } else if (extension === 'xlsx' || extension === 'xls') {
+    } else if (extension === "xlsx" || extension === "xls") {
       const data = await file.arrayBuffer()
       const workbook = XLSX.read(data)
       const worksheet = workbook.Sheets[workbook.SheetNames[0]]
       return XLSX.utils.sheet_to_json(worksheet)
     }
-    
+
     throw new Error("Formato de arquivo não suportado. Use .xlsx ou .csv.")
   }
 
@@ -114,32 +106,20 @@ export default function Vendas() {
     setUploading(true)
     setError(null)
     try {
-      if (IS_MOCK) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        const response: VendasUploadResponse = {
-          message: "Vendas importadas com sucesso (MOCK).",
-          linhas_importadas: 42,
-          lojas: [...filters.lojas, "NOVA-LOJA"],
-          meses: filters.meses,
-        }
-        setUploadResult(response)
-        setFilters({ lojas: response.lojas, meses: response.meses })
-      } else {
-        const rawRows = await parseFile(selectedFile)
-        const aggregatedRows = aggregateData(rawRows)
+      const rawRows = await parseFile(selectedFile)
+      const aggregatedRows = aggregateData(rawRows)
 
-        if (aggregatedRows.length === 0) {
-          throw new Error("Nenhum dado válido encontrado no arquivo após agregação.")
-        }
-
-        const response = await vendasApi.bulkImport({
-          strategy,
-          rows: aggregatedRows
-        })
-        
-        setUploadResult(response)
-        setFilters({ lojas: response.lojas, meses: response.meses })
+      if (aggregatedRows.length === 0) {
+        throw new Error("Nenhum dado válido encontrado no arquivo após agregação.")
       }
+
+      const response = await vendasApi.bulkImport({
+        strategy,
+        rows: aggregatedRows,
+      })
+
+      setUploadResult(response)
+      setFilters({ lojas: response.lojas, meses: response.meses })
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao importar arquivo.")
     } finally {
@@ -148,36 +128,28 @@ export default function Vendas() {
   }
 
   const handleDownloadTemplate = (format: "xlsx" | "csv") => {
-    vendasApi.downloadTemplate(format).catch(e => setError(e.message))
+    vendasApi.downloadTemplate(format).catch((e) => setError(e.message))
   }
 
   return (
     <div className="flex flex-col gap-6">
       <FadeUp>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Vendas</p>
-            <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Importação de vendas</h1>
-            <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-2xl">
-              Envie seus dados de vendas. O sistema agrega os dados localmente por dia, loja e produto antes de enviar para o servidor.
-            </p>
-          </div>
-          <Link to="/vendas/ausentes">
-            <Button variant="outline" className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 h-9 text-xs">
-              <LinkIcon className="w-3.5 h-3.5 mr-2" />
-              Ver SKUs não vinculados
-            </Button>
-          </Link>
-        </div>
+        <PageHeader
+          breadcrumb="Operação / Vendas"
+          title="Importação de vendas"
+          description="Envie seus dados de vendas. O sistema agrega os dados localmente por dia, loja e produto antes de enviar para o servidor."
+          actions={
+            <Link to="/vendas/ausentes">
+              <Button variant="outline" className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 h-9 text-xs">
+                <LinkIcon className="w-3.5 h-3.5 mr-2" />
+                Ver SKUs não vinculados
+              </Button>
+            </Link>
+          }
+        />
       </FadeUp>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-sm px-4 py-3 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-          <p className="text-red-400 text-xs">{error}</p>
-          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-300 text-xs">×</button>
-        </div>
-      )}
+      <ErrorAlert error={error} onDismiss={() => setError(null)} />
 
       <div className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6 items-start">
         <div className="flex flex-col gap-6">
@@ -222,7 +194,7 @@ export default function Vendas() {
               <div className="bg-brand-surface border border-brand-line/20 rounded-[2px] p-4">
                 <p className="text-brand-muted text-[0.72rem] tracking-[0.12em] uppercase font-medium mb-2">Comportamento da estratégia</p>
                 <p className="text-brand-soft text-[0.82rem] leading-relaxed">
-                  {strategy === "append" 
+                  {strategy === "append"
                     ? "Insere apenas novos registros. Se já existir uma venda para o mesmo dia, loja e produto, ela será ignorada (não duplica)."
                     : "Limpa as vendas existentes para as lojas e dias presentes no arquivo antes de importar. Use para corrigir ou atualizar dados de dias específicos."}
                 </p>
@@ -269,46 +241,26 @@ export default function Vendas() {
               <AlertCircle className="w-4 h-4 text-brand-highlight shrink-0 mt-0.5" />
               <div className="text-brand-soft text-sm leading-relaxed space-y-2">
                 <p className="font-medium text-brand-highlight">Dica sobre Agregação Local:</p>
-                <p>
-                  Você pode enviar um arquivo com múltiplas linhas para o mesmo produto no mesmo dia. 
-                  O sistema somará automaticamente as quantidades e valores antes de salvar.
-                </p>
+                <p>Você pode enviar um arquivo com múltiplas linhas para o mesmo produto no mesmo dia. O sistema somará automaticamente as quantidades e valores antes de salvar.</p>
               </div>
             </div>
           </FadeUp>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <FadeUp delay={0.1} className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
-            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Lojas disponíveis</p>
-            {loadingFilters ? (
-              <div className="flex items-center gap-2 text-brand-muted text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Carregando filtros…
-              </div>
-            ) : (
-              <>
-                <p className="text-brand-highlight text-3xl font-light tabular-nums">{filters.lojas.length}</p>
-                <p className="text-brand-muted text-xs mt-1">{filters.lojas.length > 0 ? filters.lojas.join(" · ") : "Nenhuma loja importada ainda"}</p>
-              </>
-            )}
-          </FadeUp>
-
-          <FadeUp delay={0.15} className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
-            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Meses disponíveis</p>
-            {loadingFilters ? (
-              <div className="flex items-center gap-2 text-brand-muted text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Carregando filtros…
-              </div>
-            ) : (
-              <>
-                <p className="text-brand-highlight text-3xl font-light tabular-nums">{filters.meses.length}</p>
-                <p className="text-brand-muted text-xs mt-1">{filters.meses.length > 0 ? filters.meses.join(" · ") : "Nenhum mês encontrado"}</p>
-              </>
-            )}
-          </FadeUp>
-
+        <StatsSidebar
+          stats={[
+            {
+              label: "Lojas disponíveis",
+              value: loadingFilters ? <Loader2 className="w-5 h-5 animate-spin" /> : filters.lojas.length,
+              subtitle: filters.lojas.length > 0 ? filters.lojas.join(" · ") : "Nenhuma loja importada ainda",
+            },
+            {
+              label: "Meses disponíveis",
+              value: loadingFilters ? <Loader2 className="w-5 h-5 animate-spin" /> : filters.meses.length,
+              subtitle: filters.meses.length > 0 ? filters.meses.join(" · ") : "Nenhum mês encontrado",
+            },
+          ]}
+        >
           {uploadResult && (
             <FadeUp delay={0.25} className="bg-brand-surface-2 border border-emerald-500/20 rounded-[2px] p-5">
               <div className="flex items-start gap-3">
@@ -323,7 +275,7 @@ export default function Vendas() {
               </div>
             </FadeUp>
           )}
-        </div>
+        </StatsSidebar>
       </div>
     </div>
   )

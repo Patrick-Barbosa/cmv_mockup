@@ -15,6 +15,7 @@ class CreateRecipeModel(BaseModel):
     quantidade_base: float
     unidade: Optional[str] = None
     id_produto_externo: Optional[str] = None
+    preco_venda: Optional[float] = None  # Preço de venda opcional para receitas
     componentes: List[ComponenteCreateRecipeModel] = Field(..., min_length=1)
 
     @field_validator('unidade')
@@ -39,6 +40,7 @@ class EditReceitaModel(BaseModel):
     quantidade_base: Optional[float] = None
     unidade: Optional[str] = None
     id_produto_externo: Optional[str] = None
+    preco_venda: Optional[float] = None  # Preço de venda opcional para receitas
     componentes: Optional[List[ComponenteCreateRecipeModel]] = None
 
     @field_validator('unidade')

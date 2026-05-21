@@ -1,0 +1,171 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - link "Prato" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img [ref=e8]
+        - generic [ref=e12]: Prato
+      - navigation [ref=e13]:
+        - paragraph [ref=e14]: Operação
+        - link "Insumos" [ref=e15] [cursor=pointer]:
+          - /url: /insumos
+          - img [ref=e16]
+          - text: Insumos
+        - link "Receitas" [ref=e19] [cursor=pointer]:
+          - /url: /receitas
+          - img [ref=e20]
+          - text: Receitas
+        - link "Vendas" [ref=e24] [cursor=pointer]:
+          - /url: /vendas
+          - img [ref=e25]
+          - text: Vendas
+        - link "SKUs não vinculados" [ref=e28] [cursor=pointer]:
+          - /url: /vendas/ausentes
+          - img [ref=e29]
+          - text: SKUs não vinculados
+        - paragraph [ref=e33]: Análise
+        - link "Lojas" [ref=e34] [cursor=pointer]:
+          - /url: /lojas
+          - img [ref=e35]
+          - text: Lojas
+        - link "CMV" [ref=e39] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e40]
+          - text: CMV
+        - paragraph [ref=e44]: Simuladores
+        - link "Impacto Insumo" [ref=e45] [cursor=pointer]:
+          - /url: /simulator/insumos
+          - img [ref=e46]
+          - text: Impacto Insumo
+        - link "Impacto Receita" [ref=e48] [cursor=pointer]:
+          - /url: /simulator/receitas
+          - img [ref=e49]
+          - text: Impacto Receita
+        - generic:
+          - img
+          - text: Margem
+      - generic [ref=e51]:
+        - paragraph [ref=e52]: Acesso antecipado
+        - button "Modo claro" [ref=e53] [cursor=pointer]:
+          - img [ref=e54]
+    - generic [ref=e60]:
+      - main [ref=e61]:
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - generic [ref=e64]:
+              - paragraph [ref=e65]: Análise / Simulação / Receitas
+              - heading "Simulador de Custos — Receitas" [level=1] [ref=e66]
+              - paragraph [ref=e67]: Análise de impacto de variação de receita e composição
+            - generic [ref=e69]:
+              - link "Insumos" [ref=e70] [cursor=pointer]:
+                - /url: /simulator/insumos
+              - link "Receitas" [ref=e72] [cursor=pointer]:
+                - /url: /simulator/receitas
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - generic [ref=e76]:
+                - generic [ref=e77]: Receita
+                - combobox [active] [ref=e107] [cursor=pointer]:
+                  - text: Bolo de pote de chocolate
+                  - img
+              - generic [ref=e78]:
+                - generic [ref=e79]: Preço Atual
+                - textbox [disabled] [ref=e80]: R$ 13.00
+              - generic [ref=e81]:
+                - generic [ref=e82]: Preço Simulado
+                - generic [ref=e83]:
+                  - generic: R$
+                  - 'textbox "Ex: 32,00" [ref=e84]'
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - generic [ref=e87]: Mês Simulação
+                - combobox [ref=e88] [cursor=pointer]:
+                  - generic: 2026-04
+                  - img [ref=e89]
+              - generic [ref=e91]:
+                - generic [ref=e92]: Lojas Selecionadas
+                - button "2 lojas selecionadas" [ref=e94] [cursor=pointer]:
+                  - generic [ref=e95]: 2 lojas selecionadas
+                  - img [ref=e96]
+            - generic [ref=e139]:
+              - generic [ref=e140]:
+                - heading "Editar Composição — Bolo de pote de chocolate" [level=3] [ref=e141]
+                - generic [ref=e142]:
+                  - button "Adicionar insumo" [ref=e143] [cursor=pointer]:
+                    - img
+                    - text: Adicionar insumo
+                  - button "Adicionar receita" [ref=e144] [cursor=pointer]:
+                    - img
+                    - text: Adicionar receita
+              - table [ref=e146]:
+                - rowgroup [ref=e147]:
+                  - row "Insumo Quantidade Custo Unit. Custo Total" [ref=e148]:
+                    - columnheader "Insumo" [ref=e149]
+                    - columnheader "Quantidade" [ref=e150]
+                    - columnheader "Custo Unit." [ref=e151]
+                    - columnheader "Custo Total" [ref=e152]
+                    - columnheader [ref=e153]
+                - rowgroup [ref=e154]:
+                  - row "Insumo 0,02 g R$ 0,02/g R$ 0,00" [ref=e155]:
+                    - cell "Insumo" [ref=e156]:
+                      - generic [ref=e157]:
+                        - combobox [ref=e160] [cursor=pointer]:
+                          - generic: Granulado de chocolate
+                          - img [ref=e161]
+                        - generic [ref=e163]: Insumo
+                    - cell "0,02 g" [ref=e164]:
+                      - generic [ref=e165]:
+                        - textbox [ref=e166]: 0,02
+                        - generic [ref=e167]: g
+                    - cell "R$ 0,02/g" [ref=e168]:
+                      - text: R$ 0,02
+                      - generic [ref=e169]: /g
+                    - cell "R$ 0,00" [ref=e170]
+                    - cell [ref=e171]:
+                      - button [ref=e172] [cursor=pointer]:
+                        - img
+                  - row "Receita 0,1 R$ 0,02 R$ 0,00" [ref=e173]:
+                    - cell "Receita" [ref=e174]:
+                      - generic [ref=e175]:
+                        - button [ref=e176] [cursor=pointer]:
+                          - img [ref=e177]
+                        - combobox [ref=e180] [cursor=pointer]:
+                          - generic: Brigadeiro
+                          - img [ref=e181]
+                        - generic [ref=e183]: Receita
+                    - cell "0,1" [ref=e184]:
+                      - textbox [ref=e186]: 0,1
+                    - cell "R$ 0,02" [ref=e187]
+                    - cell "R$ 0,00" [ref=e188]
+                    - cell [ref=e189]:
+                      - button [ref=e190] [cursor=pointer]:
+                        - img
+                  - row "Receita 0,12 R$ 4,72 R$ 0,57" [ref=e191]:
+                    - cell "Receita" [ref=e192]:
+                      - generic [ref=e193]:
+                        - button [ref=e194] [cursor=pointer]:
+                          - img [ref=e195]
+                        - combobox [ref=e198] [cursor=pointer]:
+                          - generic: Massa de bolo
+                          - img [ref=e199]
+                        - generic [ref=e201]: Receita
+                    - cell "0,12" [ref=e202]:
+                      - textbox [ref=e204]: 0,12
+                    - cell "R$ 4,72" [ref=e205]
+                    - cell "R$ 0,57" [ref=e206]
+                    - cell [ref=e207]:
+                      - button [ref=e208] [cursor=pointer]:
+                        - img
+              - generic [ref=e209]:
+                - img [ref=e210]
+                - generic [ref=e212]: Altere as quantidades dos componentes para simular o impacto no custo final da receita.
+            - button "Simular Impacto" [ref=e213] [cursor=pointer]:
+              - img
+              - text: Simular Impacto
+          - generic [ref=e100]:
+            - img [ref=e101]
+            - paragraph [ref=e103]: Pronto para simular
+            - paragraph [ref=e104]: Configure os parâmetros e clique em "Simular Impacto" para ver os resultados.
+      - contentinfo [ref=e105]:
+        - paragraph [ref=e106]: © 2026 Prato — Inteligência de margem para restaurantes.
+  - region "Notifications alt+T"

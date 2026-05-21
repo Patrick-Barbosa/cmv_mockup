@@ -57,3 +57,11 @@ frontend/screens/orientations.md
 
 # GitHub Copilot
 .github/copilot-instructions.md
+skills-lock.json
+.gemini/settings.json
+package.json
+package-lock.json
+opencode.json
+.opencode/config.json
+.opencode/opencode.json
+opencode.json

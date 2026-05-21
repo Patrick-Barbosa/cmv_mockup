@@ -148,4 +148,26 @@
     -moz-appearance: textfield;
     appearance: textfield;
   }
+
+  /* Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--brand-line) / 0.1);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--brand-primary));
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--brand-highlight));
+  }
+  
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--brand-primary)) hsl(var(--brand-line) / 0.1);
+  }
 }

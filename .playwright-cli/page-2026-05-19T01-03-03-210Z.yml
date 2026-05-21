@@ -1,0 +1,344 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - link "Prato" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e12]: Prato
+        - navigation [ref=e13]:
+          - paragraph [ref=e14]: Operação
+          - link "Insumos" [ref=e15] [cursor=pointer]:
+            - /url: /insumos
+            - img [ref=e16]
+            - text: Insumos
+          - link "Receitas" [ref=e19] [cursor=pointer]:
+            - /url: /receitas
+            - img [ref=e20]
+            - text: Receitas
+          - link "Vendas" [ref=e24] [cursor=pointer]:
+            - /url: /vendas
+            - img [ref=e25]
+            - text: Vendas
+          - link "SKUs não vinculados" [ref=e28] [cursor=pointer]:
+            - /url: /vendas/ausentes
+            - img [ref=e29]
+            - text: SKUs não vinculados
+          - paragraph [ref=e33]: Análise
+          - link "Lojas" [ref=e34] [cursor=pointer]:
+            - /url: /lojas
+            - img [ref=e35]
+            - text: Lojas
+          - link "CMV" [ref=e39] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e40]
+            - text: CMV
+          - paragraph [ref=e44]: Simuladores
+          - link "Impacto Insumo" [ref=e45] [cursor=pointer]:
+            - /url: /simulator/insumos
+            - img [ref=e46]
+            - text: Impacto Insumo
+          - link "Impacto Receita" [ref=e48] [cursor=pointer]:
+            - /url: /simulator/receitas
+            - img [ref=e49]
+            - text: Impacto Receita
+          - generic:
+            - img
+            - text: Margem
+        - generic [ref=e51]:
+          - paragraph [ref=e52]: Acesso antecipado
+          - button "Modo claro" [ref=e53] [cursor=pointer]:
+            - img [ref=e54]
+      - generic [ref=e60]:
+        - main [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - paragraph [ref=e65]: Análise / Simulação / Receitas
+                - heading "Simulador de Custos — Receitas" [level=1] [ref=e66]
+                - paragraph [ref=e67]: Análise de impacto de variação de receita e composição
+              - generic [ref=e69]:
+                - link "Insumos" [ref=e70] [cursor=pointer]:
+                  - /url: /simulator/insumos
+                - link "Receitas" [ref=e72] [cursor=pointer]:
+                  - /url: /simulator/receitas
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - generic [ref=e76]:
+                  - generic [ref=e77]: Receita
+                  - combobox [ref=e107] [cursor=pointer]:
+                    - text: Bolo de pote de chocolate
+                    - img
+                - generic [ref=e78]:
+                  - generic [ref=e79]: Preço Atual
+                  - textbox [disabled] [ref=e80]: R$ 13.00
+                - generic [ref=e81]:
+                  - generic [ref=e82]: Preço Simulado
+                  - generic [ref=e83]:
+                    - generic: R$
+                    - 'textbox "Ex: 32,00" [ref=e84]': "999"
+              - generic [ref=e85]:
+                - generic [ref=e86]:
+                  - generic [ref=e87]: Mês Simulação
+                  - combobox [ref=e88] [cursor=pointer]:
+                    - generic: 2025-05
+                    - img [ref=e89]
+                - generic [ref=e91]:
+                  - generic [ref=e92]: Lojas Selecionadas
+                  - button "2 lojas selecionadas" [ref=e94] [cursor=pointer]:
+                    - generic [ref=e95]: 2 lojas selecionadas
+                    - img [ref=e96]
+              - generic [ref=e139]:
+                - generic [ref=e140]:
+                  - heading "Editar Composição — Bolo de pote de chocolate" [level=3] [ref=e141]
+                  - generic [ref=e142]:
+                    - button "Adicionar insumo" [ref=e143] [cursor=pointer]:
+                      - img
+                      - text: Adicionar insumo
+                    - button "Adicionar receita" [ref=e144] [cursor=pointer]:
+                      - img
+                      - text: Adicionar receita
+                - table [ref=e146]:
+                  - rowgroup [ref=e147]:
+                    - row "Insumo Quantidade Custo Unit. Custo Total" [ref=e148]:
+                      - columnheader "Insumo" [ref=e149]
+                      - columnheader "Quantidade" [ref=e150]
+                      - columnheader "Custo Unit." [ref=e151]
+                      - columnheader "Custo Total" [ref=e152]
+                      - columnheader [ref=e153]
+                  - rowgroup [ref=e154]:
+                    - row "Insumo 0,02 g R$ 0,02/g R$ 0,00" [ref=e155]:
+                      - cell "Insumo" [ref=e156]:
+                        - generic [ref=e157]:
+                          - combobox [ref=e160] [cursor=pointer]:
+                            - generic: Granulado de chocolate
+                            - img [ref=e161]
+                          - generic [ref=e163]: Insumo
+                      - cell "0,02 g" [ref=e164]:
+                        - generic [ref=e165]:
+                          - textbox [ref=e166]: 0,02
+                          - generic [ref=e167]: g
+                      - cell "R$ 0,02/g" [ref=e168]:
+                        - text: R$ 0,02
+                        - generic [ref=e169]: /g
+                      - cell "R$ 0,00" [ref=e170]
+                      - cell [ref=e171]:
+                        - button [ref=e172] [cursor=pointer]:
+                          - img
+                    - row "Receita 0,1 R$ 0,02 R$ 0,00" [ref=e173]:
+                      - cell "Receita" [ref=e174]:
+                        - generic [ref=e175]:
+                          - button [ref=e176] [cursor=pointer]:
+                            - img [ref=e177]
+                          - combobox [ref=e180] [cursor=pointer]:
+                            - generic: Brigadeiro
+                            - img [ref=e181]
+                          - generic [ref=e183]: Receita
+                      - cell "0,1" [ref=e184]:
+                        - textbox [ref=e186]: 0,1
+                      - cell "R$ 0,02" [ref=e187]
+                      - cell "R$ 0,00" [ref=e188]
+                      - cell [ref=e189]:
+                        - button [ref=e190] [cursor=pointer]:
+                          - img
+                    - row "Receita 0,12 R$ 4,72 R$ 0,57" [ref=e191]:
+                      - cell "Receita" [ref=e192]:
+                        - generic [ref=e193]:
+                          - button [ref=e194] [cursor=pointer]:
+                            - img [ref=e195]
+                          - combobox [ref=e198] [cursor=pointer]:
+                            - generic: Massa de bolo
+                            - img [ref=e199]
+                          - generic [ref=e201]: Receita
+                      - cell "0,12" [ref=e202]:
+                        - textbox [ref=e204]: 0,12
+                      - cell "R$ 4,72" [ref=e205]
+                      - cell "R$ 0,57" [ref=e206]
+                      - cell [ref=e207]:
+                        - button [ref=e208] [cursor=pointer]:
+                          - img
+                - generic [ref=e209]:
+                  - img [ref=e210]
+                  - generic [ref=e212]: Altere as quantidades dos componentes para simular o impacto no custo final da receita.
+              - button "Simular Impacto" [ref=e213] [cursor=pointer]:
+                - img
+                - text: Simular Impacto
+            - generic [ref=e260]:
+              - generic [ref=e261]:
+                - heading "Simulação - 2025-05" [level=2] [ref=e262]
+                - generic [ref=e263]:
+                  - generic [ref=e264]:
+                    - generic [ref=e265]:
+                      - generic [ref=e266]: Impacto na Rede
+                      - generic [ref=e267]: R$ 7.203.716,00
+                    - paragraph [ref=e269]: 7584.6% de impacto
+                  - generic [ref=e270]:
+                    - generic [ref=e271]:
+                      - generic [ref=e272]: Impacto Médio por Loja
+                      - generic [ref=e273]: R$ 3.601.858,00
+                    - paragraph [ref=e275]: 7584.6% por loja
+                  - generic [ref=e276]:
+                    - generic [ref=e277]:
+                      - generic [ref=e278]: Impacto Médio nas Receitas
+                      - generic [ref=e279]: R$ 7.203.716,00
+                    - paragraph [ref=e281]: 7584.6% por receita
+                  - generic [ref=e282]:
+                    - generic [ref=e283]:
+                      - generic [ref=e284]: CMV Médio da Rede
+                      - generic [ref=e285]: 0.1%
+                    - paragraph [ref=e287]: Variação de -97.7%
+              - generic [ref=e288]:
+                - generic [ref=e289]:
+                  - generic [ref=e290]:
+                    - generic [ref=e291]: Evolução Custo
+                    - generic [ref=e292]:
+                      - generic [ref=e295]: Atual
+                      - generic [ref=e298]: Simulado
+                  - generic [ref=e299]:
+                    - switch "Somente impactadas" [ref=e300] [cursor=pointer]
+                    - generic [ref=e301] [cursor=pointer]: Somente impactadas
+                - img [ref=e306]:
+                  - generic [ref=e309]:
+                    - generic [ref=e310]:
+                      - generic [ref=e312]: "01"
+                      - generic [ref=e314]: "02"
+                      - generic [ref=e316]: "03"
+                      - generic [ref=e318]: "04"
+                      - generic [ref=e320]: "05"
+                      - generic [ref=e322]: "06"
+                      - generic [ref=e324]: "07"
+                      - generic [ref=e326]: "08"
+                      - generic [ref=e328]: "09"
+                      - generic [ref=e330]: "10"
+                      - generic [ref=e332]: "11"
+                      - generic [ref=e334]: "12"
+                      - generic [ref=e336]: "13"
+                      - generic [ref=e338]: "14"
+                      - generic [ref=e340]: "15"
+                      - generic [ref=e342]: "16"
+                      - generic [ref=e344]: "17"
+                      - generic [ref=e346]: "18"
+                      - generic [ref=e348]: "19"
+                      - generic [ref=e350]: "20"
+                      - generic [ref=e352]: "21"
+                      - generic [ref=e354]: "22"
+                      - generic [ref=e356]: "23"
+                      - generic [ref=e358]: "24"
+                      - generic [ref=e360]: "25"
+                      - generic [ref=e362]: "26"
+                      - generic [ref=e364]: "27"
+                      - generic [ref=e366]: "28"
+                      - generic [ref=e368]: "29"
+                      - generic [ref=e370]: "30"
+                      - generic [ref=e372]: "31"
+                    - generic [ref=e373]: Dia do Mês
+                  - generic [ref=e374]:
+                    - generic [ref=e375]:
+                      - generic [ref=e377]: R$ 0
+                      - generic [ref=e379]: R$ 2.5k
+                      - generic [ref=e381]: R$ 5.0k
+                      - generic [ref=e383]: R$ 7.5k
+                      - generic [ref=e385]: R$10.0k
+                    - generic [ref=e386]: Custo (R$)
+              - generic [ref=e391]:
+                - generic [ref=e392]:
+                  - generic [ref=e393]: Lojas R$ (%) impacto
+                  - img [ref=e397]:
+                    - generic [ref=e401]:
+                      - generic [ref=e403]: "0"
+                      - generic [ref=e405]: "950000"
+                      - generic [ref=e407]: "1900000"
+                      - generic [ref=e409]: "2850000"
+                      - generic [ref=e411]: "3800000"
+                    - generic [ref=e413]:
+                      - generic [ref=e415]: RJ-COPA
+                      - generic [ref=e417]: RJ-BARRA
+                  - generic [ref=e424]:
+                    - generic [ref=e427]: Positivo
+                    - generic [ref=e430]: Negativo
+                    - generic [ref=e433]: Neutro
+                - generic [ref=e434]:
+                  - generic [ref=e435]: Impacto CMV (%)
+                  - img [ref=e439]:
+                    - generic [ref=e443]:
+                      - generic [ref=e445]: "-7"
+                      - generic [ref=e447]: "-6"
+                      - generic [ref=e449]: "-5"
+                      - generic [ref=e451]: "-4"
+                      - generic [ref=e453]: "-3"
+                    - generic [ref=e455]:
+                      - generic [ref=e457]: RJ-COPA
+                      - generic [ref=e459]: RJ-BARRA
+                  - generic [ref=e466]:
+                    - generic [ref=e469]: Positivo
+                    - generic [ref=e472]: Negativo
+                    - generic [ref=e475]: Neutro
+              - generic [ref=e476]:
+                - generic [ref=e477]: Tabela de Resultados por Loja
+                - table [ref=e480]:
+                  - rowgroup [ref=e481]:
+                    - row "Loja Qtd. Vendido Fat. Atual Fat. Simulado CMV % CMV Simulado % Diferença % CMV R$ CMV Simulado R$ Diferença R$" [ref=e482]:
+                      - columnheader "Loja" [ref=e483]
+                      - columnheader "Qtd. Vendido" [ref=e484]
+                      - columnheader "Fat. Atual" [ref=e485]
+                      - columnheader "Fat. Simulado" [ref=e486]
+                      - columnheader "CMV %" [ref=e487]
+                      - columnheader "CMV Simulado %" [ref=e488]
+                      - columnheader "Diferença %" [ref=e489]
+                      - columnheader "CMV R$" [ref=e490]
+                      - columnheader "CMV Simulado R$" [ref=e491]
+                      - columnheader "Diferença R$" [ref=e492]
+                  - rowgroup [ref=e493]:
+                    - row "RJ-COPA 3.654 R$ 47.335,91 R$ 2.082.780,00 4.4% 0.1% -4.3% R$ 2.082,78 R$ 2.082,78 +R$ 0,00" [ref=e494]:
+                      - cell "RJ-COPA" [ref=e495]
+                      - cell "3.654" [ref=e496]
+                      - cell "R$ 47.335,91" [ref=e497]
+                      - cell "R$ 2.082.780,00" [ref=e498]
+                      - cell "4.4%" [ref=e499]
+                      - cell "0.1%" [ref=e500]
+                      - cell "-4.3%" [ref=e501]
+                      - cell "R$ 2.082,78" [ref=e502]
+                      - cell "R$ 2.082,78" [ref=e503]
+                      - cell "+R$ 0,00" [ref=e504]
+                    - row "RJ-BARRA 3.652 R$ 47.310,00 R$ 2.081.640,00 4.4% 0.1% -4.3% R$ 2.081,64 R$ 2.081,64 +R$ 0,00" [ref=e505]:
+                      - cell "RJ-BARRA" [ref=e506]
+                      - cell "3.652" [ref=e507]
+                      - cell "R$ 47.310,00" [ref=e508]
+                      - cell "R$ 2.081.640,00" [ref=e509]
+                      - cell "4.4%" [ref=e510]
+                      - cell "0.1%" [ref=e511]
+                      - cell "-4.3%" [ref=e512]
+                      - cell "R$ 2.081,64" [ref=e513]
+                      - cell "R$ 2.081,64" [ref=e514]
+                      - cell "+R$ 0,00" [ref=e515]
+              - generic [ref=e516]:
+                - generic [ref=e517]: Receitas Impactadas
+                - table [ref=e520]:
+                  - rowgroup [ref=e521]:
+                    - row "Receita Vendas/Mês Fat. Atual Fat. Simulado CMV % CMV Simulado % Diferença % CMV R$ CMV Simulado R$ Diferença R$" [ref=e522]:
+                      - columnheader "Receita" [ref=e523]
+                      - columnheader "Vendas/Mês" [ref=e524]
+                      - columnheader "Fat. Atual" [ref=e525]
+                      - columnheader "Fat. Simulado" [ref=e526]
+                      - columnheader "CMV %" [ref=e527]
+                      - columnheader "CMV Simulado %" [ref=e528]
+                      - columnheader "Diferença %" [ref=e529]
+                      - columnheader "CMV R$" [ref=e530]
+                      - columnheader "CMV Simulado R$" [ref=e531]
+                      - columnheader "Diferença R$" [ref=e532]
+                  - rowgroup [ref=e533]:
+                    - row "Bolo de pote de chocolate 7.306 R$ 94.978,00 R$ 7.298.694,00 4.4% 0.1% -4.3% R$ 4.164,42 R$ 4.164,42 +R$ 0,00" [ref=e534]:
+                      - cell "Bolo de pote de chocolate" [ref=e535]
+                      - cell "7.306" [ref=e536]
+                      - cell "R$ 94.978,00" [ref=e537]
+                      - cell "R$ 7.298.694,00" [ref=e538]
+                      - cell "4.4%" [ref=e539]
+                      - cell "0.1%" [ref=e540]
+                      - cell "-4.3%" [ref=e541]
+                      - cell "R$ 4.164,42" [ref=e542]
+                      - cell "R$ 4.164,42" [ref=e543]
+                      - cell "+R$ 0,00" [ref=e544]
+        - contentinfo [ref=e105]:
+          - paragraph [ref=e106]: © 2026 Prato — Inteligência de margem para restaurantes.
+    - region "Notifications alt+T"
+  - generic [ref=e545]: "-7"

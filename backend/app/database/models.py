@@ -27,6 +27,7 @@ class Produto(Base):
   unidade = Column(String)
   quantidade_referencia = Column(Float)  # ex: 500 (g)
   preco_referencia = Column(Float)       # ex: 25.00 (R$)
+  preco_venda = Column(Float, nullable=True, default=None)  # Preço de venda cadastrado manualmente
   id_produto_externo = Column(String, nullable=True, index=True)
 
   __table_args__ = (

@@ -2,28 +2,20 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { Link } from "react-router-dom"
 import { Calculator, Loader2, AlertCircle, ChevronDown, Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatBRL, formatPercent, formatNumber, formatQuantity } from "@/lib/format"
+import { formatBRL, formatPercent } from "@/lib/format"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Switch } from "@/components/ui/switch"
 import { FadeUp } from "@/components/ui/fade-up"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
-import { XAxis, YAxis, CartesianGrid, LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from "recharts"
-import { simulatorApi, vendasApi, IS_MOCK, commonApi } from "@/lib/api"
-import { ChartLegend, PageHeader } from "@/components/common"
-import type { SimulationInput, SimulationResponse, StoreInfo, VendasFiltersResponse, EvolutionResponse } from "@/lib/api"
 
-const getImpactColorClass = (value: number) => {
-  if (value > 0.0001) return "text-destructive"
-  if (value < -0.0001) return "text-brand-highlight"
-  return "text-brand-soft"
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { simulatorApi, vendasApi, IS_MOCK, commonApi } from "@/lib/api"
+import { PageHeader, StatsCard, SimulationResultTable } from "@/components/common"
+import { SimulationEvolutionChart } from "@/components/simulator/SimulationEvolutionChart"
+import { SimulationStoreCharts } from "@/components/simulator/SimulationStoreCharts"
+import type { SimulationInput, SimulationResponse, StoreInfo, VendasFiltersResponse, EvolutionResponse } from "@/lib/api"
 
 interface ProductOption {
   id: number
@@ -63,8 +55,8 @@ export default function SimulatorInsumosPage() {
   const [currentUnit, setCurrentUnit] = useState<string | null>(null)
   const [simulatedPrice, setSimulatedPrice] = useState<number | null>(null)
   const [simulatedPriceDisplay, setSimulatedPriceDisplay] = useState<string>("")
-  const [selectedMonth, setSelectedMonth] = useState<string>("2026-04")
-  const [selectedStores, setSelectedStores] = useState<string[]>(["RJ-COPA", "RJ-BARRA"])
+  const [selectedMonth, setSelectedMonth] = useState<string>("")
+  const [selectedStores, setSelectedStores] = useState<string[]>([])
 
   const [availableStores, setAvailableStores] = useState<StoreInfo[]>([])
   const [filters, setFilters] = useState<VendasFiltersResponse>(IS_MOCK ? mockFilters : { lojas: [], meses: [] })
@@ -98,12 +90,37 @@ export default function SimulatorInsumosPage() {
   }, [])
 
   useEffect(() => {
-    simulatorApi.getStores().then(setAvailableStores).catch(() => setAvailableStores(IS_MOCK ? mockStores : []))
+    simulatorApi.getStores()
+      .then((stores) => {
+        setAvailableStores(stores)
+        setSelectedStores(stores.map(s => s.store_id))
+      })
+      .catch(() => {
+        const fallback = IS_MOCK ? mockStores : []
+        setAvailableStores(fallback)
+        setSelectedStores(fallback.map(s => s.store_id))
+      })
   }, [])
 
   useEffect(() => {
     setLoadingFilters(true)
-    vendasApi.getFilters().then(setFilters).catch(() => setFilters(IS_MOCK ? mockFilters : { lojas: [], meses: [] })).finally(() => setLoadingFilters(false))
+    vendasApi.getFilters()
+      .then((res) => {
+        setFilters(res)
+        if (res.meses && res.meses.length > 0) {
+          const sorted = [...res.meses].sort()
+          setSelectedMonth(sorted[sorted.length - 1])
+        }
+      })
+      .catch(() => {
+        const fallback = IS_MOCK ? mockFilters : { lojas: [], meses: [] }
+        setFilters(fallback)
+        if (fallback.meses && fallback.meses.length > 0) {
+          const sorted = [...fallback.meses].sort()
+          setSelectedMonth(sorted[sorted.length - 1])
+        }
+      })
+      .finally(() => setLoadingFilters(false))
   }, [])
 
   useEffect(() => {
@@ -242,7 +259,7 @@ export default function SimulatorInsumosPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         breadcrumb="Análise / Simulação / Insumos"
-        title="Simulador de Custos — Insumos"
+        title="Impacto Insumo"
         description="Análise de impacto de variação de preço de insumos"
         actions={
           <div className="inline-flex rounded-sm border border-brand-line/30 overflow-hidden">
@@ -468,432 +485,63 @@ export default function SimulatorInsumosPage() {
         </FadeUp>
       ) : simulationResult ? (
         <div className="space-y-6">
-          <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6 space-y-6">
-            <h2 className="text-3xl font-semibold text-brand-soft tracking-tight">Simulação - {selectedMonth}</h2>
-            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-              <Card className="bg-brand-surface border-brand-line/10 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
-                    Impacto na Rede
-                  </CardDescription>
-                  <CardTitle className={cn(
-                      "text-2xl font-semibold tracking-tight",
-                      getImpactColorClass(simulationResult.total_network_impact)
-                  )}>
-                    {formatBRL(simulationResult.total_network_impact)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-[0.8125rem] text-brand-muted">
-                    {formatPercent(simulationResult.total_network_impact_percent)} de impacto
-                  </p>
-                </CardContent>
-              </Card>
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <StatsCard
+              label="Impacto na Rede"
+              description="Variação total no custo de produção mensal de toda a rede"
+              value={formatBRL(simulationResult.total_network_impact)}
+              variant={simulationResult.total_network_impact < -0.0001 ? "destructive" : simulationResult.total_network_impact > 0.0001 ? "highlight" : "default"}
+              subtitle={`${formatPercent(simulationResult.total_network_impact_percent)} sobre o custo atual`}
+            />
 
-              <Card className="bg-brand-surface border-brand-line/10 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
-                    Impacto Médio por Loja
-                  </CardDescription>
-                  <CardTitle className={cn(
-                      "text-2xl font-semibold tracking-tight",
-                      getImpactColorClass(simulationResult.avg_impact_per_store)
-                  )}>
-                    {formatBRL(simulationResult.avg_impact_per_store)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-[0.8125rem] text-brand-muted">
-                    {formatPercent(simulationResult.avg_impact_per_store_percent)} por loja
-                  </p>
-                </CardContent>
-              </Card>
+            <StatsCard
+              label="Média por Loja"
+              description="Variação média de custo de produção por unidade de loja"
+              value={formatBRL(simulationResult.avg_impact_per_store)}
+              variant={simulationResult.avg_impact_per_store < -0.0001 ? "destructive" : simulationResult.avg_impact_per_store > 0.0001 ? "highlight" : "default"}
+              subtitle={`${formatPercent(simulationResult.avg_impact_per_store_percent)} sobre o custo da loja`}
+            />
 
-              <Card className="bg-brand-surface border-brand-line/10 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
-                    Impacto Médio nas Receitas
-                  </CardDescription>
-                  <CardTitle className={cn(
-                      "text-2xl font-semibold tracking-tight",
-                      getImpactColorClass(simulationResult.avg_impact_per_recipe)
-                  )}>
-                    {formatBRL(simulationResult.avg_impact_per_recipe)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-[0.8125rem] text-brand-muted">
-                    {formatPercent(simulationResult.avg_impact_per_recipe_percent)} por receita
-                  </p>
-                </CardContent>
-              </Card>
+            <StatsCard
+              label="Impacto Unitário"
+              description="Variação média de custo por unidade produzida das receitas afetadas"
+              value={formatBRL(simulationResult.avg_impact_per_recipe)}
+              variant={simulationResult.avg_impact_per_recipe < -0.0001 ? "destructive" : simulationResult.avg_impact_per_recipe > 0.0001 ? "highlight" : "default"}
+              subtitle={`${formatPercent(simulationResult.avg_impact_per_recipe_percent)} no custo unitário médio`}
+            />
 
-              <Card className="bg-brand-surface border-brand-line/10 shadow-none">
-                <CardHeader className="pb-2">
-                  <CardDescription className="text-[0.75rem] uppercase tracking-wider font-medium text-brand-muted">
-                      CMV Médio da Rede
-                  </CardDescription>
-                  <CardTitle className={cn(
-                      "text-2xl font-semibold tracking-tight",
-                      getImpactColorClass(simulationResult.cmv_diff ?? 0)
-                  )}>
-                    {formatPercent(simulationResult.new_cmv ?? 0)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const cmvVar = simulationResult.current_cmv && simulationResult.current_cmv > 0
-                      ? ((simulationResult.new_cmv! / simulationResult.current_cmv) - 1) * 100
-                      : 0;
-                    return (
-                      <p className="text-[0.8125rem] text-brand-muted">
-                        Variação de {cmvVar >= 0 ? "+" : ""}{cmvVar.toFixed(1)}%
-                      </p>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            </div>
-          </Card>
+            <StatsCard
+              label="CMV Médio da Rede"
+              description="CMV% projetado após a mudança de preço do insumo"
+              value={formatPercent(simulationResult.new_cmv ?? 0)}
+              variant={(simulationResult.cmv_diff ?? 0) > 0.0001 ? "destructive" : (simulationResult.cmv_diff ?? 0) < -0.0001 ? "highlight" : "default"}
+              subtitle={`Variação de ${(simulationResult.cmv_diff ?? 0) >= 0 ? "+" : ""}${(simulationResult.cmv_diff ?? 0).toFixed(1)} p.p.`}
+            />
+          </div>
 
-          {evolutionData && (
-            <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none">
-              <CardHeader className="flex flex-row items-start justify-between pb-2">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg font-semibold text-brand-soft">Evolução Custo</CardTitle>
-                  <div className="flex gap-4 mt-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-brand-primary" />
-                      <span className="text-sm text-brand-muted">Atual</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-brand-muted" />
-                      <span className="text-sm text-brand-muted">Simulado</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 pt-1">
-                  <Switch
-                    id="impacted-only"
-                    checked={impactedOnly}
-                    onCheckedChange={setImpactedOnly}
-                    className="data-[state=checked]:bg-brand-highlight"
-                  />
-                  <label
-                    htmlFor="impacted-only"
-                    className="text-xs font-medium text-brand-soft cursor-pointer"
-                  >
-                    Somente impactadas
-                  </label>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {loadingEvolution ? (
-                  <Skeleton className="h-[240px] w-full rounded-sm" />
-                ) : evolutionData && (
-                  <ChartContainer config={{}} className="h-[240px] w-full">
-                    <LineChart
-                      data={evolutionData.daily_data
-                        .filter((d) => d.store_id === null)
-                        .map((d) => ({
-                          date: d.date.split("-").reverse().join("/"),
-                          day: d.date.split("-")[2],
-                          current: d.current_cost_total,
-                          new: d.new_cost_total,
-                        }))}
-                      margin={{ top: 20, right: 30, left: 45, bottom: 20 }}
-                    >
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
-                      <XAxis
-                         dataKey="day"
-                         axisLine={false}
-                         tickLine={false}
-                         tick={{ fontSize: 12, fill: "hsl(var(--brand-muted))" }}
-                         label={{ value: "Dia do Mês", position: "insideBottom", offset: -10, style: { fontSize: 12, fill: "hsl(var(--brand-muted))" } }}
-                       />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: "hsl(var(--brand-muted))" }}
-                        tickFormatter={(v) => {
-                          if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(1)}M`
-                          if (v >= 1000) return `R$ ${(v / 1000).toFixed(1)}k`
-                          return `R$ ${v.toFixed(0)}`
-                        }}
-                        label={{ 
-                          value: "Custo (R$)", 
-                          angle: -90, 
-                          position: "insideLeft", 
-                          offset: 0, 
-                          style: { textAnchor: 'middle', fill: "hsl(var(--brand-muted))", fontSize: 12 } 
-                        }}
-                      />
-                      <ChartTooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload
-                            return (
-                              <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-3 text-sm">
-                                <div className="font-semibold text-brand-soft mb-1">{data.date}</div>
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex justify-between gap-4">
-                                    <span className="text-brand-muted">Custo Atual:</span>
-                                    <span className="font-medium text-brand-primary">{formatBRL(data.current)}</span>
-                                  </div>
-                                  <div className="flex justify-between gap-4">
-                                    <span className="text-brand-muted">Custo Simulado:</span>
-                                    <span className="font-medium text-brand-muted">{formatBRL(data.new)}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="current"
-                        stroke="hsl(var(--brand-primary))"
-                        strokeWidth={3}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="new"
-                        stroke="hsl(var(--brand-muted))"
-                        strokeWidth={3}
-                        strokeDasharray="5 5"
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ChartContainer>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          <SimulationEvolutionChart
+            evolutionData={evolutionData}
+            loadingEvolution={loadingEvolution}
+            impactedOnly={impactedOnly}
+            setImpactedOnly={setImpactedOnly}
+          />
 
-          {simulationResult.store_ranking.length > 0 && (
-            <div className="grid xl:grid-cols-2 gap-6">
-              <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
-                <CardTitle className="mb-6">Lojas R$ (%) impacto</CardTitle>
-                <div className="h-[400px] w-full overflow-y-auto">
-                    <ResponsiveContainer width="100%" height={(simulationResult.store_chart_data?.length || 0) > 10 ? (simulationResult.store_chart_data?.length || 0) * 40 : "100%"}>
-                        <BarChart 
-                            layout="vertical"
-                            data={(simulationResult.store_chart_data || []).map(s => ({
-                              name: s.store_id,
-                              "Impacto R$": s.impacto_r,
-                              "Impacto %": s.impacto_percent,
-                            }))}
-                            margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-                        >
-                            <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
-                            <XAxis 
-                                type="number" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
-                            />
-                            <YAxis 
-                                dataKey="name" 
-                                type="category" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
-                                width={80}
-                            />
-                            <ChartTooltip 
-                                content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                        const data = payload[0].payload;
-                                        return (
-                                            <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-2 text-[10px]">
-                                                <div className="font-bold mb-1">{data.name}</div>
-                                                <div>Impacto R$: {formatBRL(data["Impacto R$"])}</div>
-                                                <div>Impacto %: {formatPercent(data["Impacto %"])}</div>
-                                            </div>
-                                        )
-                                    }
-                                    return null;
-                                }}
-                            />
-                            <Bar 
-                                dataKey="Impacto R$" 
-                                radius={[0, 4, 4, 0]}
-                            >
-                                {(simulationResult.store_chart_data || []).map((entry, index) => (
-                                    <Cell key={index} fill={entry.impacto_r$ > 0 ? "hsl(var(--destructive))" : entry.impacto_r$ < 0 ? "hsl(var(--brand-highlight))" : "hsl(var(--brand-muted))"} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-                <ChartLegend />
-              </Card>
+          <SimulationStoreCharts simulationResult={simulationResult} />
 
-              <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
-                <CardTitle className="mb-6">Impacto CMV (%)</CardTitle>
-                <div className="h-[400px] w-full overflow-y-auto">
-                    <ResponsiveContainer width="100%" height={(simulationResult.store_chart_data?.length || 0) > 10 ? (simulationResult.store_chart_data?.length || 0) * 40 : "100%"}>
-                        <BarChart 
-                            layout="vertical"
-                            data={(simulationResult.store_chart_data || []).map(s => ({
-                              name: s.store_id,
-                              "CMV Atual": s.cmv_atual,
-                              "CMV Simulado": s.cmv_simulado,
-                              "Variação %": s.variacao_pp,
-                            }))}
-                            margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-                        >
-                            <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="hsla(var(--brand-line), 0.2)" />
-                            <XAxis 
-                                type="number" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
-                            />
-                            <YAxis 
-                                dataKey="name" 
-                                type="category" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fill: "hsl(var(--brand-muted))" }}
-                                width={80}
-                            />
-                            <ChartTooltip 
-                                content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                        const data = payload[0].payload;
-                                        return (
-                                            <div className="bg-brand-surface border border-brand-line/40 shadow-xl rounded-sm p-2 text-[10px]">
-                                                <div className="font-bold mb-1">{data.name}</div>
-                                                <div>CMV Atual: {formatPercent(data["CMV Atual"])}</div>
-                                                <div>CMV Simulado: {formatPercent(data["CMV Simulado"])}</div>
-                                                <div className={cn("font-bold mt-1", getImpactColorClass(data["Variação %"]))}>
-                                                  Variação: {data["Variação %"] >= 0 ? "+" : ""}{data["Variação %"].toFixed(1)}pp
-                                                </div>
-                                            </div>
-                                        )
-                                    }
-                                    return null;
-                                }}
-                            />
-                            <Bar dataKey="Variação %" radius={[0, 4, 4, 0]}>
-                                {(simulationResult.store_chart_data || []).map((entry, index) => (
-                                    <Cell key={index} fill={entry.variacao_pp > 0 ? "hsl(var(--destructive))" : entry.variacao_pp < 0 ? "hsl(var(--brand-highlight))" : "hsl(var(--brand-muted))"} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-                <ChartLegend />
-              </Card>
-            </div>
-          )}
-
-          <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
-            <CardTitle className="text-lg font-semibold mb-4">Tabela de Resultados por Loja</CardTitle>
-            <div className="[&>div]:max-h-[440px] [&>div]:overflow-y-auto pr-2 -mr-2">
-              <Table>
-                <TableHeader className="sticky top-0 bg-brand-surface-2 z-10 shadow-sm shadow-brand-line/10">
-                  <TableRow className="border-brand-line/20 hover:bg-transparent">
-                    <TableHead className="text-brand-muted font-medium bg-brand-surface-2">Loja</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Qtd. Vendido</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Qtd. Insumo</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Fat. Atual</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV %</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV Simulado %</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Diferença %</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV R$</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV Simulado R$</TableHead>
-                    <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Diferença R$</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(simulationResult.store_table_data || simulationResult.store_ranking.map(s => ({ ...s, revenue_current: 0, revenue_simulated: 0 }))).map((store: any) => {
-                    const costDiff = store.total_new_cost - store.total_current_cost;
-                    return (
-                      <TableRow key={store.store_id} className="border-brand-line/20">
-                        <TableCell className="font-medium text-brand-soft">{store.store_id}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatNumber(store.monthly_sales_quantity)}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatQuantity(store.ingredient_quantity, currentUnit ?? undefined)}</TableCell>
-                        <TableCell className="text-brand-muted text-right text-xs whitespace-nowrap">{formatBRL(store.revenue_current)}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(store.current_cmv)}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(store.new_cmv)}</TableCell>
-                        <TableCell className={cn(
-                          "text-right font-bold text-xs whitespace-nowrap",
-                          getImpactColorClass(store.cmv_diff ?? 0)
-                        )}>
-                          {(store.cmv_diff ?? 0) >= 0 ? "+" : ""}{(store.cmv_diff ?? 0).toFixed(1)}%
-                        </TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(store.total_current_cost)}</TableCell>
-                        <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(store.total_new_cost)}</TableCell>
-                        <TableCell className={cn(
-                          "text-right font-bold text-xs whitespace-nowrap",
-                          getImpactColorClass(costDiff)
-                        )}>
-                          {costDiff >= 0 ? "+" : ""}{formatBRL(costDiff)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
+          <SimulationResultTable
+            title="Tabela de Resultados por Loja"
+            type="insumo"
+            currentUnit={currentUnit}
+            data={simulationResult.store_table_data || simulationResult.store_ranking.map(s => ({ ...s, revenue_current: 0, revenue_simulated: 0 }))}
+          />
 
           {(simulationResult.recipe_table_data && simulationResult.recipe_table_data.length > 0) && (
-            <Card className="bg-brand-surface-2 border-brand-line/20 shadow-none p-6">
-              <CardTitle className="text-lg font-semibold mb-4">Receitas Impactadas</CardTitle>
-              <div className="[&>div]:max-h-[440px] [&>div]:overflow-y-auto pr-2 -mr-2">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-brand-surface-2 z-10 shadow-sm shadow-brand-line/10">
-                    <TableRow className="border-brand-line/20 hover:bg-transparent">
-                      <TableHead className="text-brand-muted font-medium bg-brand-surface-2">Receita</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Vendas/Mês</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Qtd. Insumo</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Fat. Atual</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV %</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV Simulado %</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Diferença %</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV R$</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">CMV Simulado R$</TableHead>
-                      <TableHead className="text-brand-muted font-medium text-right bg-brand-surface-2">Diferença R$</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {simulationResult.results.map((item) => {
-                      const rt = simulationResult.recipe_table_data?.find(r => r.recipe_id === item.recipe_id);
-                      return (
-                        <TableRow key={item.recipe_id} className="border-brand-line/20">
-                          <TableCell className="font-medium text-brand-soft">{item.recipe_name}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatNumber(item.monthly_sales_quantity)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatQuantity(item.ingredient_quantity, currentUnit ?? undefined)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(item.monthly_revenue_current)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(item.current_cmv ?? 0)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatPercent(item.new_cmv ?? 0)}</TableCell>
-                          <TableCell className={cn(
-                            "text-right font-bold text-xs whitespace-nowrap",
-                            getImpactColorClass(item.cmv_diff ?? 0)
-                          )}>
-                            {(item.cmv_diff ?? 0) >= 0 ? "+" : ""}{(item.cmv_diff ?? 0).toFixed(1)}%
-                          </TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(rt?.cmv_atual_rs || 0)}</TableCell>
-                          <TableCell className="text-brand-soft text-right text-xs whitespace-nowrap">{formatBRL(rt?.cmv_simulado_rs || 0)}</TableCell>
-                          <TableCell className={cn(
-                              "text-right font-bold text-xs whitespace-nowrap",
-                              getImpactColorClass(rt?.dif_custo_rs || 0)
-                          )}>
-                            {(rt?.dif_custo_rs || 0) >= 0 ? "+" : ""}{formatBRL(rt?.dif_custo_rs || 0)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
+            <SimulationResultTable
+              title="Receitas Impactadas"
+              type="insumo"
+              currentUnit={currentUnit}
+              data={simulationResult.recipe_table_data}
+            />
           )}
         </div>
       ) : (

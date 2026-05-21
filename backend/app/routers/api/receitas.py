@@ -61,6 +61,7 @@ async def editReceita(receita_id: int, payload: EditReceitaModel, session: DbSes
             payload.id_produto_externo,
             'id_produto_externo' in payload.model_fields_set,
             payload.componentes,
+            payload.preco_venda,
         )
         await produto_service.recompute_recipe_cost(receita_id)
 
