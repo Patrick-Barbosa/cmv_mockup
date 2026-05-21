@@ -1,9 +1,9 @@
-export function formatBRL(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+export function formatBRL(value: number | undefined | null): string {
+  return (value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
-export function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`
+export function formatPercent(value: number | undefined | null): string {
+  return `${((value ?? 0) * 100).toFixed(1)}%`
 }
 
 export function formatNumber(value: number): string {

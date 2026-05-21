@@ -337,7 +337,7 @@ export default function Insumos() {
         onSave={handleSalvar}
         saving={saving}
         disabled={!nome || !unidade || !parsedQtd || parsedPreco === null}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           setIsDialogOpen(open)
           if (!open) handleClear()
         }}
