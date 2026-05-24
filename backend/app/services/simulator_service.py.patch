@@ -1,0 +1,164 @@
+--- backend/app/services/simulator_service.py
++++ backend/app/services/simulator_service.py
+@@ -107,6 +107,131 @@
+         # Ranking de lojas para calcular impactos reais
+         store_ranking = await self._calculate_store_ranking(results, input_data.store_ids)
+ 
++    async def get_simulated_costs_map(self, input_data: SimulationInput) -> Dict[int, Dict[str, float]]:
++        """
++        Calcula os custos atuais e simulados para todas as receitas impactadas.
++        Retorna um dicionário {recipe_id: {current_cost, new_cost, current_price, new_price}}
++        """
++        costs_map = {}
++        
++        if input_data.type == "price_change":
++            ingredient = await self._get_ingredient(input_data.ingredient_id)
++            if not ingredient:
++                return {}
++                
++            current_price = ingredient.custo or 0
++            new_price = calculate_new_price(current_price, input_data.change_type, input_data.change_value)
++            
++            # Buscar TODAS as receitas que usam este insumo (direta ou indiretamente)
++            affected_recipes = await self._get_recipes_using_ingredient(input_data.ingredient_id)
++            
++            for recipe in affected_recipes:
++                c_cost = recipe.custo or 0
++                qty = await self._get_ingredient_total_quantity(recipe.id, input_data.ingredient_id)
++                delta = (new_price - current_price) * qty
++                n_cost = c_cost + delta
++                
++                c_sale = await self._get_product_sale_price(recipe)
++                n_sale = c_sale # Price change for ingredient doesn't change recipe sale price
++                
++                costs_map[recipe.id] = {
++                    "current_cost": c_cost,
++                    "new_cost": n_cost,
++                    "current_price": c_sale,
++                    "new_price": n_sale
++                }
++                
++        elif input_data.type == "recipe_change":
++            recipe = await self._get_recipe(input_data.recipe_id)
++            if not recipe:
++                return {}
++                
++            current_cost = await self._calculate_recipe_cost_from_db(recipe.id)
++            new_cost = await self._calculate_recipe_cost_from_components(input_data.novos_componentes or [])
++            delta_cost = new_cost - current_cost
++            
++            current_sale = await self._get_product_sale_price(recipe)
++            new_sale = calculate_new_price(current_sale, input_data.change_type, input_data.change_value)
++            
++            costs_map[recipe.id] = {
++                "current_cost": current_cost,
++                "new_cost": new_cost,
++                "current_price": current_sale,
++                "new_price": new_sale
++            }
++            
++            # Propagar para receitas PAI
++            parent_recipes = await self._get_all_recipes_using_component(recipe.id)
++            for parent in parent_recipes:
++                if parent.id == recipe.id: continue
++                
++                p_c_cost = parent.custo or 0
++                recipe_qty = await self._get_ingredient_total_quantity(parent.id, recipe.id)
++                p_delta = delta_cost * recipe_qty
++                p_n_cost = p_c_cost + p_delta
++                
++                p_c_sale = await self._get_product_sale_price(parent)
++                p_n_sale = p_c_sale
++                
++                costs_map[parent.id] = {
++                    "current_cost": p_c_cost,
++                    "new_cost": p_n_cost,
++                    "current_price": p_c_sale,
++                    "new_price": p_n_sale
++                }
++                
++        return costs_map
++
++    async def get_daily_evolution(
++        self,
++        input_data: SimulationInput,
++        month: str,
++        impacted_only: bool = False
++    ) -> SimulationEvolutionResponse:
++        year, month_num = map(int, month.split('-'))
++        _, last_day = monthrange(year, month_num)
++        
++        # Calcular custos simulados
++        costs_map = await self.get_simulated_costs_map(input_data)
++        affected_recipe_ids = set(costs_map.keys())
++        
++        # Buscar IDs externos das receitas afetadas
++        recipe_ext_ids = {}
++        if affected_recipe_ids:
++            res = await self.session.execute(
++                select(Produto.id, Produto.id_produto_externo).where(Produto.id.in_(list(affected_recipe_ids)))
++            )
++            recipe_ext_ids = {row.id_produto_externo: row.id for row in res.all() if row.id_produto_externo}
++
++        # Buscar TODAS as vendas do mês
++        start_date = date(year, month_num, 1)
++        end_date = date(year, month_num, last_day)
++        
++        sales_query = select(
++            Venda.data,
++            Venda.id_produto,
++            Venda.id_loja,
++            func.sum(Venda.quantidade_produto).label('quantity'),
++            func.sum(Venda.valor_total).label('revenue')
++        ).where(
++            Venda.data >= start_date,
++            Venda.data <= end_date
++        )
++        
++        if input_data.store_ids:
++            sales_query = sales_query.where(Venda.id_loja.in_(input_data.store_ids))
++            
++        if impacted_only:
++            sales_query = sales_query.where(Venda.id_produto.in_(list(recipe_ext_ids.keys())))
++            
++        sales_query = sales_query.group_by(Venda.data, Venda.id_produto, Venda.id_loja)
++        result = await self.session.execute(sales_query)
++        sales_rows = result.all()
++        
++        # Agrupar por dia
++        daily_agg = {}
++        for row in sales_rows:
++            d = row.data.day
++            if d not in daily_agg:
++                daily_agg[d] = {"current_cost": 0, "new_cost": 0, "current_rev": 0, "new_rev": 0, "qty": 0}
++            
++            ext_id = row.id_produto
++            qty = float(row.quantity or 0)
++            rev = float(row.revenue or 0)
++            
++            daily_agg[d]["qty"] += qty
++            daily_agg[d]["current_rev"] += rev
++            
++            if ext_id in recipe_ext_ids:
++                rid = recipe_ext_ids[ext_id]
++                sim = costs_map[rid]
++                daily_agg[d]["current_cost"] += qty * sim["current_cost"]
++                daily_agg[d]["new_cost"] += qty * sim["new_cost"]
++                # Se o preço de venda mudou (apenas para recipe_change no simulador)
++                if sim["new_price"] != sim["current_price"] and sim["current_price"] > 0:
++                    daily_agg[d]["new_rev"] += rev * (sim["new_price"] / sim["current_price"])
++                else:
++                    daily_agg[d]["new_rev"] += rev
++            else:
++                # Não afetado
++                # Para custo não afetado, precisamos do custo original do banco se impacted_only=false
++                # Mas o current_cost original do banco não está no costs_map.
++                # Vamos simplificar: se não está no costs_map e impacted_only=false,
++                # o custo não muda, mas precisamos saber qual era o custo.
++                if not impacted_only:
++                    # Isto requer buscar o custo de TODAS as receitas do banco.
++                    # Vou otimizar isso depois.
++                    pass
++
++        # Reconstruir o retorno daily_data
++        # ... (Vou escrever o código final no replace)

@@ -53,7 +53,7 @@ export default function Landing() {
               to="/login"
               className="bg-brand-primary text-brand-button-text font-medium text-sm tracking-wide px-7 py-3.5 rounded-sm transition-all duration-200 hover:bg-brand-primary-hover hover:shadow-[0_0_18px_rgba(201,76,182,0.18),0_0_6px_rgba(94,111,55,0.25)] flex items-center justify-center"
             >
-              Solicitar acesso antecipado
+              Acessar Plataforma
             </Link>
             <button
               id="hero-cta-funcionamento"

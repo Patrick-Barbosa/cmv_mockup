@@ -60,7 +60,7 @@ Todas as chamadas ao backend devem passar pelo `apiFetch`.
 ## 🔄 Manutenção da Documentação
 
 ### Atualizando `agent_knowledge/` (Desta pasta)
--   **UI/UX:** Se mudar o design system, atualize `agent_knowledge/DESIGN.md` e `agent_knowledge/style.md`.
+-   **UI/UX:** Se mudar o design system, atualize `agent_knowledge/DESIGN.md` and `agent_knowledge/style.md`.
 -   **Negócio:** Se mudar o fluxo de cálculo de CMV no frontend, atualize `orientations.md`.
 
 ---

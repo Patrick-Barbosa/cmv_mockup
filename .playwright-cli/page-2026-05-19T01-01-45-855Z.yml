@@ -1,0 +1,141 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - link:
+            - /url: /
+            - generic:
+              - img
+            - generic: Prato
+        - navigation:
+          - paragraph: Operação
+          - link:
+            - /url: /insumos
+            - img
+            - text: Insumos
+          - link:
+            - /url: /receitas
+            - img
+            - text: Receitas
+          - link:
+            - /url: /vendas
+            - img
+            - text: Vendas
+          - link:
+            - /url: /vendas/ausentes
+            - img
+            - text: SKUs não vinculados
+          - paragraph: Análise
+          - link:
+            - /url: /lojas
+            - img
+            - text: Lojas
+          - link:
+            - /url: /dashboard
+            - img
+            - text: CMV
+          - paragraph: Simuladores
+          - link:
+            - /url: /simulator/insumos
+            - img
+            - text: Impacto Insumo
+          - link:
+            - /url: /simulator/receitas
+            - img
+            - text: Impacto Receita
+          - generic:
+            - img
+            - text: Margem
+        - generic:
+          - paragraph: Acesso antecipado
+          - button:
+            - img
+      - generic:
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - paragraph: Análise / Simulação / Insumos
+                - heading [level=1]: Simulador de Custos — Insumos
+                - paragraph: Análise de impacto de variação de preço de insumos
+              - generic:
+                - generic:
+                  - link:
+                    - /url: /simulator/insumos
+                    - text: Insumos
+                  - link:
+                    - /url: /simulator/receitas
+                    - text: Receitas
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Insumo
+                    - combobox:
+                      - text: Selecione...
+                      - img
+                  - generic:
+                    - generic: Custo Atual
+                    - textbox [disabled]
+                  - generic:
+                    - generic: Custo Simulado
+                    - generic:
+                      - generic: R$
+                      - textbox:
+                        - /placeholder: "Ex: 18,00"
+                        - text: "999"
+                - generic:
+                  - generic:
+                    - generic: Mês Simulação
+                    - combobox [expanded]:
+                      - generic: 2026-04
+                      - img
+                  - generic:
+                    - generic: Lojas Selecionadas
+                    - generic:
+                      - button:
+                        - generic: 2 lojas selecionadas
+                        - img
+                - generic:
+                  - button [disabled]:
+                    - img
+                    - text: Simular Impacto
+                  - generic: Selecione um insumo e defina o valor da mudança
+            - generic:
+              - img
+              - paragraph: Pronto para simular
+              - paragraph: Configure os parâmetros e clique em "Simular Impacto" para ver os resultados.
+        - contentinfo:
+          - paragraph: © 2026 Prato — Inteligência de margem para restaurantes.
+    - region "Notifications alt+T"
+  - listbox [ref=e142]:
+    - option "2026-05" [ref=e143]:
+      - generic [ref=e145]: 2026-05
+    - option "2026-04" [active] [selected] [ref=e146]:
+      - img [ref=e149]
+      - generic [ref=e151]: 2026-04
+    - option "2026-03" [ref=e152]:
+      - generic [ref=e154]: 2026-03
+    - option "2026-02" [ref=e155]:
+      - generic [ref=e157]: 2026-02
+    - option "2026-01" [ref=e158]:
+      - generic [ref=e160]: 2026-01
+    - option "2025-12" [ref=e161]:
+      - generic [ref=e163]: 2025-12
+    - option "2025-11" [ref=e164]:
+      - generic [ref=e166]: 2025-11
+    - option "2025-10" [ref=e167]:
+      - generic [ref=e169]: 2025-10
+    - option "2025-09" [ref=e170]:
+      - generic [ref=e172]: 2025-09
+    - option "2025-08" [ref=e173]:
+      - generic [ref=e175]: 2025-08
+    - option "2025-07" [ref=e176]:
+      - generic [ref=e178]: 2025-07
+    - option "2025-06" [ref=e179]:
+      - generic [ref=e181]: 2025-06
+    - option "2025-05" [ref=e182]:
+      - generic [ref=e184]: 2025-05
+    - option "2025-04" [ref=e185]:
+      - generic [ref=e187]: 2025-04

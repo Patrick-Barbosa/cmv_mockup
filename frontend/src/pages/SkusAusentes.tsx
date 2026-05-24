@@ -1,29 +1,26 @@
 import { useEffect, useState } from "react"
-import { AlertCircle, ArrowLeft, Check, ChevronRight, Loader2, Search, Unlink, Link2 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Check, ChevronRight, Loader2, Search, Unlink, Link2 } from "lucide-react"
 import { FadeUp } from "@/components/ui/fade-up"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { motion, AnimatePresence } from "framer-motion"
+import {
+  PageHeader,
+  ErrorAlert,
+  StatsSidebar,
+} from "@/components/common"
 import { vendasApi, commonApi, insumosApi, receitasApi, IS_MOCK } from "@/lib/api"
 import type { SkuAusente } from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
-// MOCK DATA
 const MOCK_SKUS: SkuAusente[] = [
-  { id_produto_externo: "SKU-XPTO-001", quantidade_total: 150, valor_total: 4500.50, vendas_count: 12 },
-  { id_produto_externo: "SKU-BACON-PREMIUM", quantidade_total: 85, valor_total: 2125.00, vendas_count: 45 },
-  { id_produto_externo: "REFRI-LATA-350", quantidade_total: 1200, valor_total: 7200.00, vendas_count: 310 },
-  { id_produto_externo: "SAUCE-SPECIAL-01", quantidade_total: 40, valor_total: 160.00, vendas_count: 8 },
+  { id_produto_externo: "SKU-XPTO-001", quantidade_total: 150, valor_total: 4500.5, vendas_count: 12 },
+  { id_produto_externo: "SKU-BACON-PREMIUM", quantidade_total: 85, valor_total: 2125.0, vendas_count: 45 },
+  { id_produto_externo: "REFRI-LATA-350", quantidade_total: 1200, valor_total: 7200.0, vendas_count: 310 },
+  { id_produto_externo: "SAUCE-SPECIAL-01", quantidade_total: 40, valor_total: 160.0, vendas_count: 8 },
 ]
 
 interface SkuRowProps {
@@ -37,53 +34,44 @@ function SkuRow({ sku, onAssociate }: SkuRowProps) {
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ 
-        height: 0, 
+      exit={{
+        height: 0,
         opacity: 0,
-        transition: { 
+        transition: {
           height: { delay: 0.35, duration: 0.3, ease: "circOut" },
-          opacity: { duration: 0.2 }
-        }
+          opacity: { duration: 0.2 },
+        },
       }}
       className="border-none group overflow-hidden"
     >
       <td colSpan={5} className="p-0 border-none">
         <motion.div
-          exit={{ 
+          exit={{
             clipPath: "inset(0 100% 0 0)",
-            transition: { duration: 0.4, ease: [0.4, 0, 0.6, 1] } 
+            transition: { duration: 0.4, ease: [0.4, 0, 0.6, 1] },
           }}
-          style={{ 
-            display: "table", 
-            width: "100%", 
+          style={{
+            display: "table",
+            width: "100%",
             tableLayout: "fixed",
-            clipPath: "inset(0 0% 0 0)"
+            clipPath: "inset(0 0% 0 0)",
           }}
         >
           <div style={{ display: "table-row" }}>
             <div className="table-cell px-6 py-4 align-middle border-b border-brand-line/10 w-[35%] text-brand-text font-medium text-[0.82rem]">
               {sku.id_produto_externo}
             </div>
-            
             <div className="table-cell px-6 py-4 align-middle border-b border-brand-line/10 w-[15%] text-brand-muted text-[0.82rem] tabular-nums">
               {sku.vendas_count}
             </div>
-
             <div className="table-cell px-6 py-4 align-middle border-b border-brand-line/10 w-[20%] text-brand-muted text-[0.82rem] tabular-nums">
               {sku.quantidade_total.toLocaleString()}
             </div>
-
             <div className="table-cell px-6 py-4 align-middle border-b border-brand-line/10 w-[20%] text-brand-highlight text-[0.82rem] tabular-nums font-semibold">
-              {sku.valor_total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              {sku.valor_total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             </div>
-
             <div className="table-cell px-6 py-4 align-middle border-b border-brand-line/10 text-right w-[10%]">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onAssociate(sku)}
-                className="h-8 w-8 text-brand-muted hover:text-brand-highlight transition-colors rounded-[2px]"
-              >
+              <Button size="sm" variant="ghost" onClick={() => onAssociate(sku)} className="h-8 w-8 text-brand-muted hover:text-brand-highlight transition-colors rounded-[2px]">
                 <Link2 className="w-4 h-4" />
               </Button>
             </div>
@@ -99,8 +87,7 @@ export default function SkusAusentes() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set())
-  
-  // Association Dialog State
+
   const [selectedSku, setSelectedSku] = useState<SkuAusente | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [products, setProducts] = useState<{ id: number; text: string; tipo: string }[]>([])
@@ -124,7 +111,7 @@ export default function SkusAusentes() {
     setLoading(true)
     try {
       if (IS_MOCK) {
-        await new Promise(resolve => setTimeout(resolve, 800))
+        await new Promise((resolve) => setTimeout(resolve, 800))
         setSkus(MOCK_SKUS)
       } else {
         const response = await vendasApi.getSkusAusentes()
@@ -157,11 +144,11 @@ export default function SkusAusentes() {
 
   const handleAssociate = async (produto: { id: number; text: string; tipo: string }) => {
     if (!selectedSku) return
-    
+
     setAssociating(true)
     try {
       const idExterno = selectedSku.id_produto_externo
-      
+
       if (!IS_MOCK) {
         if (produto.tipo.toLowerCase() === "insumo") {
           await insumosApi.edit(produto.id, { id_produto_externo: idExterno })
@@ -169,10 +156,9 @@ export default function SkusAusentes() {
           await receitasApi.edit(produto.id, { id_produto_externo: idExterno })
         }
       } else {
-        await new Promise(resolve => setTimeout(resolve, 600))
+        await new Promise((resolve) => setTimeout(resolve, 600))
       }
-      
-      // TOAST NO ESTILO PRATO AJUSTADO
+
       toast.success(`Vínculo realizado: ${idExterno}`, {
         description: `Mapeado para ${produto.text}.`,
         style: {
@@ -185,8 +171,8 @@ export default function SkusAusentes() {
         },
         descriptionClassName: "text-[#F5F4EE]/80 text-[0.7rem] block mt-0.5",
       })
-      
-      setRemovingIds(prev => new Set(prev).add(idExterno))
+
+      setRemovingIds((prev) => new Set(prev).add(idExterno))
       setSelectedSku(null)
     } catch (e) {
       toast.error("Erro na associação", {
@@ -197,41 +183,27 @@ export default function SkusAusentes() {
     }
   }
 
-  // Filtragem local para permitir que o AnimatePresence gerencie a saída
-  const displaySkus = skus.filter(s => !removingIds.has(s.id_produto_externo))
+  const displaySkus = skus.filter((s) => !removingIds.has(s.id_produto_externo))
   const pendentesCount = displaySkus.length
 
   return (
     <FadeUp>
-      <div className="mb-10 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Link to="/vendas" className="text-brand-muted hover:text-brand-highlight transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium">Operação / Vendas / SKUs não vinculados</p>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight text-brand-text">Vincular Produtos de Venda</h1>
-          <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">
-            Mapeie os identificadores das suas vendas para os insumos e receitas cadastrados no Prato.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        breadcrumb="Operação / Vendas / SKUs não vinculados"
+        title="Vincular Produtos de Venda"
+        description="Mapeie os identificadores das suas vendas para os insumos e receitas cadastrados no Prato."
+      />
 
-      {error && (
-        <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-sm px-4 py-3 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-          <p className="text-red-400 text-xs">{error}</p>
-          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-300 text-xs">×</button>
-        </div>
-      )}
+      <ErrorAlert error={error} onDismiss={() => setError(null)} />
 
       <div className="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
         <div className="flex flex-col gap-6">
           <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden shadow-sm">
             <div className="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between bg-brand-line/5">
               <h2 className="text-brand-soft text-sm font-medium">Produtos identificados sem vínculo</h2>
-              <span className="text-brand-muted text-[0.65rem] font-bold uppercase tracking-wider tabular-nums">{pendentesCount} itens restantes</span>
+              <span className="text-brand-muted text-[0.65rem] font-bold uppercase tracking-wider tabular-nums">
+                {pendentesCount} itens restantes
+              </span>
             </div>
 
             <div className="min-h-[400px]">
@@ -246,10 +218,12 @@ export default function SkusAusentes() {
                     <Check className="w-6 h-6 text-brand-highlight" />
                   </div>
                   <p className="text-brand-text font-semibold text-lg mb-1 tracking-tight">Base mapeada!</p>
-                  <p className="text-brand-muted text-xs whitespace-nowrap leading-relaxed">Não encontramos SKUs pendentes de vinculação nos seus arquivos.</p>
+                  <p className="text-brand-muted text-xs whitespace-nowrap leading-relaxed">
+                    Não encontramos SKUs pendentes de vinculação nos seus arquivos.
+                  </p>
                 </div>
               ) : (
-                <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+                <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
                   <thead>
                     <tr className="text-brand-muted text-[0.72rem] tracking-[0.08em] uppercase border-b border-brand-line/20 bg-brand-line/5">
                       <th className="px-6 py-3 text-left font-medium w-[35%]">Identificação SKU</th>
@@ -261,13 +235,11 @@ export default function SkusAusentes() {
                   </thead>
                   <tbody>
                     <AnimatePresence initial={false} mode="popLayout">
-                      {skus.filter(s => !removingIds.has(s.id_produto_externo)).map(sku => (
-                        <SkuRow
-                          key={sku.id_produto_externo}
-                          sku={sku}
-                          onAssociate={setSelectedSku}
-                        />
-                      ))}
+                      {skus
+                        .filter((s) => !removingIds.has(s.id_produto_externo))
+                        .map((sku) => (
+                          <SkuRow key={sku.id_produto_externo} sku={sku} onAssociate={setSelectedSku} />
+                        ))}
                     </AnimatePresence>
                   </tbody>
                 </table>
@@ -276,15 +248,11 @@ export default function SkusAusentes() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
-            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Pendências</p>
-            <p className="text-brand-highlight text-3xl font-light tabular-nums">
-              {pendentesCount}
-            </p>
-            <p className="text-brand-muted text-xs mt-1">aguardando vínculo</p>
-          </div>
-
+        <StatsSidebar
+          stats={[
+            { label: "Pendências", value: pendentesCount, subtitle: "aguardando vínculo" },
+          ]}
+        >
           <div className="bg-brand-surface border border-brand-line/15 rounded-[2px] p-5">
             <div className="flex items-start gap-3">
               <Unlink className="w-4 h-4 text-brand-highlight mt-0.5 shrink-0" />
@@ -296,7 +264,7 @@ export default function SkusAusentes() {
               </div>
             </div>
           </div>
-        </div>
+        </StatsSidebar>
       </div>
 
       <Dialog open={!!selectedSku} onOpenChange={(open) => !open && setSelectedSku(null)}>
@@ -331,7 +299,7 @@ export default function SkusAusentes() {
                   {searching ? "Buscando..." : searchQuery ? "Resultados da busca" : "Folhear itens cadastrados"}
                 </span>
               </div>
-              
+
               <ScrollArea className="h-[300px]">
                 <div className="p-2 flex flex-col gap-1">
                   {products.length === 0 && !searching && (
@@ -339,7 +307,7 @@ export default function SkusAusentes() {
                       <p className="text-brand-muted text-sm italic">Nenhum produto encontrado.</p>
                     </div>
                   )}
-                  
+
                   {products.map((item) => (
                     <button
                       key={`${item.tipo}-${item.id}`}
@@ -351,12 +319,14 @@ export default function SkusAusentes() {
                         <span className="text-[0.82rem] font-medium text-brand-text group-hover:text-brand-highlight transition-colors">
                           {item.text}
                         </span>
-                        <span className={cn(
-                          "text-[0.62rem] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-[2px] w-fit",
-                          item.tipo.toLowerCase() === 'insumo' 
-                            ? "bg-brand-primary/10 text-brand-primary" 
-                            : "bg-brand-highlight/10 text-brand-highlight"
-                        )}>
+                        <span
+                          className={cn(
+                            "text-[0.62rem] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-[2px] w-fit",
+                            item.tipo.toLowerCase() === "insumo"
+                              ? "bg-brand-primary/10 text-brand-primary"
+                              : "bg-brand-highlight/10 text-brand-highlight"
+                          )}
+                        >
                           {item.tipo}
                         </span>
                       </div>
@@ -369,11 +339,7 @@ export default function SkusAusentes() {
           </div>
 
           <div className="flex justify-end mt-8">
-            <Button 
-              variant="ghost" 
-              onClick={() => setSelectedSku(null)} 
-              className="text-brand-muted hover:text-brand-soft mr-auto"
-            >
+            <Button variant="ghost" onClick={() => setSelectedSku(null)} className="text-brand-muted hover:text-brand-soft mr-auto">
               Cancelar
             </Button>
             {associating && (

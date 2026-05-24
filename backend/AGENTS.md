@@ -45,7 +45,7 @@ Este diretório contém guias detalhados que devem ser lidos por agentes antes d
 
 ---
 
-## 📚 Onde encontrar informações?
+## 🚀 Onde encontrar informações?
 
 | Se você precisa de... | Consulte este arquivo |
 | :--- | :--- |

@@ -1,0 +1,218 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - link:
+            - /url: /
+            - generic:
+              - img
+            - generic: Prato
+        - navigation:
+          - paragraph: Operação
+          - link:
+            - /url: /insumos
+            - img
+            - text: Insumos
+          - link:
+            - /url: /receitas
+            - img
+            - text: Receitas
+          - link:
+            - /url: /vendas
+            - img
+            - text: Vendas
+          - link:
+            - /url: /vendas/ausentes
+            - img
+            - text: SKUs não vinculados
+          - paragraph: Análise
+          - link:
+            - /url: /lojas
+            - img
+            - text: Lojas
+          - link:
+            - /url: /dashboard
+            - img
+            - text: CMV
+          - paragraph: Simuladores
+          - link:
+            - /url: /simulator/insumos
+            - img
+            - text: Impacto Insumo
+          - link:
+            - /url: /simulator/receitas
+            - img
+            - text: Impacto Receita
+          - generic:
+            - img
+            - text: Margem
+        - generic:
+          - paragraph: Acesso antecipado
+          - button:
+            - img
+      - generic:
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - paragraph: Análise / Simulação / Receitas
+                - heading [level=1]: Simulador de Custos — Receitas
+                - paragraph: Análise de impacto de variação de receita e composição
+              - generic:
+                - generic:
+                  - link:
+                    - /url: /simulator/insumos
+                    - text: Insumos
+                  - link:
+                    - /url: /simulator/receitas
+                    - text: Receitas
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Receita
+                    - combobox:
+                      - text: Bolo de pote de chocolate
+                      - img
+                  - generic:
+                    - generic: Preço Atual
+                    - textbox [disabled]: R$ 13.00
+                  - generic:
+                    - generic: Preço Simulado
+                    - generic:
+                      - generic: R$
+                      - textbox:
+                        - /placeholder: "Ex: 32,00"
+                        - text: "999"
+                - generic:
+                  - generic:
+                    - generic: Mês Simulação
+                    - combobox [expanded]:
+                      - generic: 2026-04
+                      - img
+                  - generic:
+                    - generic: Lojas Selecionadas
+                    - generic:
+                      - button:
+                        - generic: 2 lojas selecionadas
+                        - img
+                - generic:
+                  - generic:
+                    - heading [level=3]: Editar Composição — Bolo de pote de chocolate
+                    - generic:
+                      - button:
+                        - img
+                        - text: Adicionar insumo
+                      - button:
+                        - img
+                        - text: Adicionar receita
+                  - generic:
+                    - table:
+                      - rowgroup:
+                        - row:
+                          - columnheader: Insumo
+                          - columnheader: Quantidade
+                          - columnheader: Custo Unit.
+                          - columnheader: Custo Total
+                          - columnheader
+                      - rowgroup:
+                        - row:
+                          - cell:
+                            - generic:
+                              - generic:
+                                - combobox:
+                                  - generic: Granulado de chocolate
+                                  - img
+                              - generic: Insumo
+                          - cell:
+                            - generic:
+                              - textbox: 0,02
+                              - generic: g
+                          - cell:
+                            - text: R$ 0,02
+                            - generic: /g
+                          - cell: R$ 0,00
+                          - cell:
+                            - button:
+                              - img
+                        - row:
+                          - cell:
+                            - generic:
+                              - button:
+                                - img
+                              - generic:
+                                - combobox:
+                                  - generic: Brigadeiro
+                                  - img
+                              - generic: Receita
+                          - cell:
+                            - generic:
+                              - textbox: 0,1
+                          - cell: R$ 0,02
+                          - cell: R$ 0,00
+                          - cell:
+                            - button:
+                              - img
+                        - row:
+                          - cell:
+                            - generic:
+                              - button:
+                                - img
+                              - generic:
+                                - combobox:
+                                  - generic: Massa de bolo
+                                  - img
+                              - generic: Receita
+                          - cell:
+                            - generic:
+                              - textbox: 0,12
+                          - cell: R$ 4,72
+                          - cell: R$ 0,57
+                          - cell:
+                            - button:
+                              - img
+                  - generic:
+                    - img
+                    - generic: Altere as quantidades dos componentes para simular o impacto no custo final da receita.
+                - generic:
+                  - button:
+                    - img
+                    - text: Simular Impacto
+            - generic:
+              - img
+              - paragraph: Pronto para simular
+              - paragraph: Configure os parâmetros e clique em "Simular Impacto" para ver os resultados.
+        - contentinfo:
+          - paragraph: © 2026 Prato — Inteligência de margem para restaurantes.
+    - region "Notifications alt+T"
+  - listbox [ref=e214]:
+    - option "2026-05" [ref=e215]:
+      - generic [ref=e217]: 2026-05
+    - option "2026-04" [active] [selected] [ref=e218]:
+      - img [ref=e221]
+      - generic [ref=e223]: 2026-04
+    - option "2026-03" [ref=e224]:
+      - generic [ref=e226]: 2026-03
+    - option "2026-02" [ref=e227]:
+      - generic [ref=e229]: 2026-02
+    - option "2026-01" [ref=e230]:
+      - generic [ref=e232]: 2026-01
+    - option "2025-12" [ref=e233]:
+      - generic [ref=e235]: 2025-12
+    - option "2025-11" [ref=e236]:
+      - generic [ref=e238]: 2025-11
+    - option "2025-10" [ref=e239]:
+      - generic [ref=e241]: 2025-10
+    - option "2025-09" [ref=e242]:
+      - generic [ref=e244]: 2025-09
+    - option "2025-08" [ref=e245]:
+      - generic [ref=e247]: 2025-08
+    - option "2025-07" [ref=e248]:
+      - generic [ref=e250]: 2025-07
+    - option "2025-06" [ref=e251]:
+      - generic [ref=e253]: 2025-06
+    - option "2025-05" [ref=e254]:
+      - generic [ref=e256]: 2025-05
+    - option "2025-04" [ref=e257]:
+      - generic [ref=e259]: 2025-04

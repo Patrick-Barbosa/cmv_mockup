@@ -1,0 +1,161 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - link "Prato" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e12]: Prato
+        - navigation [ref=e13]:
+          - paragraph [ref=e14]: Operação
+          - link "Insumos" [ref=e15] [cursor=pointer]:
+            - /url: /insumos
+            - img [ref=e16]
+            - text: Insumos
+          - link "Receitas" [ref=e19] [cursor=pointer]:
+            - /url: /receitas
+            - img [ref=e20]
+            - text: Receitas
+          - link "Vendas" [ref=e24] [cursor=pointer]:
+            - /url: /vendas
+            - img [ref=e25]
+            - text: Vendas
+          - link "SKUs não vinculados" [ref=e28] [cursor=pointer]:
+            - /url: /vendas/ausentes
+            - img [ref=e29]
+            - text: SKUs não vinculados
+          - paragraph [ref=e33]: Análise
+          - link "Lojas" [ref=e34] [cursor=pointer]:
+            - /url: /lojas
+            - img [ref=e35]
+            - text: Lojas
+          - link "CMV" [ref=e39] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e40]
+            - text: CMV
+          - paragraph [ref=e44]: Simuladores
+          - link "Impacto Insumo" [ref=e45] [cursor=pointer]:
+            - /url: /simulator/insumos
+            - img [ref=e46]
+            - text: Impacto Insumo
+          - link "Impacto Receita" [ref=e48] [cursor=pointer]:
+            - /url: /simulator/receitas
+            - img [ref=e49]
+            - text: Impacto Receita
+          - generic:
+            - img
+            - text: Margem
+        - generic [ref=e51]:
+          - paragraph [ref=e52]: Acesso antecipado
+          - button "Modo claro" [ref=e53] [cursor=pointer]:
+            - img [ref=e54]
+      - generic [ref=e60]:
+        - main [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - paragraph [ref=e65]: Análise / Performance
+                - heading "CMV ideal consolidado" [level=1] [ref=e66]
+                - paragraph [ref=e67]: Visão gerencial de custos e margens teóricas baseadas no mix de vendas.
+              - button "Exportar Base" [ref=e69] [cursor=pointer]:
+                - img
+                - text: Exportar Base
+            - generic [ref=e71]:
+              - generic [ref=e72]:
+                - generic [ref=e73]: Filtro de Unidade
+                - combobox [disabled] [ref=e74]:
+                  - generic: Todas as Lojas
+                  - img [ref=e75]
+              - generic [ref=e77]:
+                - generic [ref=e78]: Mês de Referência
+                - combobox [disabled] [ref=e79]:
+                  - generic: Todos os Meses
+                  - img [ref=e80]
+            - generic [ref=e82]:
+              - generic [ref=e83]:
+                - generic [ref=e84]:
+                  - generic [ref=e85]: Receita Analisada
+                  - generic [ref=e86]: R$ 0,00
+                - paragraph [ref=e88]: Faturamento vinculado a receitas
+              - generic [ref=e89]:
+                - generic [ref=e90]:
+                  - generic [ref=e91]: Custo Ideal Total
+                  - generic [ref=e92]: R$ 0,00
+                - paragraph [ref=e94]: Total teórico das fichas técnicas
+              - generic [ref=e95]:
+                - generic [ref=e96]:
+                  - generic [ref=e97]: CMV Ideal (%)
+                  - generic [ref=e98]: 0.0%
+                - paragraph [ref=e100]: 0 produtos processados
+              - generic [ref=e101]:
+                - generic [ref=e103]:
+                  - generic [ref=e104]: Margem Bruta Teórica
+                  - generic [ref=e105]: R$ 0,00
+                - paragraph [ref=e107]: Potencial de lucratividade
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - generic [ref=e110]:
+                  - generic [ref=e111]:
+                    - generic [ref=e112]: Histórico de Performance
+                    - generic [ref=e113]: Evolução do CMV Ideal no tempo
+                  - img [ref=e114]
+                - img [ref=e121]
+              - generic [ref=e124]:
+                - generic [ref=e125]:
+                  - generic [ref=e126]:
+                    - generic [ref=e127]: Top 10 Produtos por Faturamento
+                    - generic [ref=e128]: Impacto financeiro e margem ideal
+                  - img [ref=e129]
+                - img [ref=e135]
+            - generic [ref=e136]:
+              - generic [ref=e137]:
+                - generic [ref=e138]:
+                  - generic [ref=e139]: Detalhamento dos SKUs
+                  - generic [ref=e140]: Análise granular de performance e margens por unidade vendida
+                - generic [ref=e141]:
+                  - img [ref=e142]
+                  - generic [ref=e144]: Baseado em 0 itens vendidos
+              - table [ref=e148]:
+                - rowgroup [ref=e149]:
+                  - row "SKU Externo Mapeamento Interno Qtd Receita Preço Médio Custo Ideal CMV Ideal Status" [ref=e150]:
+                    - columnheader "SKU Externo" [ref=e151] [cursor=pointer]:
+                      - generic [ref=e152]:
+                        - text: SKU Externo
+                        - img [ref=e153]
+                    - columnheader "Mapeamento Interno" [ref=e156]
+                    - columnheader "Qtd" [ref=e157] [cursor=pointer]:
+                      - generic [ref=e158]:
+                        - text: Qtd
+                        - img [ref=e159]
+                    - columnheader "Receita" [ref=e162] [cursor=pointer]:
+                      - generic [ref=e163]:
+                        - text: Receita
+                        - img [ref=e164]
+                    - columnheader "Preço Médio" [ref=e167] [cursor=pointer]:
+                      - generic [ref=e168]:
+                        - text: Preço Médio
+                        - img [ref=e169]
+                    - columnheader "Custo Ideal" [ref=e172] [cursor=pointer]:
+                      - generic [ref=e173]:
+                        - text: Custo Ideal
+                        - img [ref=e174]
+                    - columnheader "CMV Ideal" [ref=e177] [cursor=pointer]:
+                      - generic [ref=e178]:
+                        - text: CMV Ideal
+                        - img [ref=e179]
+                    - columnheader "Status" [ref=e182]
+                - rowgroup [ref=e183]:
+                  - row "TOTAL ANALISADO 0 itens mapeados 0 R$ 0,00 — R$ 0,00 0.0% OK" [ref=e184]:
+                    - cell "TOTAL ANALISADO" [ref=e185]
+                    - cell "0 itens mapeados" [ref=e186]
+                    - cell "0" [ref=e187]
+                    - cell "R$ 0,00" [ref=e188]
+                    - cell "—" [ref=e189]
+                    - cell "R$ 0,00" [ref=e190]
+                    - cell "0.0%" [ref=e191]
+                    - cell "OK" [ref=e192]:
+                      - generic [ref=e193]: OK
+        - contentinfo [ref=e194]:
+          - paragraph [ref=e195]: © 2026 Prato — Inteligência de margem para restaurantes.
+    - region "Notifications alt+T"
+  - generic [ref=e196]: "0"

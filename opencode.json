@@ -1,0 +1,50 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "paths": [".opencode/skills"]
+  },
+  "agent": {
+    "frontend-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
+    },
+    "backend-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
+    },
+    "infra-specialist": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
+    },
+    "qa-validator": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask"
+      }
+    },
+    "grill-me": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
+    },
+    "tech-lead": {
+      "mode": "primary",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
+    }
+  }
+}

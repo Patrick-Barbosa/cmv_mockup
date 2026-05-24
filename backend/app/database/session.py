@@ -13,14 +13,17 @@ import os
 # Carrega variáveis do arquivo .env
 load_dotenv()
 
-# APP_ENV controls which Supabase schema is used and whether dev seeding runs.
-# Values: "production" | "development"  (default: "development")
+# APP_ENV controls which schema is used and whether dev seeding runs.
+# Values: "production" | "development" | "test" (default: "development")
 APP_ENV: str = os.getenv("APP_ENV", "development")
 
 # Schema used for all table references.
-# production → prd
-# development → dev
-DB_SCHEMA: str = "prd" if APP_ENV == "production" else "dev"
+if APP_ENV == "production":
+    DB_SCHEMA: str = "prd"
+elif APP_ENV == "test":
+    DB_SCHEMA: str = "test"
+else:
+    DB_SCHEMA: str = "dev"
 
 DATABASE_URL: str = os.getenv(
     "DATABASE_URL",
@@ -51,7 +54,7 @@ class DatabaseSession:
 
         self.engine = create_async_engine(
             DATABASE_URL,
-            echo=(APP_ENV != "production"),  # SQL logging only in dev
+            echo=(APP_ENV == "development"),  # SQL logging only in dev
             future=True,
             execution_options={"schema_translate_map": translate_map},
         )

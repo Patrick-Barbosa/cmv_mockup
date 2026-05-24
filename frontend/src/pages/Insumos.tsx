@@ -1,13 +1,21 @@
 import { useEffect, useMemo, useState } from "react"
 import { FadeUp } from "@/components/ui/fade-up"
-import { AlertCircle, Edit2, Link2, Loader2, Plus, Trash2 } from "lucide-react"
+import { AlertCircle, Edit2, Link2, Plus, Trash2 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { IS_MOCK, insumosApi } from "@/lib/api"
+import {
+  PageHeaderWithButton,
+  ErrorAlert,
+  LoadingState,
+  ContentLayout,
+  StatsSidebar,
+  CRUDDialog,
+} from "@/components/common"
+import { insumosApi, IS_MOCK } from "@/lib/api"
+import { formatBRL, parseBRL } from "@/lib/format"
 
 export interface Insumo {
   id: number
@@ -18,15 +26,11 @@ export interface Insumo {
   idProdutoExterno: string
 }
 
-const mockInsumos: Insumo[] = [
-  { id: 1, nome: "Filé de Frango", unidade: "kg", qtdRef: 1, precoRef: 22.5, idProdutoExterno: "" },
-  { id: 2, nome: "Azeite Extra Virgem", unidade: "l", qtdRef: 5, precoRef: 180.0, idProdutoExterno: "" },
-  { id: 3, nome: "Tomate Pelati", unidade: "lt", qtdRef: 2.5, precoRef: 45.0, idProdutoExterno: "SKU-TOMATE-001" },
-]
+const UNIDADES = ["kg", "g", "l", "ml", "un", "lt", "pct", "cx"]
 
 export default function Insumos() {
-  const [insumos, setInsumos] = useState<Insumo[]>(IS_MOCK ? mockInsumos : [])
-  const [loading, setLoading] = useState(!IS_MOCK)
+  const [insumos, setInsumos] = useState<Insumo[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -40,33 +44,34 @@ export default function Insumos() {
   const [idProdutoExterno, setIdProdutoExterno] = useState("")
 
   useEffect(() => {
-    if (IS_MOCK) return
-
-    insumosApi.list()
+    insumosApi
+      .list()
       .then((data) => {
-        setInsumos(data.map((item) => ({
-          id: item.id,
-          nome: item.nome,
-          unidade: item.unidade ?? "",
-          qtdRef: item.quantidade_referencia ?? 0,
-          precoRef: item.preco_referencia ?? 0,
-          idProdutoExterno: item.id_produto_externo ?? "",
-        })))
+        setInsumos(
+          data.map((item) => ({
+            id: item.id,
+            nome: item.nome,
+            unidade: item.unidade ?? "",
+            qtdRef: item.quantidade_referencia ?? 0,
+            precoRef: item.preco_referencia ?? 0,
+            idProdutoExterno: item.id_produto_externo ?? "",
+          }))
+        )
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
 
   const parsedQtd = parseFloat(qtdRef)
-  const parsedPreco = parseFloat(precoRef.replace(",", "."))
+  const parsedPreco = parseBRL(precoRef)
   const custoUn =
-    !Number.isNaN(parsedQtd) && parsedQtd > 0 && !Number.isNaN(parsedPreco)
+    !Number.isNaN(parsedQtd) && parsedQtd > 0 && parsedPreco !== null
       ? parsedPreco / parsedQtd
       : null
 
   const externalLinksCount = useMemo(
     () => insumos.filter((item) => item.idProdutoExterno.trim()).length,
-    [insumos],
+    [insumos]
   )
 
   const breakdown = useMemo(() => {
@@ -80,66 +85,49 @@ export default function Insumos() {
   }, [insumos])
 
   const handleSalvar = async () => {
-    if (!nome || !unidade || !parsedQtd || Number.isNaN(parsedPreco)) {
+    if (!nome || !unidade || !parsedQtd || parsedPreco === null) {
       return
     }
 
     const normalizedExternalId = idProdutoExterno.trim()
     setSaving(true)
     try {
-      if (IS_MOCK) {
-        const nextItem: Insumo = {
-          id: editingId ?? Date.now(),
-          nome,
-          unidade,
-          qtdRef: parsedQtd,
-          precoRef: parsedPreco,
-          idProdutoExterno: normalizedExternalId,
-        }
-
+      const payload = {
+        nome,
+        unidade,
+        quantidade_referencia: parsedQtd,
+        preco_referencia: parsedPreco,
+        id_produto_externo: normalizedExternalId || null,
+      }
+      if (editingId) {
+        await insumosApi.edit(editingId, payload)
         setInsumos((prev) =>
-          editingId
-            ? prev.map((item) => (item.id === editingId ? nextItem : item))
-            : [nextItem, ...prev]
+          prev.map((item) =>
+            item.id === editingId
+              ? {
+                  ...item,
+                  nome,
+                  unidade,
+                  qtdRef: parsedQtd,
+                  precoRef: parsedPreco,
+                  idProdutoExterno: normalizedExternalId,
+                }
+              : item
+          )
         )
       } else {
-        const payload = {
-          nome,
-          unidade,
-          quantidade_referencia: parsedQtd,
-          preco_referencia: parsedPreco,
-          id_produto_externo: normalizedExternalId || null,
-        }
-        if (editingId) {
-          await insumosApi.edit(editingId, payload)
-          setInsumos((prev) =>
-            prev.map((item) =>
-              item.id === editingId
-                ? {
-                    ...item,
-                    nome,
-                    unidade,
-                    qtdRef: parsedQtd,
-                    precoRef: parsedPreco,
-                    idProdutoExterno: normalizedExternalId,
-                  }
-                : item
-            )
-          )
-        } else {
-          const res = await insumosApi.create(payload)
-          setInsumos((prev) => [
-            {
-              id: res.id,
-              nome,
-              unidade,
-              qtdRef: parsedQtd,
-              precoRef: parsedPreco,
-              idProdutoExterno: normalizedExternalId,
-            },
-            ...prev,
-          ])
-        }
+        const res = await insumosApi.create(payload)
+        setInsumos((prev) => [
+          {
+            id: res.id,
+            nome,
+            unidade,
+            qtdRef: parsedQtd,
+            precoRef: parsedPreco,
+            idProdutoExterno: normalizedExternalId,
+          },
+          ...prev,
+        ])
       }
 
       handleClear()
@@ -186,257 +174,246 @@ export default function Insumos() {
     setIsDialogOpen(true)
   }
 
-  return (
-    <FadeUp>
-      <div className="mb-10 flex items-center justify-between">
-        <div>
-          <p className="text-brand-muted text-[0.7rem] tracking-[0.28em] uppercase font-medium mb-2">Operação / Insumos</p>
-          <h1 className="text-2xl md:text-3xl font-semibold leading-tight tracking-tight">Insumos</h1>
-          <p className="text-brand-soft text-sm md:text-base mt-2 leading-relaxed max-w-lg">
-            Cadastre os itens que alimentam o cálculo de custo e, se fizer sentido, vincule o identificador externo usado nas vendas.
-          </p>
-        </div>
-        <Button onClick={onOpenNew} className="hidden sm:flex bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover shadow-sm">
-          <Plus className="w-4 h-4 mr-2" /> Novo insumo
-        </Button>
+  const renderForm = () => (
+    <div className="grid sm:grid-cols-2 gap-5">
+      <div className="sm:col-span-2 space-y-2">
+        <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Nome do insumo</Label>
+        <Input
+          type="text"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          placeholder="Ex.: Filé de frango, Azeite extra virgem…"
+          className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+        />
       </div>
 
-      {error && (
-        <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-sm px-4 py-3 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-          <p className="text-red-400 text-xs">{error}</p>
-          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-300 text-xs">×</button>
+      <div className="sm:col-span-2 space-y-2">
+        <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">ID do produto externo</Label>
+        <Input
+          type="text"
+          value={idProdutoExterno}
+          onChange={(e) => setIdProdutoExterno(e.target.value)}
+          placeholder="Opcional. Ex.: SKU-FRANGO-001"
+          className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+        />
+        <p className="text-brand-muted text-[0.7rem] leading-relaxed">
+          Use este campo para ligar o insumo a um `id_produto` vindo do arquivo de vendas.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Unidade de medida</Label>
+        <Select value={unidade} onValueChange={setUnidade}>
+          <SelectTrigger className="w-full bg-brand-surface border-brand-line/35 focus:ring-brand-highlight/10 focus:border-brand-highlight/55 h-10">
+            <SelectValue placeholder="Selecione…" />
+          </SelectTrigger>
+          <SelectContent>
+            {UNIDADES.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Quantidade de referência</Label>
+        <Input
+          type="number"
+          value={qtdRef}
+          onChange={(e) => setQtdRef(e.target.value)}
+          placeholder="Ex.: 500, 1, 10"
+          className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Preço de referência</Label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted text-sm select-none z-10">R$</span>
+          <Input
+            type="text"
+            value={precoRef}
+            onChange={(e) => setPrecoRef(e.target.value.replace(/[^\d,]/g, ""))}
+            className="pl-10 bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
+            placeholder="0,00"
+          />
+        </div>
+      </div>
+
+      {custoUn !== null && (
+        <div className="sm:col-span-2">
+          <div className="bg-brand-surface border border-brand-line/20 rounded-[2px] px-4 py-3 flex items-center gap-2">
+            <span className="text-brand-muted text-xs font-medium uppercase tracking-wide">Custo unitário:</span>
+            <span className="text-brand-highlight text-sm font-semibold tabular-nums">
+              {formatBRL(custoUn)}/{unidade || "un"}
+            </span>
+          </div>
         </div>
       )}
+    </div>
+  )
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) handleClear() }}>
-        <DialogContent className="max-w-2xl bg-brand-surface-2 border-brand-line/20 p-6 md:p-8">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-brand-text font-medium text-lg">
-              {editingId ? "Editar insumo" : "Novo insumo"}
-            </DialogTitle>
-          </DialogHeader>
+  const renderTable = () => (
+    <div className="overflow-x-auto pb-4">
+      <Table>
+        <TableHeader>
+          <TableRow className="border-b border-brand-line/20 text-brand-muted text-[0.72rem] tracking-[0.08em] uppercase hover:bg-transparent">
+            <TableHead className="font-medium h-10">Insumo</TableHead>
+            <TableHead className="font-medium h-10">ID Externo</TableHead>
+            <TableHead className="font-medium h-10">Unidade</TableHead>
+            <TableHead className="font-medium h-10">Qtd Ref.</TableHead>
+            <TableHead className="font-medium h-10">Preço Ref.</TableHead>
+            <TableHead className="font-medium h-10">Custo/un</TableHead>
+            <TableHead className="font-medium text-right h-10">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {insumos.map((item) => (
+            <TableRow key={item.id} className="border-b border-brand-line/10 hover:bg-brand-line/5 transition-colors">
+              <TableCell className="font-medium text-brand-text">{item.nome}</TableCell>
+              <TableCell className="text-brand-muted">
+                {item.idProdutoExterno ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-highlight/10 text-brand-highlight rounded-[2px] text-[0.72rem] font-medium border border-brand-highlight/20">
+                    <Link2 className="w-3 h-3" />
+                    {item.idProdutoExterno}
+                  </span>
+                ) : (
+                  <span className="text-brand-muted/40 text-xs">—</span>
+                )}
+              </TableCell>
+              <TableCell className="text-brand-muted">
+                {item.unidade ? (
+                  <span className="px-2 py-0.5 bg-brand-surface rounded-[2px] text-[0.72rem] font-medium border border-brand-line/20">
+                    {item.unidade}
+                  </span>
+                ) : (
+                  <span className="text-brand-muted/40 text-xs">—</span>
+                )}
+              </TableCell>
+              <TableCell className="text-brand-muted tabular-nums">{item.qtdRef || "—"}</TableCell>
+              <TableCell className="text-brand-text tabular-nums">
+                {item.precoRef ? formatBRL(item.precoRef) : "—"}
+              </TableCell>
+              <TableCell className="text-brand-highlight font-medium tabular-nums">
+                {item.qtdRef && item.precoRef
+                  ? `${formatBRL(item.precoRef / item.qtdRef)}/${item.unidade}`
+                  : "—"}
+              </TableCell>
+              <TableCell className="text-right py-2">
+                <div className="flex justify-end gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-8 w-8 text-brand-muted hover:text-brand-highlight transition-colors rounded-[2px]">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="h-8 w-8 text-brand-muted hover:text-red-400 transition-colors rounded-[2px]">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  )
 
-          <div className="grid sm:grid-cols-2 gap-5">
-            <div className="sm:col-span-2 space-y-2">
-              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Nome do insumo</Label>
-              <Input
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex.: Filé de frango, Azeite extra virgem…"
-                className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
-              />
+  return (
+    <FadeUp>
+      <PageHeaderWithButton
+        breadcrumb="Operação / Insumos"
+        title="Insumos"
+        description="Cadastre os itens que alimentam o cálculo de custo e, se fizer sentido, vincule o identificador externo usado nas vendas."
+        buttonText="Novo insumo"
+        buttonIcon={<Plus className="w-4 h-4 mr-2" />}
+        onButtonClick={onOpenNew}
+      />
+
+      <ErrorAlert error={error} onDismiss={() => setError(null)} />
+
+      <CRUDDialog
+        open={isDialogOpen}
+        title={editingId ? "Editar insumo" : "Novo insumo"}
+        onSave={handleSalvar}
+        saving={saving}
+        disabled={!nome || !unidade || !parsedQtd || parsedPreco === null}
+        onOpenChange={(open: boolean) => {
+          setIsDialogOpen(open)
+          if (!open) handleClear()
+        }}
+        saveText={editingId ? "Salvar alterações" : "Adicionar insumo"}
+      >
+        {renderForm()}
+      </CRUDDialog>
+
+      <ContentLayout
+        main={
+          <div className="flex flex-col gap-6">
+            <div className="sm:hidden">
+              <Button onClick={onOpenNew} className="w-full bg-brand-primary text-brand-button-text focus:ring-2 focus:ring-brand-highlight/20">
+                <Plus className="w-4 h-4 mr-2" /> Novo insumo
+              </Button>
             </div>
 
-            <div className="sm:col-span-2 space-y-2">
-              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">ID do produto externo</Label>
-              <Input
-                type="text"
-                value={idProdutoExterno}
-                onChange={(e) => setIdProdutoExterno(e.target.value)}
-                placeholder="Opcional. Ex.: SKU-FRANGO-001"
-                className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
-              />
-              <p className="text-brand-muted text-[0.7rem] leading-relaxed">
-                Use este campo para ligar o insumo a um `id_produto` vindo do arquivo de vendas.
-              </p>
-            </div>
+            <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">
+                <h2 className="text-brand-soft text-sm font-medium">Insumos cadastrados</h2>
+                <span className="text-brand-muted text-xs">{insumos.length} itens</span>
+              </div>
 
-            <div className="space-y-2">
-              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Unidade de medida</Label>
-              <Select value={unidade} onValueChange={setUnidade}>
-                <SelectTrigger className="w-full bg-brand-surface border-brand-line/35 focus:ring-brand-highlight/10 focus:border-brand-highlight/55 h-10">
-                  <SelectValue placeholder="Selecione…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {["kg", "g", "l", "ml", "un", "lt", "pct", "cx"].map((option) => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Quantidade de referência</Label>
-              <Input
-                type="number"
-                value={qtdRef}
-                onChange={(e) => setQtdRef(e.target.value)}
-                placeholder="Ex.: 500, 1, 10"
-                className="bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[0.76rem] text-brand-soft tracking-[0.03em]">Preço de referência</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted text-sm select-none z-10">R$</span>
-                <Input
-                  type="text"
-                  value={precoRef}
-                  onChange={(e) => setPrecoRef(e.target.value.replace(/[^\d,]/g, ""))}
-                  className="pl-10 bg-brand-surface border-brand-line/35 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
-                  placeholder="0,00"
+              {loading ? (
+                <LoadingState type="spinner" message="Carregando insumos…" />
+              ) : insumos.length === 0 ? (
+                <LoadingState
+                  type="empty"
+                  message="Nenhum insumo cadastrado ainda."
+                  icon={<AlertCircle className="w-10 h-10 text-brand-highlight opacity-30 mb-5" />}
                 />
+              ) : (
+                renderTable()
+              )}
+            </div>
+          </div>
+        }
+        sidebar={
+          <StatsSidebar
+            stats={[
+              { label: "Total cadastrado", value: insumos.length, subtitle: "insumos na base" },
+              { label: "Vínculos de venda", value: externalLinksCount, subtitle: "insumos com `id_produto_externo`" },
+            ]}
+          >
+            <div className="bg-brand-surface border border-brand-line/15 rounded-[2px] p-5">
+              <div className="flex items-start gap-3">
+                <span className="text-brand-highlight mt-0.5 shrink-0">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                </span>
+                <p className="text-brand-muted text-xs leading-relaxed">
+                  {IS_MOCK
+                    ? "Modo demo — configure VITE_BACKEND_URL para conectar ao backend."
+                    : "O vínculo externo é opcional e serve para cruzar o insumo com o arquivo de vendas por loja e por mês."}
+                </p>
               </div>
             </div>
 
-            {custoUn !== null && (
-              <div className="sm:col-span-2">
-                <div className="bg-brand-surface border border-brand-line/20 rounded-[2px] px-4 py-3 flex items-center gap-2">
-                  <span className="text-brand-muted text-xs font-medium uppercase tracking-wide">Custo unitário:</span>
-                  <span className="text-brand-highlight text-sm font-semibold tabular-nums">
-                    {custoUn.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/{unidade || "un"}
-                  </span>
+            {breakdown.length > 0 && (
+              <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
+                <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Por unidade</p>
+                <div className="flex flex-col gap-2">
+                  {breakdown.map(([unit, count]) => (
+                    <div key={unit} className="flex items-center justify-between">
+                      <span className="text-brand-soft text-xs font-medium">{unit}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 rounded-full bg-brand-primary/60" style={{ width: Math.max(20, count * 18) }} />
+                        <span className="text-brand-muted text-xs tabular-nums">{count}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="flex justify-end gap-3 mt-8">
-            <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-brand-muted hover:text-brand-soft">
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSalvar}
-              disabled={saving}
-              className="bg-brand-primary text-brand-button-text hover:bg-brand-primary-hover hover:shadow-[0_0_16px_rgba(201,76,182,.14),0_0_6px_rgba(94,111,55,.2)]"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {editingId ? "Salvar alterações" : "Adicionar insumo"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <div className="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
-        <div className="flex flex-col gap-6">
-          <div className="sm:hidden mb-2">
-            <Button onClick={onOpenNew} className="w-full bg-brand-primary text-brand-button-text focus:ring-2 focus:ring-brand-highlight/20">
-              <Plus className="w-4 h-4 mr-2" /> Novo insumo
-            </Button>
-          </div>
-
-          <div className="bg-brand-surface-2 border border-brand-line/20 rounded-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-brand-line/15 flex items-center justify-between">
-              <h2 className="text-brand-soft text-sm font-medium">Insumos cadastrados</h2>
-              <span className="text-brand-muted text-xs">{insumos.length} itens</span>
-            </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-16 gap-2 text-brand-muted">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm">Carregando insumos…</span>
-              </div>
-            ) : insumos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-6">
-                <AlertCircle className="w-10 h-10 text-brand-highlight opacity-30 mb-5" />
-                <p className="text-brand-soft text-sm font-medium mb-1 text-center">Nenhum insumo cadastrado ainda.</p>
-                <p className="text-brand-muted text-xs text-center max-w-xs leading-relaxed">Comece pela base de custos da sua operação.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto pb-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-brand-line/20 text-brand-muted text-[0.72rem] tracking-[0.08em] uppercase hover:bg-transparent">
-                      <TableHead className="font-medium h-10">Insumo</TableHead>
-                      <TableHead className="font-medium h-10">ID Externo</TableHead>
-                      <TableHead className="font-medium h-10">Unidade</TableHead>
-                      <TableHead className="font-medium h-10">Qtd Ref.</TableHead>
-                      <TableHead className="font-medium h-10">Preço Ref.</TableHead>
-                      <TableHead className="font-medium h-10">Custo/un</TableHead>
-                      <TableHead className="font-medium text-right h-10">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {insumos.map((item) => (
-                      <TableRow key={item.id} className="border-b border-brand-line/10 hover:bg-brand-line/5 transition-colors">
-                        <TableCell className="font-medium text-brand-text">{item.nome}</TableCell>
-                        <TableCell className="text-brand-muted">
-                          {item.idProdutoExterno
-                            ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-highlight/10 text-brand-highlight rounded-[2px] text-[0.72rem] font-medium border border-brand-highlight/20"><Link2 className="w-3 h-3" />{item.idProdutoExterno}</span>
-                            : <span className="text-brand-muted/40 text-xs">—</span>
-                          }
-                        </TableCell>
-                        <TableCell className="text-brand-muted">
-                          {item.unidade
-                            ? <span className="px-2 py-0.5 bg-brand-surface rounded-[2px] text-[0.72rem] font-medium border border-brand-line/20">{item.unidade}</span>
-                            : <span className="text-brand-muted/40 text-xs">—</span>
-                          }
-                        </TableCell>
-                        <TableCell className="text-brand-muted tabular-nums">{item.qtdRef || "—"}</TableCell>
-                        <TableCell className="text-brand-text tabular-nums">
-                          {item.precoRef ? item.precoRef.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
-                        </TableCell>
-                        <TableCell className="text-brand-highlight font-medium tabular-nums">
-                          {item.qtdRef && item.precoRef
-                            ? `${(item.precoRef / item.qtdRef).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/${item.unidade}`
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="text-right py-2">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-8 w-8 text-brand-muted hover:text-brand-highlight transition-colors rounded-[2px]">
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="h-8 w-8 text-brand-muted hover:text-red-400 transition-colors rounded-[2px]">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
-            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Total cadastrado</p>
-            <p className="text-brand-highlight text-3xl font-light tabular-nums">{insumos.length}</p>
-            <p className="text-brand-muted text-xs mt-1">insumos na base</p>
-          </div>
-
-          <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
-            <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Vínculos de venda</p>
-            <p className="text-brand-highlight text-3xl font-light tabular-nums">{externalLinksCount}</p>
-            <p className="text-brand-muted text-xs mt-1">insumos com `id_produto_externo`</p>
-          </div>
-
-          <div className="bg-brand-surface border border-brand-line/15 rounded-[2px] p-5">
-            <div className="flex items-start gap-3">
-              <span className="text-brand-highlight mt-0.5 shrink-0">
-                <AlertCircle className="w-3.5 h-3.5" />
-              </span>
-              <p className="text-brand-muted text-xs leading-relaxed">
-                {IS_MOCK
-                  ? "Modo demo — configure VITE_BACKEND_URL para conectar ao backend."
-                  : "O vínculo externo é opcional e serve para cruzar o insumo com o arquivo de vendas por loja e por mês."}
-              </p>
-            </div>
-          </div>
-
-          {breakdown.length > 0 && (
-            <div className="bg-brand-surface-2 border border-brand-line/20 rounded-[2px] p-5">
-              <p className="text-brand-muted text-[0.7rem] tracking-[0.12em] uppercase font-medium mb-3">Por unidade</p>
-              <div className="flex flex-col gap-2">
-                {breakdown.map(([unit, count]) => (
-                  <div key={unit} className="flex items-center justify-between">
-                    <span className="text-brand-soft text-xs font-medium">{unit}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 rounded-full bg-brand-primary/60" style={{ width: Math.max(20, count * 18) }} />
-                      <span className="text-brand-muted text-xs tabular-nums">{count}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          </StatsSidebar>
+        }
+      />
     </FadeUp>
   )
 }

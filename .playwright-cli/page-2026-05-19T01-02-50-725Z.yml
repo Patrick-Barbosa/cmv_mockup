@@ -1,0 +1,166 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - link "Prato" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e12]: Prato
+        - navigation [ref=e13]:
+          - paragraph [ref=e14]: Operação
+          - link "Insumos" [ref=e15] [cursor=pointer]:
+            - /url: /insumos
+            - img [ref=e16]
+            - text: Insumos
+          - link "Receitas" [ref=e19] [cursor=pointer]:
+            - /url: /receitas
+            - img [ref=e20]
+            - text: Receitas
+          - link "Vendas" [ref=e24] [cursor=pointer]:
+            - /url: /vendas
+            - img [ref=e25]
+            - text: Vendas
+          - link "SKUs não vinculados" [ref=e28] [cursor=pointer]:
+            - /url: /vendas/ausentes
+            - img [ref=e29]
+            - text: SKUs não vinculados
+          - paragraph [ref=e33]: Análise
+          - link "Lojas" [ref=e34] [cursor=pointer]:
+            - /url: /lojas
+            - img [ref=e35]
+            - text: Lojas
+          - link "CMV" [ref=e39] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e40]
+            - text: CMV
+          - paragraph [ref=e44]: Simuladores
+          - link "Impacto Insumo" [ref=e45] [cursor=pointer]:
+            - /url: /simulator/insumos
+            - img [ref=e46]
+            - text: Impacto Insumo
+          - link "Impacto Receita" [ref=e48] [cursor=pointer]:
+            - /url: /simulator/receitas
+            - img [ref=e49]
+            - text: Impacto Receita
+          - generic:
+            - img
+            - text: Margem
+        - generic [ref=e51]:
+          - paragraph [ref=e52]: Acesso antecipado
+          - button "Modo claro" [ref=e53] [cursor=pointer]:
+            - img [ref=e54]
+      - generic [ref=e60]:
+        - main [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - paragraph [ref=e65]: Análise / Simulação / Receitas
+                - heading "Simulador de Custos — Receitas" [level=1] [ref=e66]
+                - paragraph [ref=e67]: Análise de impacto de variação de receita e composição
+              - generic [ref=e69]:
+                - link "Insumos" [ref=e70] [cursor=pointer]:
+                  - /url: /simulator/insumos
+                - link "Receitas" [ref=e72] [cursor=pointer]:
+                  - /url: /simulator/receitas
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - generic [ref=e76]:
+                  - generic [ref=e77]: Receita
+                  - combobox [expanded] [ref=e107] [cursor=pointer]:
+                    - text: Selecione...
+                    - img
+                - generic [ref=e78]:
+                  - generic [ref=e79]: Preço Atual
+                  - textbox [disabled] [ref=e80]
+                - generic [ref=e81]:
+                  - generic [ref=e82]: Preço Simulado
+                  - generic [ref=e83]:
+                    - generic: R$
+                    - 'textbox "Ex: 32,00" [ref=e84]'
+              - generic [ref=e85]:
+                - generic [ref=e86]:
+                  - generic [ref=e87]: Mês Simulação
+                  - combobox [ref=e88] [cursor=pointer]:
+                    - generic: 2026-04
+                    - img [ref=e89]
+                - generic [ref=e91]:
+                  - generic [ref=e92]: Lojas Selecionadas
+                  - button "2 lojas selecionadas" [ref=e94] [cursor=pointer]:
+                    - generic [ref=e95]: 2 lojas selecionadas
+                    - img [ref=e96]
+              - generic [ref=e98]:
+                - button "Simular Impacto" [disabled]:
+                  - img
+                  - text: Simular Impacto
+                - generic [ref=e99]: Selecione uma receita e defina o valor da mudança
+            - generic [ref=e100]:
+              - img [ref=e101]
+              - paragraph [ref=e103]: Pronto para simular
+              - paragraph [ref=e104]: Configure os parâmetros e clique em "Simular Impacto" para ver os resultados.
+        - contentinfo [ref=e105]:
+          - paragraph [ref=e106]: © 2026 Prato — Inteligência de margem para restaurantes.
+    - region "Notifications alt+T"
+  - dialog [ref=e109]:
+    - generic [ref=e110]:
+      - generic [ref=e112]:
+        - img [ref=e113]
+        - combobox [expanded] [active] [ref=e116]
+      - listbox "Suggestions" [ref=e117]:
+        - group [ref=e119]:
+          - option "Bolo de cenoura" [selected] [ref=e120]:
+            - img
+            - text: Bolo de cenoura
+          - option "Massa de bolo" [ref=e121]:
+            - img
+            - text: Massa de bolo
+          - option "Brigadeiro" [ref=e122]:
+            - img
+            - text: Brigadeiro
+          - option "Bolo de pote de chocolate" [ref=e123]:
+            - img
+            - text: Bolo de pote de chocolate
+          - option "Brownie recheado" [ref=e124]:
+            - img
+            - text: Brownie recheado
+          - option "Brownie base" [ref=e125]:
+            - img
+            - text: Brownie base
+          - option "Ganache de chocolate" [ref=e126]:
+            - img
+            - text: Ganache de chocolate
+          - option "Pizza margherita" [ref=e127]:
+            - img
+            - text: Pizza margherita
+          - option "Massa de pizza" [ref=e128]:
+            - img
+            - text: Massa de pizza
+          - option "Molho de tomate" [ref=e129]:
+            - img
+            - text: Molho de tomate
+          - option "Crepe de frango" [ref=e130]:
+            - img
+            - text: Crepe de frango
+          - option "Massa de crepe" [ref=e131]:
+            - img
+            - text: Massa de crepe
+          - option "Recheio de frango" [ref=e132]:
+            - img
+            - text: Recheio de frango
+          - option "Torta cremosa de frango" [ref=e133]:
+            - img
+            - text: Torta cremosa de frango
+          - option "Massa de torta amanteigada" [ref=e134]:
+            - img
+            - text: Massa de torta amanteigada
+          - option "Recheio cremoso de frango" [ref=e135]:
+            - img
+            - text: Recheio cremoso de frango
+          - option "Refogado base" [ref=e136]:
+            - img
+            - text: Refogado base
+          - option "Creme de queijo" [ref=e137]:
+            - img
+            - text: Creme de queijo
+          - option "Preparado de chocolate" [ref=e138]:
+            - img
+            - text: Preparado de chocolate

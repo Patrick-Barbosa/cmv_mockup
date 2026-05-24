@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
 import { Link } from "react-router-dom"
 import { AlertCircle, Edit2, Eye, Link2, Loader2, Plus, Trash2 } from "lucide-react"
 import { FadeUp } from "@/components/ui/fade-up"
@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { IS_MOCK, insumosApi, receitasApi } from "@/lib/api"
+import { RecipeCompositionTable, type ComponenteItem } from "@/components/simulator/RecipeCompositionTable"
 import type { Insumo } from "./Insumos"
 
 const mockInsumos: Insumo[] = [
@@ -75,6 +76,28 @@ function mapApiComponentes(
   })
 }
 
+// Convert ReceitaComponente[] to ComponenteItem[] for RecipeCompositionTable
+function toComponenteItems(comps: ReceitaComponente[]): ComponenteItem[] {
+  return comps.map((c) => ({
+    id: c.id,
+    tipo: c.tipo,
+    componenteId: c.tipo === "insumo" ? c.insumoId : c.receitaId,
+    quantidade: c.quantidade,
+    quantidadeDisplay: c.quantidade.toString().replace(".", ","),
+  }))
+}
+
+// Convert ComponenteItem[] back to ReceitaComponente[] for saving
+function fromComponenteItems(items: ComponenteItem[]): ReceitaComponente[] {
+  return items.map((c) => ({
+    id: c.id,
+    tipo: c.tipo,
+    insumoId: c.tipo === "insumo" ? c.componenteId : undefined,
+    receitaId: c.tipo === "receita" ? c.componenteId : undefined,
+    quantidade: c.quantidade,
+  }))
+}
+
 function formatBRL(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
@@ -94,6 +117,29 @@ export default function Receitas() {
   const [unidade, setUnidade] = useState("")
   const [idProdutoExterno, setIdProdutoExterno] = useState("")
   const [componentes, setComponentes] = useState<ReceitaComponente[]>([])
+  const [composicaoItems, setComposicaoItems] = useState<ComponenteItem[]>([])
+
+  // Product options for RecipeCompositionTable
+  const availableInsumosOptions = useMemo(
+    () => availableInsumos.map((i) => ({ id: i.id, text: `${i.nome}${i.unidade ? ` (${i.unidade})` : ""}`, tipo: "insumo" as const, precoAtual: i.qtdRef ? i.precoRef / i.qtdRef : 0 })),
+    [availableInsumos]
+  )
+
+  const availableReceitasOptions = useMemo(
+    () => receitas.map((r) => ({ id: r.id, text: `${r.nome}${r.unidade ? ` (${r.unidade})` : ""}`, tipo: "receita" as const, precoAtual: r.custoTotal })),
+    [receitas]
+  )
+
+  // Sync componentes -> composicaoItems when dialog opens
+  const syncComposicaoItems = useCallback((comps: ReceitaComponente[]) => {
+    setComposicaoItems(toComponenteItems(comps))
+  }, [])
+
+  // Sync composicaoItems -> componentes when saving
+  const syncComponentes = useCallback((items: ComponenteItem[]) => {
+    setComposicaoItems(items)
+    setComponentes(fromComponenteItems(items))
+  }, [])
 
   useEffect(() => {
     if (IS_MOCK) return
@@ -146,31 +192,6 @@ export default function Receitas() {
     () => receitas.filter((receita) => receita.idProdutoExterno.trim()).length,
     [receitas],
   )
-
-  const handleAddComponent = (tipo: "insumo" | "receita") => {
-    setComponentes((prev) => [
-      ...prev,
-      {
-        id: Math.random().toString(36).slice(2, 9),
-        tipo,
-        insumoId: tipo === "insumo" ? 0 : undefined,
-        receitaId: tipo === "receita" ? 0 : undefined,
-        quantidade: 0,
-      },
-    ])
-  }
-
-  const handleUpdateComponent = (
-    id: string,
-    field: "insumoId" | "receitaId" | "quantidade",
-    value: number,
-  ) => {
-    setComponentes((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)))
-  }
-
-  const handleRemoveComponent = (id: string) => {
-    setComponentes((prev) => prev.filter((item) => item.id !== id))
-  }
 
   const calculateCusto = (items: ReceitaComponente[]): number => {
     return items.reduce((sum, item) => {
@@ -308,6 +329,7 @@ export default function Receitas() {
     setUnidade(item.unidade ?? "")
     setIdProdutoExterno(item.idProdutoExterno)
     setComponentes(item.componentes)
+    syncComposicaoItems(item.componentes)
     setIsDialogOpen(true)
   }
 
@@ -317,6 +339,7 @@ export default function Receitas() {
     setUnidade("")
     setIdProdutoExterno("")
     setComponentes([])
+    setComposicaoItems([])
     setEditingId(null)
   }
 
@@ -408,109 +431,15 @@ export default function Receitas() {
             </div>
           </div>
 
-          <div className="mb-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-              <p className="text-brand-soft text-sm font-medium">Composição</p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleAddComponent("receita")}
-                  className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 hover:border-brand-highlight/45 hover:text-brand-highlight transition-colors h-8"
-                >
-                  <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar receita
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleAddComponent("insumo")}
-                  className="border-brand-highlight/30 text-brand-highlight hover:bg-brand-highlight/10 hover:border-brand-highlight/45 hover:text-brand-highlight transition-colors h-8"
-                >
-                  <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar insumo
-                </Button>
-              </div>
-            </div>
-
-            {componentes.length === 0 ? (
-              <div className="py-8 flex flex-col items-center justify-center border border-dashed border-brand-line/25 rounded-[2px]">
-                <p className="text-brand-muted text-xs text-center">Adicione os insumos ou receitas que compõem este preparo.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <div className="grid grid-cols-[1fr_90px_70px_30px] gap-2 pb-1">
-                  <span className="text-brand-muted text-[0.68rem] uppercase tracking-wide font-medium">Item</span>
-                  <span className="text-brand-muted text-[0.68rem] uppercase tracking-wide font-medium">Qtd</span>
-                  <span className="text-brand-muted text-[0.68rem] uppercase tracking-wide font-medium text-right pr-1">Custo</span>
-                </div>
-                {componentes.map((component, index) => {
-                  let cost = 0
-                  let unitLabel = ""
-
-                  if (component.tipo === "insumo") {
-                    const insumo = availableInsumos.find((item) => item.id === component.insumoId)
-                    cost = insumo && component.quantidade > 0 ? (insumo.precoRef / (insumo.qtdRef || 1)) * component.quantidade : 0
-                    if (insumo) unitLabel = insumo.unidade
-                  } else {
-                    const subReceita = receitas.find((item) => item.id === component.receitaId)
-                    const subCost = subReceita?.custoTotal ?? (subReceita ? calculateCusto(subReceita.componentes) : 0)
-                    cost = subReceita && component.quantidade > 0 ? (subCost / (subReceita.rendimento || 1)) * component.quantidade : 0
-                    if (subReceita) unitLabel = subReceita.unidade
-                  }
-
-                  return (
-                    <FadeUp key={component.id} delay={index * 0.05} className="grid grid-cols-[1fr_90px_70px_30px] gap-2 items-center pb-2 border-b border-brand-line/10 last:border-0 last:pb-0">
-                      <Select
-                        value={component.tipo === "insumo"
-                          ? (component.insumoId ? component.insumoId.toString() : "")
-                          : (component.receitaId ? component.receitaId.toString() : "")
-                        }
-                        onValueChange={(value) => handleUpdateComponent(
-                          component.id,
-                          component.tipo === "insumo" ? "insumoId" : "receitaId",
-                          parseInt(value, 10),
-                        )}
-                      >
-                        <SelectTrigger className="w-full h-8 bg-brand-surface border-brand-line/35 text-xs focus:ring-brand-highlight/10 focus:border-brand-highlight/55">
-                          <SelectValue placeholder={`Selecione ${component.tipo}…`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {component.tipo === "insumo"
-                            ? availableInsumos.map((item) => (
-                                <SelectItem key={item.id} value={item.id.toString()}>
-                                  {item.nome}{item.unidade ? ` (${item.unidade})` : ""}
-                                </SelectItem>
-                              ))
-                            : receitas.filter((item) => item.id !== editingId).map((item) => (
-                                <SelectItem key={item.id} value={item.id.toString()}>
-                                  {item.nome}{item.unidade ? ` (${item.unidade})` : ""}
-                                </SelectItem>
-                              ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          value={component.quantidade || ""}
-                          onChange={(e) => handleUpdateComponent(component.id, "quantidade", parseFloat(e.target.value))}
-                          className="w-full h-8 bg-brand-surface border-brand-line/35 text-xs text-right pr-8 pl-2 focus-visible:ring-brand-highlight/10 focus-visible:border-brand-highlight/55"
-                          placeholder="0"
-                        />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-brand-muted text-[0.65rem] pointer-events-none">{unitLabel}</span>
-                      </div>
-                      <span className="text-right text-xs text-brand-highlight font-medium tabular-nums pr-1">
-                        {cost > 0 ? formatBRL(cost) : "—"}
-                      </span>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveComponent(component.id)} className="h-7 w-7 text-brand-muted hover:text-red-400 ml-auto rounded-[2px]">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </FadeUp>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          <RecipeCompositionTable
+            mode="single"
+            componentes={composicaoItems}
+            onChange={syncComponentes}
+            availableInsumos={availableInsumosOptions}
+            availableReceitas={availableReceitasOptions}
+            editingId={editingId}
+            receitasList={receitas}
+          />
 
           <div className="flex justify-end gap-3 mt-8 pt-5 border-t border-brand-line/15">
             <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-brand-muted hover:text-brand-soft">
